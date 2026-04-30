@@ -505,6 +505,47 @@ const MODULE_CONFIG = {
                     placeholder: "Enter royalty percentage",
                     showIf: (formData) => formData.royaltyType === "PERCENTAGE"
                 },
+
+                // ✅ ADD THIS (TAX SECTION)
+                {
+                    name: "isTaxApplicable",
+                    label: "Apply GST",
+                    type: "checkbox"
+                },
+                {
+                    name: "taxPercentage",
+                    label: "GST %",
+                    type: "number",
+                    placeholder: "Enter GST %",
+                    showIf: (formData) => formData.isTaxApplicable
+                },
+                {
+                    name: "isTaxInclusive",
+                    label: "Inclusive of GST",
+                    type: "checkbox",
+                    showIf: (formData) => formData.isTaxApplicable
+                },
+                {
+                    name: "sacCode",
+                    label: "SAC Code",
+                    type: "text",
+                    placeholder: "e.g. 998314",
+                    showIf: (formData) => formData.isTaxApplicable
+                },
+
+                // ✅ AUTO FIELDS
+                {
+                    name: "taxAmount",
+                    label: "Tax Amount",
+                    type: "number",
+                    disabled: true
+                },
+                {
+                    name: "totalAmount",
+                    label: "Total Amount",
+                    type: "number",
+                    disabled: true
+                }
             ],
             settings: [
                 {
@@ -524,6 +565,12 @@ const MODULE_CONFIG = {
             advanceAmount: "",
             royaltyType: "",
             royaltyPercentage: "",
+            isTaxApplicable: true,
+            taxPercentage: 18,
+            isTaxInclusive: false,
+            sacCode: "",
+            taxAmount: 0,
+            totalAmount: 0,
             status: "ACTIVE",
         },
     },
@@ -711,6 +758,34 @@ const CommonMasterForm = ({
         menu: updateMenuItem,
     }
 
+    // Calculate the total package value 
+    const calculatePackageAmount = (form) => {
+        let price = Number(form.price) || 0;
+        let gst = Number(form.taxPercentage) || 0;
+
+        if (!form.isTaxApplicable) {
+            return {
+                taxAmount: 0,
+                totalAmount: price
+            };
+        }
+
+        let taxAmount = 0;
+        let totalAmount = 0;
+
+        if (!form.isTaxInclusive) {
+            taxAmount = (price * gst) / 100;
+            totalAmount = price + taxAmount;
+        } else {
+            taxAmount = (price * gst) / (100 + gst);
+            totalAmount = price;
+        }
+
+        return {
+            taxAmount: Math.round(taxAmount),
+            totalAmount: Math.round(totalAmount)
+        };
+    };
 
 
     const mergedInitialValues = useMemo(() => {
@@ -739,7 +814,6 @@ const CommonMasterForm = ({
     const [comboDropdownOpen, setComboDropdownOpen] = useState(false);
 
     // Fetch non combo menus for menu item 
-
     const menuOptions = nonComboMenuItems;
 
     useEffect(() => {
@@ -818,6 +892,25 @@ const CommonMasterForm = ({
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
+
+        if (module === "package") {
+            setForm((prev) => {
+                const updated = {
+                    ...prev,
+                    [name]: type === "checkbox" || type === "switch" ? checked : value
+                };
+
+                const { taxAmount, totalAmount } = calculatePackageAmount(updated);
+
+                return {
+                    ...updated,
+                    taxAmount,
+                    totalAmount
+                };
+            });
+
+            return;
+        }
 
         if (name === "contact" || name === "phone" || type === "tel") {
             const numericValue = value.replace(/\D/g, "");
@@ -962,6 +1055,18 @@ const CommonMasterForm = ({
                     qty: Number(i.qty)
                 }))
             }
+        }
+
+        if (module == "package") {
+            payload = {
+                ...form,
+                price: Number(form.price),
+                advanceAmount: Number(form.advanceAmount),
+                royaltyPercentage: Number(form.royaltyPercentage),
+                taxPercentage: Number(form.taxPercentage),
+                taxAmount: Number(form.taxAmount),
+                totalAmount: Number(form.totalAmount),
+            };
         }
 
 
@@ -1263,6 +1368,24 @@ const CommonMasterForm = ({
             );
         }
 
+        if (field.type === "checkbox") {
+    return (
+        <div className="form-check mt-2">
+            <input
+                type="checkbox"
+                className="form-check-input"
+                name={field.name}
+                checked={!!form[field.name]}
+                onChange={handleChange}
+                id={`checkbox-${field.name}`}
+            />
+            <label className="form-check-label ms-2">
+                {field.label}
+            </label>
+        </div>
+    );
+}
+
         return (
             <>
                 <input type={field.type || "text"} {...commonProps} />
@@ -1455,6 +1578,8 @@ const CommonMasterForm = ({
                                                                                 { icon: "bx-package", val: form.packageName || "No package yet" },
                                                                                 { icon: "bx-wallet", val: form.price ? `₹ ${form.price}` : "No price yet" },
                                                                                 { icon: "bx-pie-chart-alt-2", val: formatLabel(form.royaltyType) || "No royalty type yet" },
+                                                                                { icon: "bx-receipt", val: form.taxAmount ? `GST: ₹ ${form.taxAmount}` : "No tax" },
+                                                                                { icon: "bx-wallet", val: form.totalAmount ? `Total: ₹ ${form.totalAmount}` : "No total" },
                                                                                 { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
                                                                             ]
                                                                             : module === "masala_items"

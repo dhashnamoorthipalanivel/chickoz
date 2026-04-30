@@ -344,7 +344,7 @@ const AppRoutes = () => {
       <Route path="/master-document/edit/:id" element={<W><DocumentForm /></W>} />
       <Route path="/master-package/add" element={<W>< PackageForm /></W>} />
       <Route path="/master-package/edit/:id" element={<W><PackageForm /></W>} />
- <Route path="/master-masala-items/add" element={<W>< MasalaItemsForm /></W>} />
+      <Route path="/master-masala-items/add" element={<W>< MasalaItemsForm /></W>} />
       <Route path="/master-masala-items/edit/:id" element={<W><MasalaItemsForm /></W>} />
 
     </Routes>

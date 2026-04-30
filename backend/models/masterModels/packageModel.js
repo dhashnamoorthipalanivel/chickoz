@@ -47,6 +47,37 @@ const packageSchema = new mongoose.Schema(
       default: 0,
     },
 
+    // ✅ ADD THIS BLOCK
+    isTaxApplicable: {
+      type: Boolean,
+      default: true,
+    },
+
+    taxPercentage: {
+      type: Number,
+      default: 18,
+    },
+
+    isTaxInclusive: {
+      type: Boolean,
+      default: false,
+    },
+
+    sacCode: {
+      type: String,
+      trim: true,
+    },
+
+    taxAmount: {
+      type: Number,
+      default: 0,
+    },
+
+    totalAmount: {
+      type: Number,
+      default: 0,
+    },
+
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE"],
@@ -62,7 +93,7 @@ const packageSchema = new mongoose.Schema(
 
     remarks: String,
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Package", packageSchema);

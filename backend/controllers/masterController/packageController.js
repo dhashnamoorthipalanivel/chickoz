@@ -1,9 +1,46 @@
 const Package = require('../../models/masterModels/packageModel');
 
+const calculateAmount = (data) => {
+  let price = Number(data.price) || 0;
+  let gst = Number(data.taxPercentage) || 0;
+
+  if (!data.isTaxApplicable) {
+    return {
+      taxAmount: 0,
+      totalAmount: price
+    };
+  }
+
+  let taxAmount = 0;
+  let totalAmount = 0;
+
+  if (!data.isTaxInclusive) {
+    taxAmount = (price * gst) / 100;
+    totalAmount = price + taxAmount;
+  } else {
+    taxAmount = (price * gst) / (100 + gst);
+    totalAmount = price;
+  }
+
+  return {
+    taxAmount: Math.round(taxAmount),
+    totalAmount: Math.round(totalAmount)
+  };
+};
+
 // CREATE
 exports.createPackage = async (req, res) => {
   try {
-    const data = await Package.create(req.body);
+    const { taxAmount, totalAmount } = calculateAmount(req.body);
+
+    const payload = {
+      ...req.body,
+      taxAmount,
+      totalAmount
+    };
+
+    const data = await Package.create(payload);
+
     res.status(201).json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -36,9 +73,17 @@ exports.getPackageById = async (req, res) => {
 // UPDATE
 exports.updatePackage = async (req, res) => {
   try {
+    const { taxAmount, totalAmount } = calculateAmount(req.body);
+
+    const payload = {
+      ...req.body,
+      taxAmount,
+      totalAmount
+    };
+
     const data = await Package.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      payload,
       { new: true }
     );
 
