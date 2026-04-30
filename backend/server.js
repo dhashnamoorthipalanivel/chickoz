@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const path = require("path");   // ADD THIS
 
 dotenv.config();
 connectDB();
@@ -27,16 +28,26 @@ app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
 app.use("/api/taxes", require("./routes/masterRoutes/taxRoutes"));
 app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
 app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
-app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"))
-app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"))
-app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"))
+app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
+app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
+app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
 
 // Menu item
-app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes")); 
+app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 
-app.get("/", (req, res) => {
-  res.send("Backend Running...");
+/* ===============================
+   SERVE REACT FRONTEND (ADD THIS)
+================================= */
+
+const __dirnamePath = path.resolve();
+
+app.use(express.static(path.join(__dirnamePath, "public")));
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirnamePath, "public", "index.html"));
 });
+
+/* =============================== */
 
 const PORT = process.env.PORT || 5000;
 
