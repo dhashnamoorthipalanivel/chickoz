@@ -25,6 +25,17 @@ const packageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    cartSize: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    cartAmount: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
 
     price: {
       type: Number,
@@ -42,7 +53,7 @@ const packageSchema = new mongoose.Schema(
       required: true,
     },
 
-    royaltyPercentage: {
+    royaltyValue: {
       type: Number,
       default: 0,
     },
@@ -93,7 +104,7 @@ const packageSchema = new mongoose.Schema(
 
     remarks: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Package", packageSchema);

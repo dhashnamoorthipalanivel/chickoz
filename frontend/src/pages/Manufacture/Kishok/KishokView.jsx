@@ -5,38 +5,25 @@ import { Link, useLocation } from "react-router-dom";
 const KishokView = () => {
   const { state } = useLocation();
 
-  const data = state?.rowData || {
-    leadId: "LD001",
-    customerName: "Arun Kumar",
-    phone: "9876543210",
-    location: "Chennai",
-    packageName: "Standard",
-    cartSize: "6 x 4",
-    brandingType: "ACP Branding",
-    accessories: "Sink + Rack",
-    requiredDate: "2026-04-30",
-    priority: "Urgent",
-    vendorName: "ABC Fabrication",
-    vendorPhone: "9000000000",
-    assignDate: "2026-04-24",
-    expectedDate: "2026-04-29",
-    productionStatus: "In Progress",
-    dispatchDate: "-",
-    totalAmount: 125000,
-    paidAmount: 50000,
-    pendingAmount: 75000,
-    createdDate: "2026-04-22",
-    status: "IN_PROGRESS",
-  };
+  const data = state?.rowData || {}
 
   const badgeClass =
-    data.status === "COMPLETED"
+    data.manufactureStatus ===
+      "COMPLETED"
+
       ? "bg-success"
-      : data.status === "IN_PROGRESS"
-      ? "bg-primary"
-      : data.status === "ASSIGNED"
-      ? "bg-info"
-      : "bg-secondary";
+
+      : data.manufactureStatus ===
+        "IN_PROGRESS"
+
+        ? "bg-primary"
+
+        : data.manufactureStatus ===
+          "ASSIGNED"
+
+          ? "bg-info"
+
+          : "bg-secondary";
 
   return (
     <div className="page-content">
@@ -54,7 +41,7 @@ const KishokView = () => {
                     <Link to="/dashboard">Dashboard</Link>
                   </li>
                   <li className="breadcrumb-item">
-                    <Link to="/kishok">Kishok</Link>
+                    <Link to="/manufacture-kishok">Kishok</Link>
                   </li>
                   <li className="breadcrumb-item active">
                     View
@@ -74,13 +61,13 @@ const KishokView = () => {
               <div>
                 <h5 className="mb-1">{data.customerName}</h5>
                 <p className="text-muted mb-0">
-                  Lead ID : {data.leadId}
+                  Reference ID : {data.referenceId}
                 </p>
               </div>
 
               <div className="text-end">
                 <span className={`badge ${badgeClass} fs-6`}>
-                  {data.status.replace("_", " ")}
+                  {data.manufactureStatus?.replace("_", " ")}
                 </span>
               </div>
 
@@ -110,8 +97,8 @@ const KishokView = () => {
                   </div>
 
                   <div className="col-md-6">
-                    <label className="form-label text-muted">Location</label>
-                    <div>{data.location}</div>
+                    <label className="form-label text-muted">Place</label>
+                    <div>{data.place}</div>
                   </div>
 
                   <div className="col-md-6">
@@ -136,7 +123,15 @@ const KishokView = () => {
 
                   <div className="col-md-6">
                     <label className="form-label text-muted">Required Date</label>
-                    <div>{data.requiredDate}</div>
+                    <div>
+                      {
+                        data.requiredDate
+                          ? new Date(
+                            data.requiredDate
+                          ).toLocaleDateString()
+                          : "-"
+                      }
+                    </div>
                   </div>
 
                   <div className="col-md-6">
@@ -169,12 +164,29 @@ const KishokView = () => {
 
                   <div className="col-md-6">
                     <label className="form-label text-muted">Assign Date</label>
-                    <div>{data.assignDate}</div>
+                    <div>
+                      {
+                        data.assignDate
+                          ? new Date(
+                            data.assignDate
+                          ).toLocaleDateString()
+                          : "-"
+                      }
+                    </div>
+
                   </div>
 
                   <div className="col-md-6">
                     <label className="form-label text-muted">Expected Date</label>
-                    <div>{data.expectedDate}</div>
+                    <div>
+                      {
+                        data.expectedDate
+                          ? new Date(
+                            data.expectedDate
+                          ).toLocaleDateString()
+                          : "-"
+                      }
+                    </div>
                   </div>
 
                 </div>
@@ -198,14 +210,22 @@ const KishokView = () => {
                   <label className="form-label text-muted">
                     Production Status
                   </label>
-                  <div>{data.productionStatus}</div>
+                  <div>{data.manufactureStatus}</div>
                 </div>
 
                 <div>
                   <label className="form-label text-muted">
                     Dispatch Date
                   </label>
-                  <div>{data.dispatchDate}</div>
+                  <div>
+                    {
+                      data.dispatchDate
+                        ? new Date(
+                          data.dispatchDate
+                        ).toLocaleDateString()
+                        : "-"
+                    }
+                  </div>
                 </div>
 
               </div>
@@ -221,9 +241,9 @@ const KishokView = () => {
 
                 <div className="mb-3">
                   <label className="form-label text-muted">
-                    Total Amount
+                    Cart Amount
                   </label>
-                  <div>₹ {data.totalAmount}</div>
+                  <div>₹ {data.cartAmount}</div>
                 </div>
 
                 <div className="mb-3">
@@ -252,14 +272,14 @@ const KishokView = () => {
               <div className="card-body d-grid gap-2">
 
                 <Link
-                  to="/kishok"
+                  to="/manufacture-kishok"
                   className="btn btn-light border"
                 >
                   Back to List
                 </Link>
 
                 <Link
-                  to={`/kishok/edit/${data.leadId}`}
+                  to={`/manufacture-kishok/edit/${data._id}`}
                   state={{ rowData: data }}
                   className="btn btn-primary"
                 >

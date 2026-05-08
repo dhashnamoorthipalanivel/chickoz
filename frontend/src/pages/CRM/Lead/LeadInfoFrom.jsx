@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { updateLead } from "../../../api/leadApi";
 
 const LeadInfoFrom = ({ formData, setFormData }) => {
 
@@ -22,9 +24,34 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
     setIsChanged(changed);
   };
 
-  const handleUpdate = () => {
-    setFormData(localData);
-    setIsChanged(false);
+  const handleUpdate =
+  async () => {
+
+    try {
+
+      // ✅ UPDATE FRONTEND
+      setFormData(localData);
+
+      // ✅ UPDATE DATABASE
+      await updateLead(
+        localData._id,
+        localData
+      );
+
+      toast.success(
+        "Enquiry Info Updated"
+      );
+
+      setIsChanged(false);
+
+    } catch (error) {
+
+      console.log(error);
+
+      toast.error(
+        "Update Failed"
+      );
+    }
   };
 
   return (
@@ -37,10 +64,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
 
           {/* Enquiry ID */}
           <div className="col-12">
-            <label className="form-label">Enquiry ID</label>
+            <label className="form-label">Reference ID</label>
             <input
               className="form-control"
-              value={localData?.enquiryId || ""}
+              value={localData?.referenceId || ""}
               disabled
             />
           </div>
@@ -92,7 +119,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
             <input
               className="form-control"
               name="interestedPackage"
-              value={localData?.interestedPackage || ""}
+              value={
+                localData?.interestedPackage
+                  ?.packageName || ""
+              }
               onChange={handleChange}
             />
           </div>
@@ -117,16 +147,39 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
             </label>
             <select
               className="form-select"
-              name="status"
-              value={localData?.status || ""}
+              name="leadStatus"
+              value={
+                localData?.leadStatus || ""
+              }
               onChange={handleChange}
             >
-              <option value="">Select</option>
-              <option value="INPROGRESS">In Progress</option>
-              <option value="HOLD">Hold</option>
-              <option value="CANCEL">Cancel</option>
-              <option value="RETURN">Return</option>
-              <option value="COMPLETED">Completed</option>
+              <option value="">
+                Select
+              </option>
+
+              <option value="NOT_STARTED">
+                Not Started
+              </option>
+
+              <option value="IN_PROGRESS">
+                In Progress
+              </option>
+
+              <option value="COMPLETED">
+                Completed
+              </option>
+
+              <option value="HOLD">
+                Hold
+              </option>
+
+              <option value="RETURN">
+                Return
+              </option>
+
+              <option value="CANCELLED">
+                Cancelled
+              </option>
             </select>
           </div>
 

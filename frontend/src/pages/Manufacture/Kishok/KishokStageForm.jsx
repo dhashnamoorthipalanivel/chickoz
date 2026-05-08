@@ -1,13 +1,16 @@
 // KishokStageForm.jsx
 import React, { useEffect } from "react";
+import { toast } from "react-toastify";
 
 const KishokStageForm = ({
   activeStage,
   stages,
   formData,
   setFormData,
+  paymentModes
 }) => {
   const stage = stages[activeStage];
+  const stageData = formData || {};
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,74 +21,43 @@ const KishokStageForm = ({
     }));
   };
 
-  // Auto Fetch Package Details
-  useEffect(() => {
-    if (formData.package === "Basic") {
-      setFormData((prev) => ({
-        ...prev,
-        cartSize: "4 x 4",
-        brandingType: "Sticker",
-        accessories: "Basic Setup",
-        totalAmount: 85000,
-      }));
-    }
+  const paidAmount =
+    (stageData.payments || [])
+      .reduce(
+        (a, b) =>
+          a + Number(b.amount || 0),
+        0
+      );
 
-    if (formData.package === "Standard") {
-      setFormData((prev) => ({
-        ...prev,
-        cartSize: "6 x 4",
-        brandingType: "ACP Branding",
-        accessories: "Sink + Rack",
-        totalAmount: 125000,
-      }));
-    }
-
-    if (formData.package === "Premium") {
-      setFormData((prev) => ({
-        ...prev,
-        cartSize: "8 x 6",
-        brandingType: "LED Branding",
-        accessories: "Full Setup",
-        totalAmount: 175000,
-      }));
-    }
-  }, [formData.package]);
-
-  const paidAmount = (formData.payments || []).reduce(
-    (a, b) => a + b.amount,
-    0
-  );
-
-  const totalAmount = Number(formData.totalAmount || 0);
-  const isFullyPaid = paidAmount >= totalAmount;
+  const cartAmount = Number(formData.cartAmount ?? 0);
+  const isFullyPaid = cartAmount > 0 && paidAmount >= cartAmount;
 
   return (
     <div className="card">
       <div className="card-body">
         <div className="row g-3">
-
           {stage === "REQUIREMENT" && (
             <>
               <h5 className="mb-2">Cart Requirement</h5>
 
               <div className="col-md-6">
-                <label className="form-label">Lead ID</label>
-                <input className="form-control" value={formData.leadId} readOnly />
+                <label className="form-label">Reference ID</label>
+                <input className="form-control" value={formData.referenceId || ""} readOnly />
               </div>
 
               <div className="col-md-6">
                 <label className="form-label">Customer Name</label>
-                <input className="form-control" value={formData.customerName} readOnly />
+                <input className="form-control" value={formData.customerName || ""} readOnly />
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Location</label>
-                <input className="form-control" value={formData.location} readOnly />
+                <label className="form-label">Place</label>
+                <input className="form-control" value={formData.place || ""} readOnly />
               </div>
 
               <div className="col-md-6">
                 <label className="form-label">Package</label>
-                <input className="form-control" value={formData.package} readOnly />
+                <input className="form-control" value={formData.packageName || ""} readOnly />
               </div>
 
               <div className="col-md-6">
@@ -108,6 +80,13 @@ const KishokStageForm = ({
                 <input
                   type="date"
                   name="requiredDate"
+                  value={
+                    formData.requiredDate
+                      ? new Date(formData.requiredDate)
+                        .toISOString()
+                        .split("T")[0]
+                      : ""
+                  }
                   className="form-control"
                   onChange={handleChange}
                 />
@@ -118,6 +97,7 @@ const KishokStageForm = ({
                 <select
                   name="priority"
                   className="form-select"
+                  value={formData.priority || ""}
                   onChange={handleChange}
                 >
                   <option value="">Select</option>
@@ -137,6 +117,7 @@ const KishokStageForm = ({
                 <input
                   type="text"
                   name="vendorName"
+                  value={formData.vendorName || ""}
                   className="form-control"
                   onChange={handleChange}
                 />
@@ -147,6 +128,7 @@ const KishokStageForm = ({
                 <input
                   type="text"
                   name="vendorPhone"
+                  value={formData.vendorPhone || ""}
                   className="form-control"
                   onChange={handleChange}
                 />
@@ -157,6 +139,13 @@ const KishokStageForm = ({
                 <input
                   type="date"
                   name="assignDate"
+                  value={
+                    formData.assignDate
+                      ? new Date(formData.assignDate)
+                        .toISOString()
+                        .split("T")[0]
+                      : ""
+                  }
                   className="form-control"
                   onChange={handleChange}
                 />
@@ -167,6 +156,13 @@ const KishokStageForm = ({
                 <input
                   type="date"
                   name="expectedDate"
+                  value={
+                    formData.expectedDate
+                      ? new Date(formData.expectedDate)
+                        .toISOString()
+                        .split("T")[0]
+                      : ""
+                  }
                   className="form-control"
                   onChange={handleChange}
                 />
@@ -179,32 +175,104 @@ const KishokStageForm = ({
               <h5 className="mb-2">Production</h5>
 
               <div className="col-md-6">
-                <label className="form-label">Production Status</label>
+                <label className="form-label">Manufacture Status <span className="text-danger">*</span></label>
                 <select
-                  name="productionStatus"
+                  name="manufactureStatus"
+                  value={formData.manufactureStatus || ""}
                   className="form-select"
                   onChange={handleChange}
                 >
                   <option value="">Select</option>
-                  <option>Started</option>
-                  <option>In Progress</option>
-                  <option>Completed</option>
+
+                  <option value="PENDING">
+                    Pending
+                  </option>
+
+                  <option value="ASSIGNED">
+                    Assigned
+                  </option>
+
+                  <option value="IN_PROGRESS">
+                    In Progress
+                  </option>
+
+                  <option value="HOLD">
+                    Hold
+                  </option>
+
+                  <option value="CANCELLED">
+                    Cancelled
+                  </option>
+
+                  <option value="COMPLETED">
+                    Completed
+                  </option>
                 </select>
               </div>
 
               <div className="col-md-6">
-                <label className="form-label">Dispatch Date</label>
+                <label className="form-label">Dispatch Date <span className="text-danger">*</span></label>
                 <input
                   type="date"
                   name="dispatchDate"
+                  value={formData.dispatchDate ? new Date(formData.dispatchDate).toISOString()
+                    .split("T")[0]
+                    : ""
+                  }
                   className="form-control"
                   onChange={handleChange}
                 />
               </div>
 
               <div className="col-md-12">
-                <label className="form-label">Cart Image</label>
-                <input type="file" className="form-control" />
+                <label className="form-label">
+                  Cart Image
+                  <span className="text-danger">*</span>
+                </label>
+                <input
+                  type="file"
+                  className="form-control"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    setFormData((prev) => ({
+                      ...prev,
+                      cartImage: file,
+                      cartImageName:
+                        file.name,
+                    }));
+                  }}
+                />
+                {
+                  (
+                    formData.cartImageName ||
+                    formData.cartImage
+                  ) && (
+
+                    <div className="mt-2">
+
+                      <span className="badge bg-success">
+
+                        <i className="bx bx-check-circle me-1"></i>
+
+                        {
+                          formData.cartImageName ||
+
+                          (
+                            typeof formData.cartImage ===
+                              "string"
+
+                              ? formData.cartImage
+
+                              : formData.cartImage?.name
+                          )
+                        }
+
+                      </span>
+
+                    </div>
+                  )
+                }
               </div>
             </>
           )}
@@ -214,10 +282,10 @@ const KishokStageForm = ({
               <h5 className="mb-2">Payment</h5>
 
               <div className="col-md-6">
-                <label className="form-label">Total Amount</label>
+                <label className="form-label">Cart Amount</label>
                 <input
                   className="form-control"
-                  value={formData.totalAmount || ""}
+                  value={formData.cartAmount || ""}
                   readOnly
                 />
               </div>
@@ -255,6 +323,46 @@ const KishokStageForm = ({
               </div>
 
               <div className="col-md-6">
+
+                <label className="form-label">
+                  Payment Mode
+                  <span className="text-danger">*</span>
+                </label>
+
+                <select
+                  className="form-select"
+                  value={
+                    formData.tempPaymentMode || ""
+                  }
+                  disabled={isFullyPaid}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      tempPaymentMode:
+                        e.target.value,
+                    }))
+                  }
+                >
+
+                  <option value="">Select</option>
+                  {
+                    paymentModes?.length > 0 ? (
+                      paymentModes.map((mode) => (
+                        <option
+                          key={mode._id}
+                          value={mode._id}
+                        >
+                          {mode.paymentName}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No Payment Modes</option>
+                    )
+                  }
+                </select>
+              </div>
+
+              <div className="col-md-6">
                 <label className="form-label d-block">&nbsp;</label>
 
                 <button
@@ -262,18 +370,50 @@ const KishokStageForm = ({
                   className="btn btn-primary w-100"
                   disabled={isFullyPaid}
                   onClick={() => {
-                    if (!formData.tempAmount || !formData.tempDate) return;
+
+                    if (
+                      !formData.tempAmount ||
+                      !formData.tempDate ||
+                      !formData.tempPaymentMode
+                    ) {
+                      toast.error("Please fill all payment fields");
+                      return;
+                    }
 
                     const newPayment = {
-                      amount: Number(formData.tempAmount),
-                      date: formData.tempDate,
+                      amount: Number(
+                        formData.tempAmount), paymentDate: formData.tempDate,
+                      paymentMode: formData.tempPaymentMode || null,
                     };
+
+                    const updatedPayments = [
+                      ...(formData.payments || []),
+                      newPayment,
+                    ];
+
+                    const updatedPaid =
+                      updatedPayments.reduce(
+                        (a, b) =>
+                          a + Number(
+                            b.amount || 0
+                          ),
+                        0
+                      );
 
                     setFormData((prev) => ({
                       ...prev,
-                      payments: [...(prev.payments || []), newPayment],
+                      payments:
+                        updatedPayments,
+                      paidAmount:
+                        updatedPaid,
+                      pendingAmount:
+                        Number(
+                          prev.cartAmount || 0
+                        ) - updatedPaid,
+
                       tempAmount: "",
                       tempDate: "",
+                      tempPaymentMode: "",
                     }));
                   }}
                 >
@@ -290,6 +430,7 @@ const KishokStageForm = ({
                       <th>S.No</th>
                       <th>Date</th>
                       <th>Amount</th>
+                      <th>Payment Mode</th>
                     </tr>
                   </thead>
 
@@ -297,8 +438,9 @@ const KishokStageForm = ({
                     {(formData.payments || []).map((p, i) => (
                       <tr key={i}>
                         <td>{i + 1}</td>
-                        <td>{p.date}</td>
+                        <td>{p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : "-"}</td>
                         <td>{p.amount}</td>
+                        <td>{paymentModes?.find((x) => String(x._id) === String(p.paymentMode))?.paymentName || "-"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -314,7 +456,7 @@ const KishokStageForm = ({
                 <label className="form-label">Pending</label>
                 <input
                   className="form-control"
-                  value={totalAmount - paidAmount}
+                  value={Math.max(cartAmount - paidAmount, 0)}
                   readOnly
                 />
               </div>

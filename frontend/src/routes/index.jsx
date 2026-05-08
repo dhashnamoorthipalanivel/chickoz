@@ -288,7 +288,7 @@ const AppRoutes = () => {
       {/* CRM module form */}
       <Route path="/crm-enquiry/add" element={<W><EnquiryForm /></W>} />
       <Route path="/crm-enquiry/edit/:id" element={<W><EnquiryForm /></W>} />
-      <Route path="/crm-lead/edit/:id" element={<W><LeadWizardFrom /></W>} />
+      <Route path="/crm-lead/:id" element={<W><LeadWizardFrom /></W>} />
 
       {/* Manufacture */}
       <Route path="/manufacture-kishok" element={<W><Kishok /></W>} />

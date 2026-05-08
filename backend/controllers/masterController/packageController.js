@@ -1,30 +1,60 @@
 const Package = require('../../models/masterModels/packageModel');
 
 const calculateAmount = (data) => {
-  let price = Number(data.price) || 0;
-  let gst = Number(data.taxPercentage) || 0;
 
+  let price =
+    Number(data.price) || 0;
+
+  let cartAmount =
+    Number(data.cartAmount) || 0;
+
+  let gst =
+    Number(data.taxPercentage) || 0;
+
+  // ✅ PACKAGE + CART
+  let baseAmount =
+    price + cartAmount;
+
+  // ✅ NO GST
   if (!data.isTaxApplicable) {
+
     return {
       taxAmount: 0,
-      totalAmount: price
+      totalAmount: Math.round(baseAmount)
     };
   }
 
   let taxAmount = 0;
   let totalAmount = 0;
 
+  // ✅ GST EXCLUSIVE
   if (!data.isTaxInclusive) {
-    taxAmount = (price * gst) / 100;
-    totalAmount = price + taxAmount;
-  } else {
-    taxAmount = (price * gst) / (100 + gst);
-    totalAmount = price;
+
+    taxAmount =
+      (baseAmount * gst) / 100;
+
+    totalAmount =
+      baseAmount + taxAmount;
+
+  }
+
+  // ✅ GST INCLUSIVE
+  else {
+
+    taxAmount =
+      (baseAmount * gst) /
+      (100 + gst);
+
+    totalAmount = baseAmount;
   }
 
   return {
-    taxAmount: Math.round(taxAmount),
-    totalAmount: Math.round(totalAmount)
+
+    taxAmount:
+      Math.round(taxAmount),
+
+    totalAmount:
+      Math.round(totalAmount)
   };
 };
 
@@ -84,7 +114,7 @@ exports.updatePackage = async (req, res) => {
     const data = await Package.findByIdAndUpdate(
       req.params.id,
       payload,
-      { new: true }
+      { returnDocument: "after" }
     );
 
     res.json(data);

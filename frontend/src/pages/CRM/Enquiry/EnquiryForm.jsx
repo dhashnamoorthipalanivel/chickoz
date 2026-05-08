@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useEnquiryStore, useLeadSources, usePackageStore } from "../../../store/store";
+import { toast } from "react-toastify";
 
 const formatLabel = (value) => {
     return value
@@ -16,10 +18,10 @@ const ENQUIRY_CONFIG = {
     tabs: ["basic", "lead", "followup"],
     fields: {
         basic: [
-            { name: "enquiryId", label: "Enquiry ID", type: "text", required: true, placeholder: "Enter enquiry ID", maxLength: 50 },
+            { name: "referenceId", label: "Reference ID", type: "text", required: true, placeholder: "Enter reference ID", maxLength: 50, disabled: true },
             { name: "name", label: "Name", type: "text", required: true, placeholder: "Enter customer name", maxLength: 100 },
             { name: "phone", label: "Phone", type: "tel", required: true, placeholder: "Enter phone number", maxLength: 10 },
-            { name: "email", label: "Email", type: "email", placeholder: "Enter email address", maxLength: 100 },
+            { name: "email", label: "Email", type: "email", required: true, placeholder: "Enter email address", maxLength: 100 },
             { name: "place", label: "Place", type: "text", required: true, placeholder: "Enter place / city", maxLength: 100 },
             { name: "address", label: "Address", type: "textarea", placeholder: "Enter address", col: 12, maxLength: 500 },
         ],
@@ -30,21 +32,21 @@ const ENQUIRY_CONFIG = {
                 label: "Interested Package",
                 type: "select",
                 required: true,
-                options: ["STARTER_PACKAGE", "PROFESSIONAL_PACKAGE", "ENTERPRISE_PACKAGE", "CUSTOM_PACKAGE"],
+                // options: ["STARTER_PACKAGE", "PROFESSIONAL_PACKAGE", "ENTERPRISE_PACKAGE", "CUSTOM_PACKAGE"],
             },
             {
                 name: "leadSource",
                 label: "Lead Source",
                 type: "select",
                 required: true,
-                options: ["WEBSITE", "INSTAGRAM", "FACEBOOK", "REFERENCE", "WALK_IN"],
+                // options: ["WEBSITE", "INSTAGRAM", "FACEBOOK", "REFERENCE", "WALK_IN"],
             },
             {
                 name: "status",
                 label: "Status",
                 type: "select",
                 required: true,
-                options: ["NEW", "FOLLOW_UP", "HOLD", "CANCELLED", "CONVERTED_TO_LEAD"],
+                options: ["NEW", "FOLLOW_UP", "HOLD", "CANCELLED"],
             },
             {
                 name: "assignedTo",
@@ -64,7 +66,7 @@ const ENQUIRY_CONFIG = {
     },
 
     initialValues: {
-        enquiryId: "",
+        referenceId: "",
         name: "",
         phone: "",
         email: "",
@@ -91,13 +93,58 @@ const EnquiryForm = () => {
 
     const [activeTab, setActiveTab] = useState(config.tabs[0]);
     const [submitting, setSubmitting] = useState(false);
-    const [success, setSuccess] = useState(false);
     const [errors, setErrors] = useState({});
+    const [success, setSuccess] = useState(false);
+    const { leadSources, fetchLeadSources } = useLeadSources();
+    const { packages, fetchPackages } = usePackageStore();
+    const { createEnquiry, getNextReferenceId, updateEnquiry } = useEnquiryStore();
+
+    useEffect(() => {
+        fetchLeadSources();
+        fetchPackages();
+    }, [])
+
+    useEffect(() => {
+        const loadId = async () => {
+            const res = await getNextReferenceId();
+
+            setForm((prev) => ({
+                ...prev,
+                referenceId: res.referenceId,
+            }));
+        };
+
+        if (mode === "add") {
+            loadId();
+        }
+    }, [mode]);
 
     const mergedInitialValues = useMemo(() => {
         return {
             ...config.initialValues,
             ...initialData,
+
+            interestedPackage:
+                initialData.interestedPackage?._id ||
+                initialData.interestedPackage ||
+                "",
+
+            leadSource:
+                initialData.leadSource?._id ||
+                initialData.leadSource ||
+                "",
+
+            followUpDate: initialData.followUpDate
+                ? new Date(initialData.followUpDate)
+                    .toISOString()
+                    .split("T")[0]
+                : "",
+
+            createdDate: initialData.createdAt
+                ? new Date(initialData.createdAt)
+                    .toISOString()
+                    .split("T")[0]
+                : config.initialValues.createdDate,
         };
     }, [initialData]);
 
@@ -161,13 +208,13 @@ const EnquiryForm = () => {
             }));
         }
 
-        
+
         if (errors[name]) {
             setErrors((prev) => ({ ...prev, [name]: "" }));
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const errs = validate();
@@ -175,7 +222,6 @@ const EnquiryForm = () => {
         if (Object.keys(errs).length > 0) {
             setErrors(errs);
 
-            
             const firstTabWithError = config.tabs.find((tab) =>
                 config.fields[tab]?.some((field) => errs[field.name])
             );
@@ -184,17 +230,54 @@ const EnquiryForm = () => {
             return;
         }
 
-        setSubmitting(true);
+        try {
+            setSubmitting(true);
 
-        setTimeout(() => {
-            console.log(`${mode.toUpperCase()} ${config.title}:`, form);
-            setSubmitting(false);
-            setSuccess(true);
+            // 🔥 IMPORTANT: send only required fields
+            const payload = {
+                name: form.name,
+                phone: form.phone,
+                email: form.email,
+                place: form.place,
+                address: form.address,
+                interestedPackage: form.interestedPackage,
+                leadSource: form.leadSource,
+                status: form.status,
+                followUpDate: form.followUpDate,
+                assignedTo: form.assignedTo,
+                remarks: form.remarks,
+            };
+
+            console.log("payload: ", payload)
+
+            // 🔥 CALL ZUSTAND
+
+            if (mode === "add") {
+                const response = await createEnquiry(payload);
+                toast.success("Enquiry created successfully");
+                console.log("response : ", response);
+            } else {
+                const response = await updateEnquiry(initialData._id, payload);
+                toast.success("Enquiry updated successfully");
+                console.log("response : ", response);
+            }
+
 
             setTimeout(() => {
                 navigate(config.listPath);
-            }, 1200);
-        }, 1000);
+            }, 1000);
+
+        } catch (err) {
+            console.error(err);
+            const message =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Something went wrong";
+
+            toast.error(message);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     // ✅ Next button handler - NO validation, NO form submit
@@ -237,6 +320,54 @@ const EnquiryForm = () => {
         }
 
         if (field.type === "select") {
+
+            // 🔥 Package dropdown
+            if (field.name === "interestedPackage") {
+                return (
+                    <>
+                        <select
+                            name={field.name}
+                            value={form[field.name] ?? ""}
+                            onChange={handleChange}
+                            className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                        >
+                            <option value="">Select Package</option>
+
+                            {packages.map((pkg) => (
+                                <option key={pkg._id} value={pkg._id}>
+                                    {pkg.packageName}
+                                </option>
+                            ))}
+                        </select>
+                        {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
+                    </>
+                );
+            }
+
+            // 🔥 Lead Source dropdown
+            if (field.name === "leadSource") {
+                return (
+                    <>
+                        <select
+                            name={field.name}
+                            value={form[field.name] ?? ""}
+                            onChange={handleChange}
+                            className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                        >
+                            <option value="">Select Lead Source</option>
+
+                            {leadSources.map((src) => (
+                                <option key={src._id} value={src._id}>
+                                    {src.leadSourceName}
+                                </option>
+                            ))}
+                        </select>
+                        {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
+                    </>
+                );
+            }
+
+            // default select (if any)
             return (
                 <>
                     <select
@@ -244,11 +375,20 @@ const EnquiryForm = () => {
                         value={form[field.name] ?? ""}
                         onChange={handleChange}
                         className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
-                        disabled={field.disabled || false}
                     >
                         <option value="">Select {field.label}</option>
-                        {field.options?.map((option) => (
-                            <option key={option} value={option}>
+                        {[
+                            ...field.options,
+
+                            ...(form.status === "CONVERTED_TO_LEAD"
+                                ? ["CONVERTED_TO_LEAD"]
+                                : []),
+                        ].map((option) => (
+
+                            <option
+                                key={option}
+                                value={option}
+                            >
                                 {formatLabel(option)}
                             </option>
                         ))}

@@ -81,34 +81,34 @@ const Package = () => {
     };
 
     const toggleAll = () => {
-    if (selected.length === paged.length) {
-        setSelected([]);
-    } else {
-        setSelected(paged.map((r) => r._id));
-    }
-};
+        if (selected.length === paged.length) {
+            setSelected([]);
+        } else {
+            setSelected(paged.map((r) => r._id));
+        }
+    };
 
     const confirmDelete = (id) => {
-       setDeleteId(id)
+        setDeleteId(id)
         setShowDeleteModal(true);
     };
 
     const handleDelete = async () => {
-    try {
-        await deletePackage(deleteId);
-        await fetchPackages();
+        try {
+            await deletePackage(deleteId);
+            await fetchPackages();
 
-        setShowDeleteModal(false);
-        setDeleteId(null);
+            setShowDeleteModal(false);
+            setDeleteId(null);
 
-        setSelected((prev) =>
-            prev.filter((item) => item !== deleteId)
-        );
+            setSelected((prev) =>
+                prev.filter((item) => item !== deleteId)
+            );
 
-    } catch (error) {
-        console.log(error);
-    }
-};
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     return (
         <React.Fragment>
@@ -229,6 +229,7 @@ const Package = () => {
                                                     <th style={{ width: "70px" }}>S.No</th>
                                                     <th>Package Code</th>
                                                     <th>Package Name</th>
+                                                    <th>Cart Size</th>
                                                     <th>Price</th>
                                                     <th>Advance Amount</th>
                                                     <th>Royalty Type</th>
@@ -257,13 +258,14 @@ const Package = () => {
 
                                                             <td>{row.packageCode}</td>
                                                             <td>{row.packageName}</td>
+                                                            <td>{row.cartSize}</td>
                                                             <td>₹ {row.price.toLocaleString()}</td>
                                                             <td>₹ {row.advanceAmount.toLocaleString()}</td>
                                                             <td>{royaltyTypeBadge(row.royaltyType)}</td>
                                                             <td>
                                                                 {row.royaltyType === "PERCENTAGE"
-                                                                    ? `${row.royaltyPercentage}%`
-                                                                    : "-"}
+                                                                    ? `${row.royaltyValue}%`
+                                                                    : `₹ ${row.royaltyValue}`}
                                                             </td>
                                                             <td>{row.agreementDuration}</td>
                                                             <td>{statusBadge(row.status)}</td>

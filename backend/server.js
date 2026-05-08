@@ -35,6 +35,10 @@ app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
 // Menu item
 app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 
+// CRM
+app.use("/api/enquiry", require("./routes/enquiryRoutes"))
+app.use("/api/lead", require("./routes/leadRoutes"))
+app.use("/api/kishok", require("./routes/kishokRoutes"));
 /* ===============================
    SERVE REACT FRONTEND (ADD THIS)
 ================================= */
@@ -43,7 +47,7 @@ const __dirnamePath = path.resolve();
 
 app.use(express.static(path.join(__dirnamePath, "public")));
 
-app.get("*", (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
 });
 

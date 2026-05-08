@@ -1,7 +1,9 @@
 // KishokWizardForm.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import KishokStageForm from "./KishokStageForm";
+import { useLocation, useNavigate } from "react-router-dom";
+import useKishokStore, { usePaymentModes } from "../../../store/store";
 
 const stages = [
   { key: "REQUIREMENT", icon: "bx bx-cart" },
@@ -19,68 +21,304 @@ const formatLabel = (value) =>
 const KishokWizardForm = () => {
   const [activeStage, setActiveStage] = useState(0);
 
-  const [formData, setFormData] = useState({
-    package: "Standard",
-    leadId: "LD001",
-    customerName: "Arun Kumar",
-    location: "Chennai",
-  });
+  const { state } = useLocation();
+  const navigate = useNavigate();
+
+  const rowData = state?.rowData;
+
+  const [formData, setFormData] = useState({});
+  const { paymentModes, fetchPaymentModes } = usePaymentModes();
+
+  useEffect(() => {
+    fetchPaymentModes();
+  }, [])
+
+  const { saveKishok } = useKishokStore();
+
+  useEffect(() => {
+
+    if (!rowData) return;
+
+    setFormData(rowData);
+
+    const completed =
+      rowData.completedStages || [];
+
+    const stageKeys =
+      stages.map((s) => s.key);
+
+    let openStage = 0;
+
+    for (
+      let i = 0;
+      i < stageKeys.length;
+      i++
+    ) {
+
+      const key =
+        stageKeys[i];
+
+      // ✅ PRODUCTION SPECIAL
+      if (
+        key === "PRODUCTION"
+      ) {
+
+        if (
+          rowData.manufactureStatus !==
+          "COMPLETED"
+        ) {
+
+          openStage = i;
+          break;
+        }
+
+        continue;
+      }
+
+      // ✅ PAYMENT SPECIAL
+      if (
+        key === "PAYMENT"
+      ) {
+
+        const total =
+          Number(
+            rowData.cartAmount || 0
+          );
+
+        const paid =
+          (rowData.payments || [])
+            .reduce(
+              (a, b) =>
+                a +
+                Number(
+                  b.amount || 0
+                ),
+              0
+            );
+
+        if (paid < total) {
+
+          openStage = i;
+          break;
+        }
+
+        continue;
+      }
+
+      // ✅ NORMAL STAGES
+      if (
+        !completed.includes(key)
+      ) {
+
+        openStage = i;
+        break;
+      }
+    }
+
+    setActiveStage(openStage);
+
+  }, [rowData]);
 
   const stageRequiredFields = {
     REQUIREMENT: ["requiredDate", "priority"],
     VENDOR_ASSIGN: ["vendorName", "assignDate", "expectedDate"],
-    PRODUCTION: ["productionStatus"],
-    PAYMENT: [],
+    PRODUCTION: ["manufactureStatus", "dispatchDate", "cartImage"],
+    PAYMENT: ["payments"],
   };
 
-  const validateCurrentStage = () => {
-    const currentStage = stages[activeStage].key;
-    const required = stageRequiredFields[currentStage] || [];
+  const validateCurrentStage =
+    () => {
 
-    for (let field of required) {
-      const value = formData[field];
+      const currentStage =
+        stages[activeStage].key;
 
-      if (!value || value.toString().trim() === "") {
-        toast.error("Please fill all required fields");
-        return false;
+      const required =
+        stageRequiredFields[
+        currentStage
+        ] || [];
+
+      for (let field of required) {
+        const value =
+          formData?.[field];
+        // ✅ ARRAY VALIDATION
+        if (Array.isArray(value)) {
+          if (value.length === 0) {
+            toast.error(
+              "Please add payment"
+            );
+            return false;
+          }
+          continue;
+        }
+
+        // ✅ NORMAL VALIDATION
+        if (!value || value.toString().trim() === "") {
+          toast.error("Please fill all required fields");
+          return false;
+        }
       }
-    }
 
-    return true;
-  };
+      return true;
+    };
 
   const getStageStatus = (stageKey) => {
+    const completedStages = formData.completedStages || [];
+    // ✅ PAYMENT
     if (stageKey === "PAYMENT") {
-      const total = Number(formData.totalAmount || 0);
-      const paid = (formData.payments || []).reduce(
-        (a, b) => a + b.amount,
-        0
-      );
+      const total = Number(formData.cartAmount || 0);
+      const paid = (formData.payments || [])
+        .reduce(
+          (a, b) =>
+            a + Number(
+              b.amount || 0
+            ),
+          0
+        );
 
-      if (paid === 0) return "not-started";
-      if (paid < total) return "in-progress";
+      if (paid === 0) {
+        return "not-started";
+      }
+
+      if (paid < total) {
+        return "in-progress";
+      }
+
       return "completed";
     }
 
-    const required = stageRequiredFields[stageKey] || [];
 
-    const filled = required.filter((field) => {
-      const value = formData[field];
-      return value && value.toString().trim() !== "";
-    }).length;
+    // ✅ PRODUCTION
+    if (
+      stageKey === "PRODUCTION"
+    ) {
 
-    if (filled === 0) return "not-started";
-    if (filled < required.length) return "in-progress";
-    return "completed";
+      if (
+        formData.manufactureStatus ===
+        "COMPLETED"
+      ) {
+        return "completed";
+      }
+
+      if (
+        formData.manufactureStatus
+      ) {
+        return "in-progress";
+      }
+
+      return "not-started";
+    }
+
+
+    // ✅ SAVE & NEXT ONLY
+    if (
+      completedStages.includes(
+        stageKey
+      )
+    ) {
+      return "completed";
+    }
+
+
+    const required =
+      stageRequiredFields[
+      stageKey
+      ] || [];
+
+    const filled =
+      required.filter(
+        (field) => {
+
+          const value =
+            formData[field];
+
+          return (
+            value &&
+            value.toString()
+              .trim() !== ""
+          );
+        }
+      ).length;
+
+    if (filled > 0) {
+      return "in-progress";
+    }
+
+    return "not-started";
   };
 
-  const handleNext = () => {
-    if (!validateCurrentStage()) return;
+  const allStagesCompleted =
+    stages.every(
+      (stage) =>
+        getStageStatus(
+          stage.key
+        ) === "completed"
+    );
 
-    toast.success("Saved Successfully");
+  const handleNext = async () => {
 
-    if (activeStage < stages.length - 1) {
-      setActiveStage((prev) => prev + 1);
+    if (!validateCurrentStage())
+      return;
+
+    try {
+      const updatedData = {
+
+        ...formData,
+
+        completedStages: [
+          ...new Set([
+            ...(formData.completedStages || []),
+            stages[activeStage].key,
+          ]),
+        ],
+      };
+
+      const payload = {
+        ...updatedData,
+      };
+
+      // ✅ FILE FIX
+      if (payload.cartImage) {
+
+        const image =
+          payload.cartImage;
+
+        payload.cartImage =
+          typeof image === "string"
+            ? image
+            : image.name;
+
+        payload.cartImageName =
+          typeof image === "string"
+            ? image
+            : image.name;
+      }
+
+
+      await saveKishok(
+        formData._id,
+        payload
+      );
+
+      setFormData(updatedData);
+
+      toast.success(
+        "Saved Successfully"
+      );
+
+      if (
+        activeStage <
+        stages.length - 1
+      ) {
+        setActiveStage(
+          (prev) => prev + 1
+        );
+      }
+
+    } catch (error) {
+
+      toast.error(
+        "Save Failed"
+      );
     }
   };
 
@@ -90,19 +328,120 @@ const KishokWizardForm = () => {
     }
   };
 
-  const handleSave = () => {
-    if (!validateCurrentStage()) return;
+  const handleSave = async () => {
 
-    toast.success("Draft Saved");
+    try {
+
+      const payload = {
+        ...formData,
+      };
+
+      if (payload.cartImage) {
+
+        const image =
+          payload.cartImage;
+
+        payload.cartImage =
+          typeof image === "string"
+            ? image
+            : image.name;
+
+        payload.cartImageName =
+          typeof image === "string"
+            ? image
+            : image.name;
+      }
+
+      await saveKishok(
+        formData._id,
+        payload
+      );
+
+      toast.success(
+        "Draft Saved"
+      );
+
+    } catch (error) {
+
+      toast.error(
+        "Save Failed"
+      );
+    }
   };
 
-  const handleComplete = () => {
-    toast.success("Kishok Process Completed");
+  const handleComplete = async () => {
+    if (!allStagesCompleted) {
+
+      toast.error(
+        "Complete all stages first"
+      );
+
+      return;
+    }
+
+    try {
+
+      const payload = {
+
+        ...formData,
+
+        manufactureStatus:
+          "COMPLETED",
+
+        completedStages:
+          stages.map(
+            (s) => s.key
+          ),
+      };
+
+      if (payload.cartImage) {
+
+        const image =
+          payload.cartImage;
+
+        payload.cartImage =
+          typeof image === "string"
+            ? image
+            : image.name;
+
+        payload.cartImageName =
+          typeof image === "string"
+            ? image
+            : image.name;
+      }
+
+      await saveKishok(
+        formData._id,
+        payload
+      );
+
+      toast.success(
+        "Kishok Process Completed"
+      );
+
+    } catch (error) {
+
+      toast.error(
+        "Completion Failed"
+      );
+    }
   };
 
   return (
     <div className="page-content">
       <div className="container-fluid">
+
+        <button
+          className="btn btn-secondary mb-3"
+
+          onClick={() =>
+            navigate("/manufacture-kishok")
+          }
+        >
+          <i className="bx bx-left-arrow-alt me-1"></i>
+
+          Back
+        </button>
 
         {/* Header */}
         <div className="card mb-3">
@@ -117,10 +456,10 @@ const KishokWizardForm = () => {
                   status === "completed"
                     ? "bg-success text-white"
                     : status === "in-progress"
-                    ? "bg-warning text-dark"
-                    : activeStage === index
-                    ? "bg-primary text-white"
-                    : "bg-light";
+                      ? "bg-warning text-dark"
+                      : activeStage === index
+                        ? "bg-primary text-white"
+                        : "bg-light";
 
                 return (
                   <React.Fragment key={stage.key}>
@@ -173,6 +512,7 @@ const KishokWizardForm = () => {
           stages={stages.map((s) => s.key)}
           formData={formData}
           setFormData={setFormData}
+          paymentModes={paymentModes}
         />
 
         {/* Buttons */}
@@ -211,6 +551,7 @@ const KishokWizardForm = () => {
                   <button
                     className="btn btn-success"
                     onClick={handleComplete}
+                    disabled={!allStagesCompleted}
                   >
                     Mark Completed
                   </button>

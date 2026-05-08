@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import useKishokStore from "../../../store/store";
 
 const initialData = [
     {
@@ -32,37 +33,53 @@ const initialData = [
     },
 ];
 
+const formatLabel = (value) => {
+    return value
+        ?.toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const statusBadge = (status) => {
+    const map = {
+        COMPLETED: "bg-success",
+        HOLD: "bg-warning",
+        CANCELLED : "bg-danger",
+        IN_PROGRESS : "bg-primary",
+    };
+
+    return (
+        <span className={`badge ${map[status] || "bg-secondary"}`}>
+            {formatLabel(status)}
+        </span>
+    );
+};
+
 const Kiosk = () => {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
 
-    const filtered = initialData.filter((item) => {
+    const {kishoks, fetchKishoks,} = useKishokStore();
+    console.log(kishoks)
+
+    useEffect(() => {
+        fetchKishoks();
+    },[])
+
+    const filtered = kishoks.filter((item) => {
         const matchSearch =
-            item.leadId.toLowerCase().includes(search.toLowerCase()) ||
+            item.referenceId.toLowerCase().includes(search.toLowerCase()) ||
             item.customerName.toLowerCase().includes(search.toLowerCase()) ||
             item.phone.includes(search) ||
-            item.location.toLowerCase().includes(search.toLowerCase());
+            item.place.toLowerCase().includes(search.toLowerCase());
 
         const matchStatus =
-            statusFilter === "ALL" || item.status === statusFilter;
+            statusFilter === "ALL" || item.manufactureStatus === statusFilter;
 
         return matchSearch && matchStatus;
     });
 
-    const statusBadge = (status) => {
-        const map = {
-            PENDING: "bg-secondary",
-            ASSIGNED: "bg-info",
-            IN_PROGRESS: "bg-primary",
-            COMPLETED: "bg-success",
-        };
 
-        return (
-            <span className={`badge ${map[status]}`}>
-                {status.replace("_", " ")}
-            </span>
-        );
-    };
 
     const priorityBadge = (priority) => {
         return (
@@ -147,10 +164,10 @@ const Kiosk = () => {
                                     <thead className="table-light">
                                         <tr>
                                             <th>S.No</th>
-                                            <th>Lead ID</th>
+                                            <th>Reference ID</th>
                                             <th>Customer</th>
                                             <th>Phone</th>
-                                            <th>Location</th>
+                                            <th>Place</th>
                                             <th>Package</th>
                                             <th>Cart Size</th>
                                             <th>Required Date</th>
@@ -174,25 +191,25 @@ const Kiosk = () => {
                                             </tr>
                                         ) : (
                                             filtered.map((row, index) => (
-                                                <tr key={row.id}>
+                                                <tr key={row._id}>
                                                     <td>{index + 1}</td>
-                                                    <td>{row.leadId}</td>
+                                                    <td>{row.referenceId}</td>
                                                     <td>{row.customerName}</td>
                                                     <td>{row.phone}</td>
-                                                    <td>{row.location}</td>
+                                                    <td>{row.place}</td>
                                                     <td>{row.packageName}</td>
                                                     <td>{row.cartSize}</td>
-                                                    <td>{row.requiredDate}</td>
+                                                    <td>{row.requiredDate? new Date(row.requiredDate).toLocaleDateString(): "-"}</td>
                                                     <td>{priorityBadge(row.priority)}</td>
-                                                    <td>{row.vendor}</td>
-                                                    <td>{statusBadge(row.status)}</td>
-                                                    <td>{row.createdDate}</td>
+                                                    <td>{row.vendorName || "-"}</td>
+                                                    <td>{statusBadge(row.manufactureStatus)}</td>
+                                                    <td>{row.createdAt ? new Date(row.createdAt).toLocaleDateString(): "-"}</td>
 
                                                     <td>
                                                         <div className="d-flex justify-content-center gap-2">
 
                                                             <Link
-                                                                to={`/manufacture-kishok/view/${row.id}`}
+                                                                to={`/manufacture-kishok/view/${row._id}`}
                                                                 state={{ rowData: row }}
                                                                 className="btn btn-sm btn-outline-primary"
                                                                 title="Edit"
@@ -201,7 +218,7 @@ const Kiosk = () => {
                                                             </Link>
 
                                                             <Link
-                                                                to={`/manufacture-kishok/edit/${row.id}`}
+                                                                to={`/manufacture-kishok/edit/${row._id}`}
                                                                 state={{ rowData: row }}
                                                                 className="btn btn-sm btn-outline-warning"
                                                                 title="Edit"

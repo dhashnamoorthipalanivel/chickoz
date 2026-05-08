@@ -475,6 +475,20 @@ const MODULE_CONFIG = {
                     placeholder: "Enter agreement duration (e.g. 12 Months)",
                     maxLength: 50,
                 },
+                {
+                    name: "cartSize",
+                    label: "Cart Size",
+                    type: "text",
+                    required: true,
+                    placeholder: "Example: 4x4 / 6x4"
+                },
+                {
+                    name: "cartAmount",
+                    label: "Cart Amount",
+                    type: "number",
+                    required: true,
+                    placeholder: "Enter cart amount"
+                },
             ],
             pricing: [
                 {
@@ -499,11 +513,10 @@ const MODULE_CONFIG = {
                     options: ["PERCENTAGE", "FIXED"]
                 },
                 {
-                    name: "royaltyPercentage",
-                    label: "Royalty %",
+                    name: "royaltyValue",
+                    label: "Royalty Value",
                     type: "number",
-                    placeholder: "Enter royalty percentage",
-                    showIf: (formData) => formData.royaltyType === "PERCENTAGE"
+                    placeholder: "Enter royalty value"
                 },
 
                 // ✅ ADD THIS (TAX SECTION)
@@ -561,10 +574,12 @@ const MODULE_CONFIG = {
             packageName: "",
             features: "",
             agreementDuration: "",
+            cartSize: "",
+            cartAmount: "",
             price: "",
             advanceAmount: "",
             royaltyType: "",
-            royaltyPercentage: "",
+            royaltyValue: "",
             isTaxApplicable: true,
             taxPercentage: 18,
             isTaxInclusive: false,
@@ -761,12 +776,17 @@ const CommonMasterForm = ({
     // Calculate the total package value 
     const calculatePackageAmount = (form) => {
         let price = Number(form.price) || 0;
+        let cartAmount =
+            Number(form.cartAmount) || 0;
+
+        let baseAmount =
+            price + cartAmount;
         let gst = Number(form.taxPercentage) || 0;
 
         if (!form.isTaxApplicable) {
             return {
                 taxAmount: 0,
-                totalAmount: price
+                totalAmount: baseAmount
             };
         }
 
@@ -774,11 +794,11 @@ const CommonMasterForm = ({
         let totalAmount = 0;
 
         if (!form.isTaxInclusive) {
-            taxAmount = (price * gst) / 100;
-            totalAmount = price + taxAmount;
+            taxAmount = (baseAmount * gst) / 100;
+            totalAmount = baseAmount + taxAmount;
         } else {
-            taxAmount = (price * gst) / (100 + gst);
-            totalAmount = price;
+            taxAmount = (baseAmount * gst) / (100 + gst);
+            totalAmount = baseAmount;
         }
 
         return {
@@ -1040,8 +1060,12 @@ const CommonMasterForm = ({
             payload = {
                 ...form,
                 price: Number(form.price),
+                cartAmount: Number(form.cartAmount),
                 advanceAmount: Number(form.advanceAmount),
-                royaltyPercentage: Number(form.royaltyPercentage),
+                royaltyValue: Number(form.royaltyValue),
+                taxPercentage: Number(form.taxPercentage),
+                taxAmount: Number(form.taxAmount),
+                totalAmount: Number(form.totalAmount),
             };
         }
 
@@ -1061,8 +1085,9 @@ const CommonMasterForm = ({
             payload = {
                 ...form,
                 price: Number(form.price),
+                cartAmount: Number(form.cartAmount),
                 advanceAmount: Number(form.advanceAmount),
-                royaltyPercentage: Number(form.royaltyPercentage),
+                royaltyValue: Number(form.royaltyValue),
                 taxPercentage: Number(form.taxPercentage),
                 taxAmount: Number(form.taxAmount),
                 totalAmount: Number(form.totalAmount),
@@ -1300,12 +1325,30 @@ const CommonMasterForm = ({
     };
 
     const renderField = (field) => {
+        let dynamicLabel = field.label;
+        let dynamicPlaceholder = field.placeholder;
+
+        if (
+            module === "package" &&
+            field.name === "royaltyValue"
+        ) {
+            dynamicLabel =
+                form.royaltyType === "PERCENTAGE"
+                    ? "Royalty %"
+                    : "Royalty Amount";
+
+            dynamicPlaceholder =
+                form.royaltyType === "PERCENTAGE"
+                    ? "Enter royalty percentage"
+                    : "Enter royalty amount";
+        }
+
         const commonProps = {
             name: field.name,
             value: form[field.name] ?? "",
             onChange: handleChange,
             className: `form-control ${errors[field.name] ? "is-invalid" : ""}`,
-            placeholder: field.placeholder || `Enter ${field.label.toLowerCase()}`,
+            placeholder: dynamicPlaceholder || `Enter ${dynamicLabel.toLowerCase()}`,
             maxLength: field.maxLength,
         };
 
@@ -1369,22 +1412,22 @@ const CommonMasterForm = ({
         }
 
         if (field.type === "checkbox") {
-    return (
-        <div className="form-check mt-2">
-            <input
-                type="checkbox"
-                className="form-check-input"
-                name={field.name}
-                checked={!!form[field.name]}
-                onChange={handleChange}
-                id={`checkbox-${field.name}`}
-            />
-            <label className="form-check-label ms-2">
-                {field.label}
-            </label>
-        </div>
-    );
-}
+            return (
+                <div className="form-check mt-2">
+                    <input
+                        type="checkbox"
+                        className="form-check-input"
+                        name={field.name}
+                        checked={!!form[field.name]}
+                        onChange={handleChange}
+                        id={`checkbox-${field.name}`}
+                    />
+                    <label className="form-check-label ms-2">
+                        {field.label}
+                    </label>
+                </div>
+            );
+        }
 
         return (
             <>
@@ -1662,9 +1705,19 @@ const CommonMasterForm = ({
                                                 .map((field) => (
                                                     <div key={field.name} className={`col-md-${field.col || (field.type === "switch" ? 12 : 6)}`}>
                                                         {field.type !== "switch" && field.type !== "combo-builder" && (
-                                                            <label className="form-label">
-                                                                {field.label}{" "}
-                                                                {field.required && <span className="text-danger">*</span>}
+                                                            <label className="form-label">{
+                                                                module === "package" &&
+                                                                    field.name === "royaltyValue"
+                                                                    ? (
+                                                                        form.royaltyType === "PERCENTAGE"
+                                                                            ? "Royalty %"
+                                                                            : "Royalty Amount"
+                                                                    )
+                                                                    : field.label
+                                                            }
+                                                                {field.required && (
+                                                                    <span className="text-danger">*</span>
+                                                                )}
                                                             </label>
                                                         )}
                                                         {renderField(field)}

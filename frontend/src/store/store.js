@@ -25,9 +25,35 @@ import {
   getOrderTypes,
   updateOrderType,
 } from "../api/orderTypeApi";
-import { createLeadSource, deleteLeadSource, getLeadSources, updateLeadSource } from "../api/leadSourceApi";
-import { createDocument, deleteDocument, getDocuments, updateDocument } from "../api/documentApi";
-import { createMenu, deleteMenu, getMenus, getNonComboMenus, updateMenu } from "../api/menuItemApi";
+import {
+  createLeadSource,
+  deleteLeadSource,
+  getLeadSources,
+  updateLeadSource,
+} from "../api/leadSourceApi";
+import {
+  createDocument,
+  deleteDocument,
+  getDocuments,
+  updateDocument,
+} from "../api/documentApi";
+import {
+  createMenu,
+  deleteMenu,
+  getMenus,
+  getNonComboMenus,
+  updateMenu,
+} from "../api/menuItemApi";
+import {
+  convertToLead,
+  createEnquiry,
+  deleteEnquiry,
+  getEnquiries,
+  getNextReferenceId,
+  updateEnquiry,
+} from "../api/enquiryApi";
+import { getLeadById, getLeads, updateLead } from "../api/leadApi";
+import { getKishokById, getKishoks, updateKishok } from "../api/kishokApi";
 
 // Package
 export const usePackageStore = create((set) => ({
@@ -224,35 +250,237 @@ export const useDocuments = create((set) => ({
 // Menu items
 
 export const useMenuItems = create((set) => ({
-  menuItems : [],
-  nonComboMenuItems : [],
-  loading : false,
+  menuItems: [],
+  nonComboMenuItems: [],
+  loading: false,
 
-  fetchMenuItems : async () => {
-    set({loading : true});
+  fetchMenuItems: async () => {
+    set({ loading: true });
     const res = await getMenus();
-    set({menuItems : res.data, loading : false})
+    set({ menuItems: res.data, loading: false });
   },
 
-  fetchNonComboMenuItems : async () => {
-    set({loading : true});
+  fetchNonComboMenuItems: async () => {
+    set({ loading: true });
     const res = await getNonComboMenus();
-    set({nonComboMenuItems : res.data, loading : false})
+    set({ nonComboMenuItems: res.data, loading: false });
   },
 
-  addMenuItem : async (data) => {
+  addMenuItem: async (data) => {
     const res = await createMenu(data);
     return res.data;
   },
 
-  updateMenuItem : async (id, data) => {
+  updateMenuItem: async (id, data) => {
     const res = await updateMenu(id, data);
     return res.data;
   },
 
-  deleteMenuItem : async (id) => {
-const res = await deleteMenu(id);
-return res.data;
-  }
+  deleteMenuItem: async (id) => {
+    const res = await deleteMenu(id);
+    return res.data;
+  },
+}));
 
-}))
+// CRM
+
+export const useEnquiryStore = create((set) => ({
+  enquiries: [],
+  loading: false,
+
+  // GET
+  fetchEnquiries: async () => {
+    set({ loading: true });
+
+    try {
+      const res = await getEnquiries();
+      set({ enquiries: res.data, loading: false });
+    } catch (err) {
+      console.error(err);
+      set({ loading: false });
+    }
+  },
+
+  // CREATE
+  createEnquiry: async (payload) => {
+    try {
+      const res = await createEnquiry(payload);
+      return res.data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  },
+
+  // DELETE
+  deleteEnquiry: async (id) => {
+    try {
+      const res = await deleteEnquiry(id);
+      return res.data;
+
+      set((state) => ({
+        enquiries: state.enquiries.filter((e) => e._id !== id),
+      }));
+
+      return res.data;
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
+  updateEnquiry: async (id, payload) => {
+    try {
+      const res = await updateEnquiry(id, payload);
+      set((state) => ({
+        enquiries: state.enquiries.map((e) => (e._id === id ? res.data : e)),
+      }));
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
+  // CONVERT
+  convertToLead: async (id) => {
+    try {
+      const res = await convertToLead(id);
+      return res.data;
+
+      // 🔥 Update only that row (no refetch needed)
+      set((state) => ({
+        enquiries: state.enquiries.map((e) =>
+          e._id === id
+            ? {
+                ...e,
+                status: "CONVERTED_TO_LEAD",
+                isConverted: true,
+              }
+            : e,
+        ),
+      }));
+
+      return res.data;
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
+  getNextReferenceId: async () => {
+    try {
+      const res = await getNextReferenceId();
+
+      console.log("res:", res);
+      return res.data;
+    } catch (err) {
+      console.error(err);
+    }
+  },
+}));
+
+export const useLeadStore = create((set) => ({
+  leads: [],
+
+  selectedLead: null,
+
+  fetchLeads: async () => {
+    try {
+      const res = await getLeads();
+
+      set({
+        leads: res.data,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  },
+  fetchLeadById: async (id) => {
+    try {
+      const res = await getLeadById(id);
+
+      set({
+        selectedLead: res.data,
+      });
+
+      return res.data;
+    } catch (err) {
+      console.error(err);
+    }
+  },
+  updateLead: async (id, payload) => {
+    try {
+      const res = await updateLead(id, payload);
+
+      set((state) => ({
+        leads: state.leads.map((lead) =>
+          lead._id === id ? res.data.lead : lead,
+        ),
+      }));
+
+      return res.data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  },
+}));
+
+// Kishok
+const useKishokStore = create((set) => ({
+  kishoks: [],
+  kishok: null,
+  loading: false,
+
+  // ✅ GET ALL
+  fetchKishoks: async () => {
+    try {
+      set({ loading: true });
+      const res = await getKishoks();
+      set({
+        kishoks: res.data,
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ✅ GET SINGLE
+  fetchKishokById: async (id) => {
+    try {
+      set({ loading: true });
+      const res = await getKishokById(id);
+      set({
+        kishok: res.data,
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ✅ UPDATE
+  saveKishok: async (id, data) => {
+    try {
+      set({ loading: true });
+      const res = await updateKishok(id, data);
+      set({
+        kishok: res.data.data,
+      });
+      return res.data;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    } finally {
+      set({
+        loading: false,
+      });
+    }
+  },
+}));
+
+export default useKishokStore;

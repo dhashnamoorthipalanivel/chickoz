@@ -1,64 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const initialData = [
-  {
-    id: 1,
-    enquiryId: "ENQ001",
-    name: "Arun Kumar",
-    phone: "9876543210",
-    place: "Chennai",
-    interestedPackage: "Starter Package",
-    leadSource: "WEBSITE",
-    status: "NEW",
-    followUpDate: "2026-04-10",
-    assignedTo: "Dhash",
-    createdDate: "2026-04-07",
-  },
-  {
-    id: 2,
-    enquiryId: "ENQ002",
-    name: "Suresh",
-    phone: "9123456780",
-    place: "Coimbatore",
-    interestedPackage: "Professional Package",
-    leadSource: "INSTAGRAM",
-    status: "FOLLOW_UP",
-    followUpDate: "2026-04-12",
-    assignedTo: "Raja",
-    createdDate: "2026-04-06",
-  },
-  {
-    id: 3,
-    enquiryId: "ENQ003",
-    name: "Karthik",
-    phone: "9988776655",
-    place: "Madurai",
-    interestedPackage: "Enterprise Package",
-    leadSource: "REFERENCE",
-    status: "CONVERTED_TO_LEAD",
-    followUpDate: "2026-04-15",
-    assignedTo: "Vicky",
-    createdDate: "2026-04-05",
-  },
-  {
-    id: 4,
-    enquiryId: "ENQ004",
-    name: "Praveen",
-    phone: "9090909090",
-    place: "Salem",
-    interestedPackage: "Custom Package",
-    leadSource: "FACEBOOK",
-    status: "CANCELLED",
-    followUpDate: "2026-04-09",
-    assignedTo: "Ajay",
-    createdDate: "2026-04-04",
-  },
-];
+import { useEnquiryStore } from "../../../store/store";
 
 const formatLabel = (value) => {
+  if (!value) return "";
+
   return value
-    ?.toLowerCase()
+    .toString()
+    .toLowerCase()
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
@@ -100,17 +49,28 @@ const Enquiry = () => {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [leadSourceFilter, setLeadSourceFilter] = useState("ALL");
   const [selected, setSelected] = useState([]);
-  const [data, setData] = useState(initialData);
   const [page, setPage] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [showConvertModal, setShowConvertModal] =
+  useState(false);
+
+const [convertId, setConvertId] =
+  useState(null);
 
   const perPage = 10;
 
-  const filtered = data.filter((item) => {
+  // Fetch enquiry from store
+  const { enquiries, fetchEnquiries, deleteEnquiry, convertToLead } = useEnquiryStore();
+
+  useEffect(() => {
+    fetchEnquiries();
+  }, [])
+
+  const filtered = enquiries.filter((item) => {
     const matchSearch =
       item.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.enquiryId.toLowerCase().includes(search.toLowerCase()) ||
+      item.referenceId.toLowerCase().includes(search.toLowerCase()) ||
       item.phone.toLowerCase().includes(search.toLowerCase()) ||
       item.place.toLowerCase().includes(search.toLowerCase()) ||
       item.assignedTo.toLowerCase().includes(search.toLowerCase());
@@ -119,7 +79,8 @@ const Enquiry = () => {
       statusFilter === "ALL" || item.status === statusFilter;
 
     const matchLeadSource =
-      leadSourceFilter === "ALL" || item.leadSource === leadSourceFilter;
+      leadSourceFilter === "ALL" ||
+      item.leadSource?.name === leadSourceFilter;
 
     return matchSearch && matchStatus && matchLeadSource;
   });
@@ -137,7 +98,7 @@ const Enquiry = () => {
     if (selected.length === paged.length) {
       setSelected([]);
     } else {
-      setSelected(paged.map((r) => r.id));
+      setSelected(paged.map((r) => r._id));
     }
   };
 
@@ -146,16 +107,47 @@ const Enquiry = () => {
     setShowDeleteModal(true);
   };
 
-  const handleDelete = () => {
-    setData((prev) => prev.filter((r) => r.id !== deleteId));
-    setShowDeleteModal(false);
-    setDeleteId(null);
-    setSelected((prev) => prev.filter((id) => id !== deleteId));
+  const confirmConvert = (id) => {
+
+  setConvertId(id);
+
+  setShowConvertModal(true);
+};
+
+  const handleDelete = async () => {
+    try {
+      await deleteEnquiry(deleteId);
+      await fetchEnquiries();
+
+      setShowDeleteModal(false);
+      setDeleteId(null);
+
+      setSelected((prev) =>
+        prev.filter((item) => item !== deleteId)
+      );
+
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handleBulkDelete = () => {
-    setData((prev) => prev.filter((r) => !selected.includes(r.id)));
-    setSelected([]);
+  const handleConvertLead =
+  async () => {
+
+    try {
+
+      await convertToLead(convertId);
+
+      await fetchEnquiries();
+
+      setShowConvertModal(false);
+
+      setConvertId(null);
+
+    } catch (error) {
+
+      console.log(error);
+    }
   };
 
   return (
@@ -209,7 +201,7 @@ const Enquiry = () => {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Search by enquiry ID, name, phone, place or assigned to..."
+                          placeholder="Search by reference ID, name, phone, place or assigned to..."
                           value={search}
                           onChange={(e) => {
                             setSearch(e.target.value);
@@ -275,19 +267,8 @@ const Enquiry = () => {
                     <table className="table table-hover table-centered align-middle mb-0 text-nowrap">
                       <thead className="table-light">
                         <tr>
-                          <th style={{ width: "40px" }}>
-                            <div className="form-check">
-                              <input
-                                className="form-check-input"
-                                type="checkbox"
-                                checked={selected.length === paged.length && paged.length > 0}
-                                onChange={toggleAll}
-                                id="checkAll"
-                              />
-                              <label className="form-check-label" htmlFor="checkAll"></label>
-                            </div>
-                          </th>
-                          <th>Enquiry ID</th>
+                          <th style={{ width: "70px" }}>S.No</th>
+                          <th>Reference ID</th>
                           <th>Name</th>
                           <th>Phone</th>
                           <th>Place</th>
@@ -310,36 +291,28 @@ const Enquiry = () => {
                             </td>
                           </tr>
                         ) : (
-                          paged.map((row) => (
-                            <tr key={row.id} className={selected.includes(row.id) ? "table-active" : ""}>
-                              <td>
-                                <div className="form-check">
-                                  <input
-                                    className="form-check-input"
-                                    type="checkbox"
-                                    checked={selected.includes(row.id)}
-                                    onChange={() => toggleSelect(row.id)}
-                                    id={`check-${row.id}`}
-                                  />
-                                  <label className="form-check-label" htmlFor={`check-${row.id}`}></label>
-                                </div>
-                              </td>
-
-                              <td>{row.enquiryId}</td>
+                          paged.map((row, index) => (
+                            <tr key={row._id} className={selected.includes(row._id) ? "table-active" : ""}>
+                              <td>{(page - 1) * perPage + index + 1}</td>
+                              <td>{row.referenceId}</td>
                               <td>{row.name}</td>
                               <td>{row.phone}</td>
                               <td>{row.place}</td>
-                              <td>{row.interestedPackage}</td>
-                              <td>{leadSourceBadge(row.leadSource)}</td>
+                              <td>{row.interestedPackage?.packageName}</td>
+                              <td>{leadSourceBadge(row.leadSource?.leadSourceName)}</td>
                               <td>{statusBadge(row.status)}</td>
-                              <td>{row.followUpDate}</td>
+                              <td>
+                                {row.followUpDate
+                                  ? new Date(row.followUpDate).toLocaleDateString()
+                                  : "-"}
+                              </td>
                               <td>{row.assignedTo}</td>
-                              <td>{row.createdDate}</td>
+                              <td>{new Date(row.createdAt).toLocaleDateString()}</td>
 
                               <td>
                                 <div className="d-flex justify-content-center gap-2">
                                   <Link
-                                    to={`/crm-enquiry/edit/${row.id}`}
+                                    to={`/crm-enquiry/edit/${row._id}`}
                                     state={{ rowData: row }}
                                     className="btn btn-sm btn-outline-primary"
                                     title="Edit"
@@ -349,9 +322,13 @@ const Enquiry = () => {
 
                                   {row.status !== "CONVERTED_TO_LEAD" && (
                                     <button
-                                      className="btn btn-sm btn-outline-success"
-                                      title="Convert To Lead"
-                                    >
+  className="btn btn-sm btn-outline-success"
+  title="Convert To Lead"
+
+  onClick={() =>
+    confirmConvert(row._id)
+  }
+>
                                       <i className="bx bx-transfer-alt"></i>
                                     </button>
                                   )}
@@ -359,7 +336,7 @@ const Enquiry = () => {
                                   <button
                                     className="btn btn-sm btn-outline-danger"
                                     title="Delete"
-                                    onClick={() => confirmDelete(row.id)}
+                                    onClick={() => confirmDelete(row._id)}
                                   >
                                     <i className="bx bx-trash-alt"></i>
                                   </button>
@@ -441,6 +418,84 @@ const Enquiry = () => {
           </div>
         </div>
       )}
+
+      {showConvertModal && (
+  <div
+    className="modal fade show d-block"
+    tabIndex="-1"
+    style={{
+      background:
+        "rgba(0,0,0,0.5)",
+    }}
+  >
+    <div className="modal-dialog modal-dialog-centered">
+
+      <div className="modal-content">
+
+        <div className="modal-header border-0 pb-0">
+
+          <button
+            type="button"
+            className="btn-close"
+
+            onClick={() =>
+              setShowConvertModal(false)
+            }
+          ></button>
+
+        </div>
+
+        <div className="modal-body text-center pb-4">
+
+          <div className="avatar-md mx-auto mb-4">
+
+            <div
+              className="avatar-title bg-success-subtle text-success rounded-circle font-size-32"
+            >
+              <i className="bx bx-transfer-alt"></i>
+            </div>
+
+          </div>
+
+          <h5>
+            Convert To Lead?
+          </h5>
+
+          <p className="text-muted mb-0">
+
+            Are you sure you want to convert this enquiry into lead?
+
+          </p>
+
+        </div>
+
+        <div className="modal-footer border-0 pt-0 justify-content-center gap-2">
+
+          <button
+            className="btn btn-secondary px-4"
+
+            onClick={() =>
+              setShowConvertModal(false)
+            }
+          >
+            Cancel
+          </button>
+
+          <button
+            className="btn btn-success px-4"
+
+            onClick={handleConvertLead}
+          >
+            Convert
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+)}
     </React.Fragment>
   );
 };
