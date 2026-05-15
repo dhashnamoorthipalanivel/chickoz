@@ -10,7 +10,7 @@ const formatLabel = (value) => {
         .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentModes }) => {
+const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentModes, isLocked }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -21,7 +21,9 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                 ...prev.stages[
                     currentStage
                 ].data,
-                [name]: value,
+                [name]: name.toLowerCase().includes("date")
+   ? new Date(value)
+   : value,
             };
             // ✅ CART REQUIRED LOGIC
             if (name === "cartRequired") {
@@ -79,15 +81,18 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
             stage
         ]?.data || {};
 
+    // const isLocked = [
+    //     "HOLD",
+    //     "RETURN",
+    //     "CANCELLED",
+    // ].includes(
+    //     formData?.leadStatus
+    // );
+
     {/* CALCULATE */ }
     const paidAmount = (stageData.payments || []).reduce((a, b) => a + b.amount, 0);
     // 
     const packageData = formData?.interestedPackage || {};
-    console.log("PACKAGE DATA", packageData);
-    console.log(
-        "PACKAGE CART AMOUNT",
-        packageData.cartAmount
-    );
     const cartRequired = formData?.stages?.TRAINING?.data?.cartRequired;
 
     const packagePrice = Number(packageData.price || 0);
@@ -287,8 +292,8 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
 
     return (
         <div className="card">
-            <div className="card-body">
-
+            <div className="card-body" style={{ pointerEvents: isLocked ? "none" : "auto", opacity: isLocked ? 0.8 : 1, }}>
+                {isLocked && (<div className="alert alert-danger">  Lead is {" "} <strong> {formatLabel(formData.leadStatus)}</strong>. Editing is disabled. </div>)}
                 <div className="row g-3">
 
                     {/* SITE VISIT */}
@@ -315,8 +320,7 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                                 <input type="date" name="visitDate" className="form-control"
                                     value={
                                         stageData.visitDate
-                                            ? new Date(stageData.visitDate)
-                                                .toISOString()
+                                            ? String(stageData.visitDate)
                                                 .split("T")[0]
                                             : ""
                                     } onChange={handleChange} />
@@ -384,7 +388,6 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                     {stage === "TRAINING" && (
                         <>
                             <h5 className="mb-3">Training</h5>
-
                             <div className="row g-3">
                                 {/* Training Status */}
                                 <div className="col-md-6">
@@ -394,22 +397,9 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                                     <select
                                         name="trainingStatus"
                                         className="form-select"
-
                                         value={
                                             stageData.trainingStatus || ""
                                         }
-
-                                        disabled={
-                                            (
-                                                stageData.cartRequired === "yes"
-                                                ||
-                                                stageData.cartRequired === true
-                                            )
-                                            &&
-                                            stageData.cartManufactureStatus !==
-                                            "COMPLETED"
-                                        }
-
                                         onChange={handleChange}
                                     >
                                         <option value="">Select</option>

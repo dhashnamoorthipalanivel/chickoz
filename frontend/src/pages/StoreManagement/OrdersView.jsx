@@ -71,7 +71,7 @@ const OrdersView = () => {
                   </li>
 
                   <li className="breadcrumb-item">
-                    <Link to="/orders">Orders</Link>
+                    <Link to="/store-management-orders">Orders</Link>
                   </li>
 
                   <li className="breadcrumb-item active">
@@ -273,7 +273,7 @@ const OrdersView = () => {
                 </button>
 
                 <Link
-                  to="/orders"
+                  to="/store-management-orders"
                   className="btn btn-light border"
                 >
                   Back to List

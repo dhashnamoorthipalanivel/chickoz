@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from '../components/Layout/MainLayout';
+import ProtectedRoute from "../components/ProtectedRoute";
 
 // Dashboard
 import Dashboard from '../pages/Dashboard/Index';
@@ -123,6 +124,8 @@ import OrdersView from '../pages/StoreManagement/OrdersView';
 import MasalaItems from '../pages/Master/MasalaItems/MasalaItems';
 import MasalaItemsForm from '../pages/Master/MasalaItems/MasalaItemsForm';
 import FranchiseForm from '../pages/Master/Franchise/FranchiseForm';
+import SetUpPassword from '../pages/Auth/SetUpPassword';
+import ChangePassword from '../pages/Auth/ChangePassword';
 
 
 // Full-page auth/error routes (no layout)
@@ -175,15 +178,18 @@ const AppRoutes = () => {
 
       {/* Auth (no layout) */}
       <Route path="/auth-login" element={<Login />} />
+      <Route path="/auth-setup-password" element={<SetUpPassword />} />
       <Route path="/auth-register" element={<Register />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/auth-recoverpw" element={<RecoverPw />} />
+      {/*  */}
+      <Route path="/auth-recoverpw" element={<RecoverPw />} /> 
       <Route path="/auth-lock-screen" element={<LockScreen />} />
       <Route path="/auth-logout" element={<Logout />} />
       <Route path="/auth-confirm-mail" element={<ConfirmMail />} />
       <Route path="/auth-email-verification" element={<EmailVerification />} />
       <Route path="/auth-two-step-verification" element={<TwoStepVerification />} />
-
+      <Route path='/auth-change-password' element={<ChangePassword />} />
+      
       {/* Error Pages (no layout) */}
       <Route path="/pages-404" element={<Page404 />} />
       <Route path="/pages-500" element={<Page500 />} />
@@ -282,8 +288,32 @@ const AppRoutes = () => {
       <Route path="*" element={<Page404 />} />
 
       {/* CRM Module */}
-      <Route path='/crm-enquiry' element={<W> <Enquiry /> </W>} />
-      <Route path='/crm-lead' element={<W> <Lead /> </W>} />
+      <Route
+        path='/crm-enquiry'
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "admin",
+              "super_admin"
+            ]}
+          >
+            <W><Enquiry /></W>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path='/crm-lead'
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "admin",
+              "super_admin"
+            ]}
+          >
+            <W><Lead /></W>
+          </ProtectedRoute>
+        }
+      />
 
       {/* CRM module form */}
       <Route path="/crm-enquiry/add" element={<W><EnquiryForm /></W>} />
@@ -291,7 +321,17 @@ const AppRoutes = () => {
       <Route path="/crm-lead/:id" element={<W><LeadWizardFrom /></W>} />
 
       {/* Manufacture */}
-      <Route path="/manufacture-kishok" element={<W><Kishok /></W>} />
+      <Route path="/manufacture-kishok" element={
+        <ProtectedRoute
+          allowedRoles={[
+            "admin",
+            "super_admin"
+          ]}
+        >
+          <W> <Kishok /></W>
+        </ProtectedRoute>
+      }
+      />
       <Route path="/manufacture-kishok/edit/:id" element={<W><KishokWizardForm /></W>} />
       <Route path="/manufacture-kishok/view/:id" element={<W><KishokView /></W>} />
       <Route path="/manufacture-masala-franchise-request" element={<W><MasalaFranchiseRequest /></W>} />
@@ -301,12 +341,49 @@ const AppRoutes = () => {
       <Route path="/manufacture-masala-admin-process/view/:id" element={<W><MasalaAdminProcessView /></W>} />
 
       {/* Store Management */}
-      <Route path='/store-management-billing' element={<W> <Billing /> </W>} />
-      <Route path='/store-management-orders' element={<W> <Orders /> </W>} />
+      <Route path='/store-management-billing'
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "admin",
+              "super_admin",
+              "user",
+              "franchise",
+            ]}
+          >
+            <W> <Billing /></W>
+          </ProtectedRoute>
+        }
+      />
+      <Route path='/store-management-orders'
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "admin",
+              "super_admin",
+              "user",
+              "franchise"
+            ]}
+          >
+            <W> <Orders /></W>
+          </ProtectedRoute>
+        }
+      />
       <Route path='/store-management-orders/view/:id' element={<W> <OrdersView /> </W>} />
 
       {/* Master Module */}
-      <Route path='/master-franchise' element={<W> <Franchise /> </W>} />
+      <Route path='/master-franchise'
+        element={
+          <ProtectedRoute
+            allowedRoles={[
+              "admin",
+              "super_admin"
+            ]}
+          >
+            <W><Franchise /></W>
+          </ProtectedRoute>
+        }
+      />
       <Route path='/master-package' element={<W> <Package /> </W>} />
       {/* <Route path='/master-unit' element={<W> <Unit /></W>} /> */}
       <Route path='/master-tax' element={<W> <Tax /></W>} />
@@ -314,7 +391,23 @@ const AppRoutes = () => {
       {/* <Route path='/master-kitchen-station' element={<W> <KitchenStation /></W>} /> */}
       <Route path='/master-menu-item' element={<W> <MenuItem /></W>} />
       <Route path='/master-franchise-menu-visibility' element={<W> <FranchiseMenuVisibility /></W>} />
-      <Route path='/master-franchise-menu-availability' element={<W> <FranchiseMenuAvailability /></W>} />
+      <Route path='/master-franchise-menu-availability'
+        element={
+          <ProtectedRoute allowedRoles={[
+            "admin",
+            "super_admin",
+            "user",
+            "franchise"
+          ]}
+          >
+
+            <W>
+              <FranchiseMenuAvailability />
+            </W>
+
+          </ProtectedRoute>
+        }
+      />
       {/* <Route path='/master-raw-material' element={<W> <RawMaterial /></W>} /> */}
       {/* <Route path='/master-vendor' element={<W> <Vendor /></W>} /> */}
       <Route path='/master-masala-items' element={<W> <MasalaItems /></W>} />

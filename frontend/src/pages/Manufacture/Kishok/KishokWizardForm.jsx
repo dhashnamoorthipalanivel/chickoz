@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import KishokStageForm from "./KishokStageForm";
 import { useLocation, useNavigate } from "react-router-dom";
-import useKishokStore, { usePaymentModes } from "../../../store/store";
+import { useKishokStore, usePaymentModes } from "../../../store/store";
 
 const stages = [
   { key: "REQUIREMENT", icon: "bx bx-cart" },
@@ -27,6 +27,17 @@ const KishokWizardForm = () => {
   const rowData = state?.rowData;
 
   const [formData, setFormData] = useState({});
+  const isLocked =
+
+    [
+      "HOLD",
+      "RETURN",
+      "CANCELLED",
+    ].includes(
+      formData?.leadStatus
+    ) ||
+
+    formData?.isFranchiseCreated;
   const { paymentModes, fetchPaymentModes } = usePaymentModes();
 
   useEffect(() => {
@@ -62,24 +73,19 @@ const KishokWizardForm = () => {
       if (
         key === "PRODUCTION"
       ) {
-
         if (
           rowData.manufactureStatus !==
           "COMPLETED"
         ) {
-
           openStage = i;
           break;
         }
-
         continue;
       }
-
       // ✅ PAYMENT SPECIAL
       if (
         key === "PAYMENT"
       ) {
-
         const total =
           Number(
             rowData.cartAmount || 0
@@ -255,7 +261,7 @@ const KishokWizardForm = () => {
     );
 
   const handleNext = async () => {
-
+    if (isLocked) return;
     if (!validateCurrentStage())
       return;
 
@@ -329,7 +335,7 @@ const KishokWizardForm = () => {
   };
 
   const handleSave = async () => {
-
+    if (isLocked) return;
     try {
 
       const payload = {
@@ -370,6 +376,7 @@ const KishokWizardForm = () => {
   };
 
   const handleComplete = async () => {
+    if (isLocked) return;
     if (!allStagesCompleted) {
 
       toast.error(
@@ -529,35 +536,45 @@ const KishokWizardForm = () => {
                 <i className="bx bx-left-arrow-alt me-1"></i>
                 Previous
               </button>
+              {!(
+                [
+                  "HOLD",
+                  "RETURN",
+                  "CANCELLED",
+                ].includes(
+                  formData?.leadStatus
+                ) ||
 
-              <div className="d-flex gap-2">
+                formData?.isFranchiseCreated
+              ) && (
+                  <div className="d-flex gap-2">
 
-                <button
-                  className="btn btn-light border"
-                  onClick={handleSave}
-                >
-                  Save Draft
-                </button>
+                    <button
+                      className="btn btn-light border"
+                      onClick={handleSave}
+                    >
+                      Save Draft
+                    </button>
 
-                {activeStage !== stages.length - 1 ? (
-                  <button
-                    className="btn btn-primary"
-                    onClick={handleNext}
-                  >
-                    Save & Next
-                    <i className="bx bx-right-arrow-alt ms-1"></i>
-                  </button>
-                ) : (
-                  <button
-                    className="btn btn-success"
-                    onClick={handleComplete}
-                    disabled={!allStagesCompleted}
-                  >
-                    Mark Completed
-                  </button>
-                )}
+                    {activeStage !== stages.length - 1 ? (
+                      <button
+                        className="btn btn-primary"
+                        onClick={handleNext}
+                      >
+                        Save & Next
+                        <i className="bx bx-right-arrow-alt ms-1"></i>
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-success"
+                        onClick={handleComplete}
+                        disabled={!allStagesCompleted}
+                      >
+                        Mark Completed
+                      </button>
+                    )}
 
-              </div>
+                  </div>)}
 
             </div>
 

@@ -32,6 +32,11 @@ const enquirySchema = new mongoose.Schema(
       required: true,
     },
 
+    postCode: {
+      type: String,
+      default: "",
+    },
+
     address: {
       type: String,
     },

@@ -32,7 +32,7 @@ const masalaItemSchema = new mongoose.Schema(
     unit: {
       type: String,
       required: true,
-      enum: ["Kg", "Gram", "Packet", "Bottle", "Box"],
+      enum: ["KG", "GRAM", "PACKET", "BOTTLE", "BOX"],
     },
 
     price: {
@@ -41,11 +41,15 @@ const masalaItemSchema = new mongoose.Schema(
       min: 0,
     },
 
-    gst: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 100,
+    isTaxApplicable: {
+      type: Boolean,
+      default: true,
+    },
+
+    taxId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tax",
+      default: null,
     },
 
     stock: {

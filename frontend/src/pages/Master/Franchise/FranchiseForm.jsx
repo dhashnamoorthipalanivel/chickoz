@@ -4,9 +4,6 @@ import CommonMasterForm from '../../Custom/CommonMasterForm';
 
 const FranchiseForm = () => {
   const location = useLocation();
-    console.log(location)
-      console.log(location.pathname)
-
     const rowData = location.state?.rowData || null;
     const isEdit = !!rowData;
 

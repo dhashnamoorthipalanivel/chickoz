@@ -226,9 +226,9 @@ const MasalaItems = () => {
                                                             <td>{row.itemCode}</td>
                                                             <td>{row.itemName}</td>
                                                             <td>{row.category}</td>
-                                                            <td>{row.packSize} {row.unit}</td>
+                                                            <td>{row.packSize} {formatLabel(row.unit)}</td>
                                                             <td>₹ {row.price}</td>
-                                                            <td>{row.gst}%</td>
+                                                            <td>{row.taxId?.taxPercentage || 0}%</td>
                                                             <td>{row.stock}</td>
                                                             <td>{statusBadge(row.status)}</td>
 

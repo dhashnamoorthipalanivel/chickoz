@@ -89,10 +89,41 @@ const menuSchema = new mongoose.Schema(
       min: 0,
     },
 
-    tax: {
+    hasOffer: {
+      type: Boolean,
+      default: false,
+    },
+
+    offerType: {
       type: String,
-      required: true,
-      enum: ["GST_5", "GST_12", "GST_18"],
+      enum: ["PERCENTAGE", "FLAT"],
+      default: null,
+    },
+
+    offerValue: {
+      type: Number,
+      default: 0,
+    },
+
+    offerStartDate: {
+      type: Date,
+      default: null,
+    },
+
+    offerEndDate: {
+      type: Date,
+      default: null,
+    },
+
+    isTaxApplicable: {
+  type: Boolean,
+  default: false,
+},
+
+    taxId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tax",
+      required: false,
     },
 
     comboItems: {
@@ -116,9 +147,38 @@ const menuSchema = new mongoose.Schema(
       default: false,
     },
 
+    addons: [
+      {
+        addonName: {
+          type: String,
+          trim: true,
+        },
+
+        price: {
+          type: Number,
+          min: 0,
+          default: 0,
+        },
+      },
+    ],
+
+    customizationOptions: [
+      {
+        label: {
+          type: String,
+          trim: true,
+        },
+      },
+    ],
+
     isVisibleInBilling: {
       type: Boolean,
       default: true,
+    },
+
+    sortOrder: {
+      type: Number,
+      default: 0,
     },
 
     image: {

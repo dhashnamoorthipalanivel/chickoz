@@ -8,3 +8,5 @@ export const getLeadById = (id) => api.get(`/lead/${id}`);
 
 // ✅ UPDATE LEAD
 export const updateLead = (id, data) => api.put(`/lead/${id}`, data);
+
+export const createFranchise = (id) => api.post(`/lead/create-franchise/${id}`);

@@ -1,11 +1,15 @@
 import React, { useState } from "react";
+import { useCustomerStore } from "../../store/store";
+import { toast } from "react-toastify";
 
-const NewCustomerModal = ({ show, onClose }) => {
+const NewCustomerModal = ({ show, onClose,franchiseId,onCustomerCreated, }) => {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
   });
+
+  const { createCustomer } = useCustomerStore();
 
   if (!show) return null;
 
@@ -25,11 +29,51 @@ const NewCustomerModal = ({ show, onClose }) => {
     }
   };
 
-  const handleSave = () => {
-    console.log("NEW CUSTOMER:", form);
-    onClose();
-    setForm({ name: "", email: "", phone: "" });
-  };
+  const handleSave = async () => {
+      try {
+        // VALIDATION
+        if (!form.name ||!form.phone ) {
+          alert( "Name and phone are required" );
+          return;
+        }
+
+        // API PAYLOAD
+        const payload = {
+          customerName: form.name,
+          mobile:form.phone,
+          email:form.email,
+          franchiseId,
+        };
+
+        // CREATE CUSTOMER
+        await createCustomer( payload);
+
+        if (onCustomerCreated) {
+    onCustomerCreated({
+        customerName:form.name,
+        mobile: form.phone,
+        email: form.email,
+    });
+}
+
+        alert("Customer created successfully");
+
+        // RESET
+        setForm({
+          name: "",
+          email: "",
+          phone: "",
+        });
+
+        onClose();
+
+      } catch (error) {
+        console.log(error);
+        toast.error(
+          error?.response?.data?.message || "Failed to create customer"
+        );
+      }
+    };
 
   return (
     <div className="modal fade show d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,0.5)" }}>
@@ -54,10 +98,10 @@ const NewCustomerModal = ({ show, onClose }) => {
 
           <div className="modal-body">
             <div className="mb-3">
-              <label className="form-label">Customer Name 
+              <label className="form-label">Customer Name
                 <span className="text-danger">*</span>
-                 </label>
-              
+              </label>
+
               <input
                 type="text"
                 className="form-control"
@@ -69,10 +113,10 @@ const NewCustomerModal = ({ show, onClose }) => {
             </div>
 
             <div className="mb-3">
-              <label className="form-label">Phone Number 
-                 <span className="text-danger">*</span>
+              <label className="form-label">Phone Number
+                <span className="text-danger">*</span>
               </label>
-             
+
               <input
                 type="text"
                 className="form-control"

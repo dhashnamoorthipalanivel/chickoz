@@ -13,4 +13,9 @@ router.get("/:id", leadController.getLeadById);
 // ✅ UPDATE
 router.put("/:id", leadController.updateLead);
 
+router.post(
+  "/create-franchise/:id",
+  leadController.createFranchise
+);
+
 module.exports = router;

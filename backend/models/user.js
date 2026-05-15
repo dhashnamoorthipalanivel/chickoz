@@ -40,8 +40,14 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["super_admin", "admin", "user"],
+      enum: ["super_admin", "admin", "franchise", "user"],
       default: "user",
+    },
+
+    franchiseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
+      default: null,
     },
 
     profileImage: {
@@ -93,8 +99,21 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    changePasswordOtp: {
+      type: String,
+      default: null,
+    },
+
+    changePasswordOtpExpiry: {
+      type: Date,
+      default: null,
+    },
+    tempNewPassword: {
+      type: String,
+      default: null,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Hash password before save
@@ -110,4 +129,4 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.models.User || mongoose.model("User", userSchema);

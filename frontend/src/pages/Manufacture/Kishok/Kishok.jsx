@@ -1,37 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import useKishokStore from "../../../store/store";
+import { useKishokStore } from "../../../store/store";
 
-const initialData = [
-    {
-        id: 1,
-        leadId: "LD001",
-        customerName: "Arun Kumar",
-        phone: "9876543210",
-        location: "Chennai",
-        packageName: "Starter Package",
-        cartSize: "4 x 4",
-        requiredDate: "2026-04-28",
-        priority: "Urgent",
-        vendor: "Not Assigned",
-        status: "PENDING",
-        createdDate: "2026-04-22",
-    },
-    {
-        id: 2,
-        leadId: "LD002",
-        customerName: "Suresh",
-        phone: "9123456780",
-        location: "Coimbatore",
-        packageName: "Professional Package",
-        cartSize: "6 x 4",
-        requiredDate: "2026-04-30",
-        priority: "Normal",
-        vendor: "ABC Fabrication",
-        status: "IN_PROGRESS",
-        createdDate: "2026-04-21",
-    },
-];
 
 const formatLabel = (value) => {
     return value
@@ -60,7 +30,6 @@ const Kiosk = () => {
     const [statusFilter, setStatusFilter] = useState("ALL");
 
     const {kishoks, fetchKishoks,} = useKishokStore();
-    console.log(kishoks)
 
     useEffect(() => {
         fetchKishoks();

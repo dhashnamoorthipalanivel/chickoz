@@ -8,6 +8,13 @@ const kishokSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    leadStatus: {
+      type: String,
+
+      enum: ["NEW", "IN_PROGRESS", "HOLD", "RETURN", "CANCELLED", "COMPLETED"],
+
+      default: "NEW",
+    },
     // ✅ REQUIREMENT STAGE
     customerName: {
       type: String,
@@ -59,8 +66,6 @@ const kishokSchema = new mongoose.Schema(
       default: "Normal",
     },
 
-
-
     // ✅ VENDOR ASSIGN
     vendorName: {
       type: String,
@@ -81,8 +86,6 @@ const kishokSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-
-
 
     // ✅ PRODUCTION
     manufactureStatus: {
@@ -111,16 +114,14 @@ const kishokSchema = new mongoose.Schema(
     },
 
     cartImageName: {
-  type: String,
-  default: "",
-},
+      type: String,
+      default: "",
+    },
 
     remarks: {
       type: String,
       default: "",
     },
-
-
 
     // ✅ PAYMENT
     payments: [
@@ -136,8 +137,7 @@ const kishokSchema = new mongoose.Schema(
         },
 
         paymentMode: {
-          type:
-            mongoose.Schema.Types.ObjectId,
+          type: mongoose.Schema.Types.ObjectId,
           ref: "PaymentMode",
           default: null,
         },
@@ -155,9 +155,13 @@ const kishokSchema = new mongoose.Schema(
     },
 
     completedStages: {
-  type: [String],
-  default: [],
-},
+      type: [String],
+      default: [],
+    },
+    isFranchiseCreated: {
+      type: Boolean,
+      default: false,
+    },
 
     // ✅ COMMON
     isDeleted: {
@@ -169,11 +173,10 @@ const kishokSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-module.exports = mongoose.model("Kishok",kishokSchema);
+module.exports = mongoose.model("Kishok", kishokSchema);

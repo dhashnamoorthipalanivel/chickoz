@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useFranchiseMenuStore, useFranchiseStore, useMenuItems } from "../../../store/store";
+import { toast } from "react-toastify";
 
 const allMenuItems = [
     {
@@ -56,17 +58,62 @@ const FranchiseMenuVisibilityForm = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const { franchise, fetchFranchiseById } = useFranchiseStore();
+
+    useEffect(() => {
+        fetchMenuItems();
+        fetchFranchiseById(id);
+        console.log("ID: ", id)
+    },[])
+
     const rowData = location.state?.rowData || {};
-    const franchiseName = rowData?.franchiseName || "Franchise";
-    const franchiseCode = rowData?.franchiseCode || `FR${id}`;
+    const franchiseName =
+    franchise?.franchiseName ||
+    rowData?.franchiseName ||
+    "Franchise";
+
+const franchiseCode =
+    franchise?.franchiseId ||
+    rowData?.franchiseId ||
+    `FR${id}`;
 
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("ALL");
-    const [selectedMenus, setSelectedMenus] = useState([1, 2, 4]); // temporary selected assigned menus
+    const [selectedMenus, setSelectedMenus] = useState([]); // temporary selected assigned menus
     const [saving, setSaving] = useState(false);
 
+    const {menuItems, fetchMenuItems} = useMenuItems();
+    const {saveAssignedMenus} = useFranchiseMenuStore();
+    
+
+    useEffect(() => {
+
+    console.log("FRANCHISE DATA:", franchise);
+
+    if (franchise?.assignedMenus) {
+
+        const assignedIds = franchise.assignedMenus.map((menu) => {
+
+            if (typeof menu.menuId === "object") {
+                return menu.menuId._id?.toString();
+            }
+
+            return menu.menuId.toString();
+        });
+
+        console.log("ASSIGNED IDS:", assignedIds);
+
+        setSelectedMenus(assignedIds);
+
+    } else {
+
+        setSelectedMenus([]);
+    }
+
+}, [franchise]);
+
     const filteredMenus = useMemo(() => {
-        return allMenuItems.filter((item) => {
+        return menuItems.filter((item) => {
             const matchSearch =
                 item.menuName.toLowerCase().includes(search.toLowerCase()) ||
                 item.menuCode.toLowerCase().includes(search.toLowerCase());
@@ -76,18 +123,21 @@ const FranchiseMenuVisibilityForm = () => {
 
             return matchSearch && matchCategory;
         });
-    }, [search, categoryFilter]);
+    }, [menuItems,search, categoryFilter]);
 
     const toggleMenu = (menuId) => {
-        setSelectedMenus((prev) =>
-            prev.includes(menuId)
-                ? prev.filter((id) => id !== menuId)
-                : [...prev, menuId]
-        );
-    };
+
+    const id = menuId.toString();
+
+    setSelectedMenus((prev) =>
+        prev.includes(id)
+            ? prev.filter((item) => item !== id)
+            : [...prev, id]
+    );
+};
 
     const toggleAll = () => {
-        const currentPageIds = filteredMenus.map((item) => item.id);
+        const currentPageIds = filteredMenus.map((item) => item._id.toString());
         const allSelected = currentPageIds.every((id) => selectedMenus.includes(id));
 
         if (allSelected) {
@@ -97,23 +147,49 @@ const FranchiseMenuVisibilityForm = () => {
         }
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
+    try {
         setSaving(true);
 
-        const payload = {
-            franchiseId: id,
-            franchiseCode,
-            franchiseName,
-            assignedMenuIds: selectedMenus,
-        };
+        // ✅ full selected menu data
+        const assignedMenus = menuItems
+            .filter((item) => selectedMenus.includes(item._id.toString()))
+            .map((item) => ({
+                menuId: item._id,
+                menuCode: item.menuCode,
+                menuName: item.menuName,
+                category: item.category,
+                foodType: item.foodType,
+                price: item.price,
+                image: item.image,
+                isCombo: item.isCombo,
+                isAssigned: true,
+                isVisibleInBilling: true,
+            }));
 
-        console.log("SAVE FRANCHISE MENU VISIBILITY:", payload);
+            console.log("SAVING MENUS:", assignedMenus);
 
-        setTimeout(() => {
-            setSaving(false);
-            navigate("/master-franchise-menu-visibility");
-        }, 1000);
-    };
+        // ✅ API CALL
+        await saveAssignedMenus(id, {
+            assignedMenus,
+        });
+
+        // ✅ SUCCESS TOAST
+        toast.success("Menus assigned successfully");
+
+        // ✅ REDIRECT
+        navigate("/master-franchise-menu-visibility");
+
+    } catch (error) {
+        console.log(error);
+
+        toast.error(
+            error?.response?.data?.message || "Failed to assign menus"
+        );
+    } finally {
+        setSaving(false);
+    }
+};
 
     return (
         <React.Fragment>
@@ -227,7 +303,7 @@ const FranchiseMenuVisibilityForm = () => {
                                                         checked={
                                                             filteredMenus.length > 0 &&
                                                             filteredMenus.every((item) =>
-                                                                selectedMenus.includes(item.id)
+                                                                selectedMenus.includes(item._id.toString())
                                                             )
                                                         }
                                                         onChange={toggleAll}
@@ -251,14 +327,14 @@ const FranchiseMenuVisibilityForm = () => {
                                             </tr>
                                         ) : (
                                             filteredMenus.map((item) => (
-                                                <tr key={item.id}>
+                                                <tr key={item._id}>
                                                     <td>
                                                         <div className="form-check">
                                                             <input
                                                                 className="form-check-input"
                                                                 type="checkbox"
-                                                                checked={selectedMenus.includes(item.id)}
-                                                                onChange={() => toggleMenu(item.id)}
+                                                                checked={selectedMenus.includes(item._id.toString())}
+                                                                onChange={() => toggleMenu(item._id)}
                                                             />
                                                         </div>
                                                     </td>

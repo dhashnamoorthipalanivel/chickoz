@@ -54,6 +54,18 @@ import {
 } from "../api/enquiryApi";
 import { getLeadById, getLeads, updateLead } from "../api/leadApi";
 import { getKishokById, getKishoks, updateKishok } from "../api/kishokApi";
+import {
+  getFranchiseById,
+  getFranchises,
+  sendFranchiseInvitation,
+  updateFranchise,
+} from "../api/franchiseApi";
+import {
+  getMyMenus,
+  updateAssignedMenus,
+  updateMenuVisibility,
+} from "../api/franchiseMenuApi";
+import { getMe, sendChangePasswordOtpApi, verifyChangePasswordOtpApi } from "../api/authAPI";
 
 // Package
 export const usePackageStore = create((set) => ({
@@ -424,7 +436,7 @@ export const useLeadStore = create((set) => ({
 }));
 
 // Kishok
-const useKishokStore = create((set) => ({
+export const useKishokStore = create((set) => ({
   kishoks: [],
   kishok: null,
   loading: false,
@@ -483,4 +495,277 @@ const useKishokStore = create((set) => ({
   },
 }));
 
-export default useKishokStore;
+// franchise
+
+export const useFranchiseStore = create((set) => ({
+  franchises: [],
+  franchise: null,
+  loading: false,
+
+  // ======================
+  // GET ALL
+  // ======================
+
+  fetchFranchises: async () => {
+    set({
+      loading: true,
+    });
+
+    try {
+      const res = await getFranchises();
+      set({
+        franchises: res.data,
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ======================
+  // GET SINGLE
+  // ======================
+
+  fetchFranchiseById: async (id) => {
+    try {
+      console.log("FETCH ID:", id);
+
+      const res = await getFranchiseById(id);
+
+      console.log("FRANCHISE API RESPONSE:", res.data);
+
+      set({
+        franchise: res.data,
+      });
+
+      return res.data;
+    } catch (err) {
+      console.error("FETCH ERROR:", err);
+    }
+  },
+
+  // ======================
+  // UPDATE
+  // ======================
+
+  saveFranchise: async (id, data) => {
+    try {
+      const res = await updateFranchise(id, data);
+
+      return res.data;
+    } catch (error) {
+      console.log(error);
+
+      throw error;
+    }
+  },
+
+  sendInvitation: async (id) => {
+    try {
+      const res = await sendFranchiseInvitation(id);
+
+      return res.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+}));
+
+// Franchise Menu
+export const useFranchiseMenuStore = create((set) => ({
+  // ✅ COMMON
+  loading: false,
+
+  // ✅ FRANCHISE MENUS
+  menus: [],
+
+  // =====================================
+  // ADMIN SIDE
+  // SAVE ASSIGNED MENUS
+  // =====================================
+
+  saveAssignedMenus: async (id, data) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await updateAssignedMenus(id, data);
+
+      return res.data;
+    } catch (error) {
+      throw error;
+    } finally {
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // =====================================
+  // FRANCHISE SIDE
+  // GET MY MENUS
+  // =====================================
+
+  fetchMyMenus: async () => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await getMyMenus();
+
+      set({
+        menus: res.data.menus,
+
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  updateVisibility: async (data) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      await updateMenuVisibility(data);
+
+      // ✅ REFRESH MENUS
+      const res = await getMyMenus();
+
+      set({
+        menus: res.data.menus,
+
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+}));
+
+// profile
+export const useAuthStore = create((set) => ({
+  profile: null,
+  franchise: null,
+  loading: false,
+
+  clearProfile: () => set({
+        profile: null,
+        franchise: null,
+    }),
+
+  fetchProfile: async () => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await getMe();
+
+      console.log("data:", res.data);
+
+      set({
+        profile: res.data.user,
+        franchise: res.data.franchise,
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  sendChangePasswordOtp: async (payload) => {
+    try {
+      const response = await sendChangePasswordOtpApi(payload);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  verifyChangePasswordOtp: async (payload) => {
+
+    try {
+      const response = await verifyChangePasswordOtpApi(payload);
+      return response;
+
+    } catch (error) {
+      throw error;
+    }
+  },
+}));
+
+// Customer
+
+export const useCustomerStore = create((set) => ({
+  customer: null,
+  customerLoading: false,
+  // CREATE CUSTOMER
+  createCustomer: async (payload) => {
+    try {
+      set({
+        customerLoading: true,
+      });
+
+      const response = await createCustomerApi(payload);
+
+      set({
+        customer: response.customer,
+
+        customerLoading: false,
+      });
+
+      return response;
+    } catch (error) {
+      set({
+        customerLoading: false,
+      });
+
+      throw error;
+    }
+  },
+
+  // GET CUSTOMER
+  getCustomerByMobile: async (mobile, franchiseId) => {
+    try {
+      set({
+        customerLoading: true,
+      });
+
+      const response = await getCustomerByMobileApi(mobile, franchiseId);
+
+      set({
+        customer: response.customer,
+        customerLoading: false,
+      });
+
+      return response;
+    } catch (error) {
+      set({
+        customer: null,
+        customerLoading: false,
+      });
+
+      throw error;
+    }
+  },
+}));

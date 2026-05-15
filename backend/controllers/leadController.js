@@ -1,6 +1,11 @@
 const Lead = require("../models/leadModel");
 const Enquiry = require("../models/enquiryModel");
-const { createKishokFromLead, removeKishokFromLead } = require("./kishokController");
+const {
+  createKishokFromLead,
+  removeKishokFromLead,
+} = require("./kishokController");
+const Kishok = require("../models/kishokModel");
+const Franchise = require("../models/masterModels/franchiseModel");
 
 // ===================================================
 // ✅ GET ALL LEADS
@@ -17,6 +22,7 @@ exports.getLeads = async (req, res) => {
 
     res.status(200).json(data);
   } catch (error) {
+    console.log(error.message);
     res.status(500).json({
       message: error.message,
     });
@@ -41,6 +47,7 @@ exports.getLeadById = async (req, res) => {
 
     res.status(200).json(lead);
   } catch (error) {
+    console.log(error.message);
     res.status(500).json({
       message: error.message,
     });
@@ -69,6 +76,12 @@ exports.updateLead = async (req, res) => {
       await removeKishokFromLead(lead.referenceId);
     }
 
+    await Kishok.findOneAndUpdate(
+      { referenceId: lead.referenceId },
+
+      { leadStatus: lead.leadStatus },
+    );
+
     if (!lead) {
       return res.status(404).json({
         message: "Lead not found",
@@ -94,12 +107,102 @@ exports.updateLead = async (req, res) => {
       },
     );
 
+    // Franchise auto created
+
     res.status(200).json({
       message: "Lead updated successfully",
 
       lead,
     });
   } catch (error) {
+    console.log(error.message);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+exports.createFranchise = async (req, res) => {
+  try {
+    const lead = await Lead.findById(req.params.id).populate(
+      "interestedPackage",
+    );
+
+    if (!lead) {
+      return res.status(404).json({
+        message: "Lead not found",
+      });
+    }
+
+    if (lead.isFranchiseCreated) {
+      return res.status(400).json({
+        message: "Franchise already created",
+      });
+    }
+
+    const franchises = await Franchise.find({}, "franchiseId");
+
+    let maxNumber = 0;
+
+    franchises.forEach((f) => {
+      const num = parseInt(f.franchiseId.replace("FR", ""));
+
+      if (num > maxNumber) {
+        maxNumber = num;
+      }
+    });
+
+    const franchiseId = `FR${String(maxNumber + 1).padStart(3, "0")}`;
+
+    await Franchise.create({
+      franchiseId,
+
+      referenceId: lead.referenceId,
+
+      franchiseName: "",
+
+      ownerName: lead.name,
+
+      manager: "",
+
+      contact: lead.phone,
+
+      email: lead.email,
+
+      packageName: lead?.interestedPackage?.packageName || "",
+
+      status: "ACTIVE",
+
+      address: lead.address,
+
+      location: lead.place,
+
+      state: "",
+
+      country: "India",
+
+      postCode: lead.postCode,
+    });
+
+    lead.isFranchiseCreated = true;
+
+    await lead.save();
+
+    await Kishok.findOneAndUpdate(
+      {
+        referenceId: lead.referenceId,
+      },
+
+      {
+        isFranchiseCreated: true,
+      },
+    );
+
+    res.status(200).json({
+      message: "Franchise created successfully",
+    });
+  } catch (error) {
+    console.log(error.message);
     res.status(500).json({
       message: error.message,
     });

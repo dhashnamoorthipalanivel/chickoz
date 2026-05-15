@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPackage } from "../../api/packageApi";
-import { useDocuments, useLeadSources, useMasalaItems, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore } from "../../store/store";
+import { useDocuments, useFranchiseStore, useLeadSources, useMasalaItems, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore } from "../../store/store";
 import { toast } from "react-toastify";
 
 
@@ -13,34 +13,59 @@ const MODULE_CONFIG = {
         imageField: "logo",
         tabs: ["basic", "contact", "settings"],
         fields: {
-            basic: [
-                { name: "franchiseCode", label: "Franchise Code", type: "text", required: true, placeholder: "Enter franchise code", maxLength: 50 },
-                { name: "franchiseName", label: "Franchise Name", type: "text", required: true, placeholder: "Enter franchise name", maxLength: 100 },
-                { name: "ownerName", label: "Owner Name", type: "text", required: true, placeholder: "Enter owner name", maxLength: 100 },
-                { name: "manager", label: "Manager Name", type: "text", placeholder: "Enter manager name", maxLength: 100 },
-                { name: "contact", label: "Contact Number", type: "tel", required: true, placeholder: "Enter contact number", maxLength: 10 },
-                { name: "email", label: "Email Address", type: "email", required: true, placeholder: "Enter email address", maxLength: 100 },
-                {
-                    name: "type",
-                    label: "Franchise Type",
-                    type: "select",
-                    required: true,
-                    options: ["HEAD_OFFICE", "FRANCHISE", "OUTLET", "KITCHEN", "WAREHOUSE"],
-                },
-                {
-                    name: "status",
-                    label: "Status",
-                    type: "select",
-                    options: ["ACTIVE", "INACTIVE", "UNDER_MAINTENANCE", "CLOSED"],
-                },
-            ],
+            basic: [{ name: "referenceId", label: "Reference ID", type: "text", readOnly: true, },
+            { name: "franchiseId", label: "Franchise Id", type: "text", readOnly: true, },
+            { name: "franchiseName", label: "Franchise Name", type: "text", required: true, },
+            { name: "ownerName", label: "Owner Name", type: "text", readOnly: true, },
+            { name: "manager", label: "Manager Name", type: "text", placeholder: "Enter manager name", required: true, maxLength: 100, },
+            { name: "contact", label: "Contact Number", type: "tel", readOnly: true, },
+            { name: "email", label: "Email Address", type: "email", readOnly: true, },
+            { name: "packageName", label: "Package Name", type: "text", readOnly: true, },
+            { name: "status", label: "Status", type: "select", required: true, options: ["ACTIVE", "UNDER_MAINTENANCE", "INACTIVE", "CLOSED",], },],
             contact: [
-                { name: "address", label: "Address", type: "textarea", placeholder: "Enter address", col: 12, maxLength: 500 },
-                { name: "location", label: "City / Location", type: "text", required: true, placeholder: "Enter city / location", maxLength: 100 },
-                { name: "state", label: "State", type: "text", placeholder: "Enter state", maxLength: 50 },
-                { name: "country", label: "Country", type: "text", placeholder: "Enter country", maxLength: 50 },
-                { name: "zipCode", label: "ZIP / Postal Code", type: "text", placeholder: "Enter zip code", maxLength: 10 },
-                { name: "openingDate", label: "Opening Date", type: "date" },
+                {
+                    name: "address",
+                    label: "Address",
+                    type: "textarea",
+                    readOnly: true,
+                    col: 12,
+                },
+
+                {
+                    name: "location",
+                    label: "City / Location",
+                    type: "text",
+                    readOnly: true,
+                },
+
+                {
+                    name: "state",
+                    label: "State",
+                    type: "text",
+                    required: true,
+                },
+
+                {
+                    name: "country",
+                    label: "Country",
+                    type: "text",
+                    readOnly: true,
+                },
+
+                {
+                    name: "postCode",
+                    label: "ZIP / Postal Code",
+                    type: "text",
+                    readOnly: true,
+                },
+
+                {
+                    name: "openingDate",
+                    label: "Opening Date",
+                    type: "date",
+                    required: true,
+                },
+
             ],
             settings: [
                 { name: "isActiveForBilling", label: "Enable Billing", type: "switch", desc: "Allow this franchise to access billing/POS" },
@@ -49,24 +74,27 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
+            referenceId: "",
             franchiseCode: "",
             franchiseName: "",
             ownerName: "",
             manager: "",
             contact: "",
             email: "",
+            packageName: "",
             type: "",
             status: "ACTIVE",
             address: "",
             location: "",
             state: "",
             country: "India",
-            zipCode: "",
+            postCode: "",
             openingDate: "",
             isActiveForBilling: true,
             allowMenuControl: true,
             allowReports: true,
             logo: null,
+
         },
     },
 
@@ -75,7 +103,8 @@ const MODULE_CONFIG = {
         listPath: "/master-menu-item",
         icon: "bx-food-menu",
         imageField: "image",
-        tabs: ["basic", "pricing", "settings", "combo"],
+        tabs: ["basic", "pricing", "offers",
+            "customization", "settings", "combo"],
 
         fields: {
 
@@ -157,12 +186,95 @@ const MODULE_CONFIG = {
                 },
 
                 {
-                    name: "tax",
+                    name: "isTaxApplicable",
+                    label: "Apply Tax",
+                    type: "switch"
+                },
+
+                {
+                    name: "taxId",
                     label: "Tax",
+                    type: "dynamic-select",
+                    required: true,
+                    optionLabel: "taxName",
+                    optionValue: "_id",
+
+                    showIf: (formData) =>
+                        formData.isTaxApplicable
+                },
+
+                {
+                    name: "finalPricePreview",
+                    label: "Final Price",
+                    type: "menu-price-preview",
+                    col: 12
+                }
+            ],
+            offers: [
+                {
+                    name: "hasOffer",
+                    label: "Enable Offer",
+                    type: "switch"
+                },
+
+                {
+                    name: "offerType",
+                    label: "Offer Type",
                     type: "select",
                     required: true,
-                    options: ["GST_5", "GST_12", "GST_18"]
+                    options: ["PERCENTAGE", "FLAT"],
+                    showIf: (formData) => formData.hasOffer
+                },
+
+                {
+                    name: "offerValue",
+                    label: "Offer Value",
+                    type: "number",
+                    required: true,
+                    showIf: (formData) => formData.hasOffer
+                },
+
+                {
+                    name: "offerStartDate",
+                    label: "Offer Start Date",
+                    type: "date",
+                    required: true,
+                    showIf: (formData) => formData.hasOffer
+                },
+
+                {
+                    name: "offerEndDate",
+                    label: "Offer End Date",
+                    type: "date",
+                    required: true,
+                    showIf: (formData) => formData.hasOffer
+                },
+
+
+            ],
+            customization: [
+
+                {
+                    name: "isAddonAllowed",
+                    label: "Allow Addons",
+                    type: "switch"
+                },
+
+                {
+                    name: "addonBuilder",
+                    label: "Addons",
+                    type: "addon-builder",
+                    col: 12,
+                    showIf: (formData) => formData.isAddonAllowed
+                },
+
+                {
+                    name: "customizationBuilder",
+                    label: "Customization Options",
+                    type: "customization-builder",
+                    col: 12,
                 }
+
             ],
 
             settings: [
@@ -176,12 +288,6 @@ const MODULE_CONFIG = {
                 {
                     name: "isCombo",
                     label: "Is Combo Item",
-                    type: "switch"
-                },
-
-                {
-                    name: "isAddonAllowed",
-                    label: "Addon Allowed",
                     type: "switch"
                 },
 
@@ -212,7 +318,16 @@ const MODULE_CONFIG = {
             portionName: "",
             description: "",
             price: "",
-            tax: "",
+            hasOffer: false,
+            offerType: "",
+            offerValue: 0,
+            offerStartDate: "",
+            offerEndDate: "",
+            addons: [],
+            customizationOptions: [],
+            sortOrder: 0,
+            isTaxApplicable: false,
+            taxId: "",
             comboItems: [],
             status: "ACTIVE",
             isCombo: false,
@@ -639,11 +754,11 @@ const MODULE_CONFIG = {
                     type: "select",
                     required: true,
                     options: [
-                        "Kg",
-                        "Gram",
-                        "Packet",
-                        "Bottle",
-                        "Box",
+                        "KG",
+                        "GRAM",
+                        "PACKET",
+                        "BOTTLE",
+                        "BOX",
                     ],
                 },
                 {
@@ -654,11 +769,20 @@ const MODULE_CONFIG = {
                     placeholder: "Enter price",
                 },
                 {
-                    name: "gst",
-                    label: "GST %",
-                    type: "number",
+                    name: "isTaxApplicable",
+                    label: "Apply Tax",
+                    type: "switch"
+                },
+                {
+                    name: "taxId",
+                    label: "Tax",
+                    type: "dynamic-select",
                     required: true,
-                    placeholder: "Enter GST %",
+                    optionLabel: "taxName",
+                    optionValue: "_id",
+
+                    showIf: (formData) =>
+                        formData.isTaxApplicable
                 },
                 {
                     name: "stock",
@@ -706,7 +830,8 @@ const MODULE_CONFIG = {
             packSize: "",
             unit: "",
             price: "",
-            gst: "",
+            isTaxApplicable: true,
+            taxId: "",
             stock: "",
             description: "",
             lowStockAlert: false,
@@ -742,13 +867,14 @@ const CommonMasterForm = ({
 
     // Get create / update action from Zustand store
     const { addPackage, updatePackage } = usePackageStore();
-    const { addTax, updateTax } = useTaxStore();
+    const { addTax, updateTax, taxes, fetchTaxes } = useTaxStore();
     const { addMasalaItem, updateMasalaItem } = useMasalaItems();
     const { addPaymentMode, updatePaymentMode } = usePaymentModes();
     const { addOrderType, updateOrderType } = useOrderTypes();
     const { addLeadSource, updateLeadSource } = useLeadSources();
     const { addDocument, updateDocument } = useDocuments();
     const { addMenuItem, updateMenuItem, nonComboMenuItems, fetchNonComboMenuItems } = useMenuItems();
+    const { saveFranchise, sendInvitation } = useFranchiseStore();
 
     // create
     const createApiMap = {
@@ -771,7 +897,34 @@ const CommonMasterForm = ({
         lead_source: updateLeadSource,
         document: updateDocument,
         menu: updateMenuItem,
+        franchise: saveFranchise
     }
+
+    useEffect(() => {
+
+        if (module === "menu" || module === "masala_items") {
+            fetchTaxes();
+        }
+
+    }, [module]);
+
+    // Email send request
+    const handleSendInvitation = async () => {
+        try {
+            const res = await sendInvitation(initialData._id);
+            toast.success(res.message);
+            setForm((prev) => ({
+                ...prev,
+                inviteStatus: "INVITE_SENT",
+                inviteSentAt: new Date(),
+            }));
+            console.log("Sent invitation")
+
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to send invitation"
+            );
+        }
+    };
 
     // Calculate the total package value 
     const calculatePackageAmount = (form) => {
@@ -813,6 +966,26 @@ const CommonMasterForm = ({
             ...config.initialValues,
             ...initialData,
 
+            taxId: initialData?.taxId?._id || initialData?.taxId || "",
+
+            openingDate: initialData?.openingDate
+                ? new Date(initialData.openingDate)
+                    .toISOString()
+                    .split("T")[0]
+                : "",
+
+            offerStartDate: initialData?.offerStartDate
+                ? new Date(initialData.offerStartDate)
+                    .toISOString()
+                    .split("T")[0]
+                : "",
+
+            offerEndDate: initialData?.offerEndDate
+                ? new Date(initialData.offerEndDate)
+                    .toISOString()
+                    .split("T")[0]
+                : "",
+
             comboItems:
                 module === "menu" && initialData?.comboItems
                     ? initialData.comboItems.map((item) => ({
@@ -829,6 +1002,23 @@ const CommonMasterForm = ({
 
 
     const [form, setForm] = useState(mergedInitialValues);
+
+    const [resendTimer, setResendTimer] = useState(0);
+
+    const isFranchiseCompleted = module === "franchise" &&
+
+        form.franchiseName &&
+        form.ownerName &&
+        form.manager &&
+        form.contact &&
+        form.email &&
+        form.packageName &&
+        form.address &&
+        form.location &&
+        form.state &&
+        form.postCode &&
+        form.openingDate &&
+        form.status === "ACTIVE";
 
     const [comboSearch, setComboSearch] = useState("");
     const [comboDropdownOpen, setComboDropdownOpen] = useState(false);
@@ -849,6 +1039,33 @@ const CommonMasterForm = ({
         setSuccess(false);
         setActiveTab(config.tabs[0]);
     }, [mergedInitialValues, initialData, config.imageField, config.tabs]);
+
+    // Resend button enable 
+    useEffect(() => {
+        if (
+            form.inviteStatus === "INVITE_SENT" &&
+            form.inviteSentAt
+        ) {
+            const sentTime = new Date(form.inviteSentAt).getTime();
+
+            const cooldown = 2 * 60;
+
+            const interval = setInterval(() => {
+                const now = Date.now();
+
+                const diff = cooldown - Math.floor((now - sentTime) / 1000);
+
+                if (diff <= 0) {
+                    setResendTimer(0);
+                    clearInterval(interval);
+                } else {
+                    setResendTimer(diff);
+                }
+            }, 1000);
+
+            return () => clearInterval(interval);
+        }
+    }, [form.inviteStatus, form.inviteSentAt]);
 
     // Outside click close for combo dropdown
     useEffect(() => {
@@ -904,6 +1121,35 @@ const CommonMasterForm = ({
         if (form.email) {
             if (!/\S+@\S+\.\S+/.test(form.email)) {
                 e.email = "Enter a valid email address";
+            }
+        }
+
+        if (module === "menu" && form.hasOffer) {
+
+            if (!form.offerType) {
+                e.offerType = "Offer type required";
+            }
+
+            if (!form.offerValue) {
+                e.offerValue = "Offer value required";
+            }
+
+        }
+
+        if (
+            module === "menu" &&
+            form.hasOffer
+        ) {
+
+            if (
+                form.offerStartDate &&
+                form.offerEndDate &&
+                new Date(form.offerEndDate) <
+                new Date(form.offerStartDate)
+            ) {
+
+                e.offerEndDate =
+                    "End date cannot be before start date";
             }
         }
 
@@ -983,9 +1229,33 @@ const CommonMasterForm = ({
             }
         }
         else {
+
+            let updatedValue = value;
+
+            // Allow only numbers
+            const numericFields = [
+                "price",
+                "stock",
+                "packSize",
+                "portionQty",
+                "offerValue",
+                "taxPercentage",
+                "advanceAmount",
+                "cartAmount",
+                "royaltyValue"
+            ];
+
+            if (numericFields.includes(name)) {
+
+                updatedValue = value.replace(/[^0-9]/g, "");
+
+                // remove leading zeros
+                updatedValue = updatedValue === "" ? "" : String(Number(updatedValue));
+            }
+
             setForm((prev) => ({
                 ...prev,
-                [name]: value,
+                [name]: updatedValue,
             }));
         }
 
@@ -1074,25 +1344,40 @@ const CommonMasterForm = ({
                 ...form,
                 price: Number(form.price),
                 portionQty: Number(form.portionQty),
-                comboItems: form.comboItems.map(i => ({
-                    menuId: i.menuId,
-                    qty: Number(i.qty)
-                }))
+                offerType: form.hasOffer ? form.offerType : null,
+                offerValue: Number(form.offerValue || 0),
+                offerStartDate: form.hasOffer ? form.offerStartDate : null,
+                offerEndDate: form.hasOffer ? form.offerEndDate : null,
+                sortOrder: Number(form.sortOrder || 0),
+                taxId: form.isTaxApplicable ? form.taxId : null,
+                addons: form.addons || [],
+                customizationOptions: form.customizationOptions || [],
+                comboItems: form.comboItems.map(i => ({ menuId: i.menuId, qty: Number(i.qty) }))
             }
         }
 
-        if (module == "package") {
+        if (module === "masala_items") {
             payload = {
                 ...form,
+                packSize: Number(form.packSize),
                 price: Number(form.price),
-                cartAmount: Number(form.cartAmount),
-                advanceAmount: Number(form.advanceAmount),
-                royaltyValue: Number(form.royaltyValue),
-                taxPercentage: Number(form.taxPercentage),
-                taxAmount: Number(form.taxAmount),
-                totalAmount: Number(form.totalAmount),
+                stock: Number(form.stock),
+                taxId: form.isTaxApplicable ? form.taxId : null,
             };
         }
+
+        // if (module == "package") {
+        //     payload = {
+        //         ...form,
+        //         price: Number(form.price),
+        //         cartAmount: Number(form.cartAmount),
+        //         advanceAmount: Number(form.advanceAmount),
+        //         royaltyValue: Number(form.royaltyValue),
+        //         taxPercentage: Number(form.taxPercentage),
+        //         taxAmount: Number(form.taxAmount),
+        //         totalAmount: Number(form.totalAmount),
+        //     };
+        // }
 
 
 
@@ -1140,8 +1425,6 @@ const CommonMasterForm = ({
                 toast.success(`${config.title} created successfully`);
             }
 
-            console.log(res)
-
             setTimeout(() => {
                 console.log(`${mode.toUpperCase()} ${config.title}:`, form);
                 setSubmitting(false);
@@ -1171,7 +1454,6 @@ const CommonMasterForm = ({
                 toast.error("Code already exists. Please use unique code.");
             } else {
                 toast.error(msg || "Something went wrong");
-                console.log(msg)
             }
         } finally {
             setSubmitting(false)
@@ -1324,6 +1606,231 @@ const CommonMasterForm = ({
         );
     };
 
+    const renderAddonBuilder = () => {
+
+        const addAddon = () => {
+            setForm((prev) => ({
+                ...prev,
+                addons: [
+                    ...(prev.addons || []),
+                    {
+                        addonName: "",
+                        price: "",
+                    },
+                ],
+            }));
+        };
+
+        const updateAddon = (index, field, value) => {
+            setForm((prev) => {
+                const updated = [...prev.addons];
+
+                updated[index] = {
+                    ...updated[index],
+                    [field]:
+                        field === "price"
+                            ? Number(value)
+                            : value,
+                };
+
+                return {
+                    ...prev,
+                    addons: updated,
+                };
+            });
+        };
+
+        const removeAddon = (index) => {
+            setForm((prev) => ({
+                ...prev,
+                addons: prev.addons.filter((_, i) => i !== index),
+            }));
+        };
+
+        return (
+            <div>
+
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={addAddon}
+                    >
+                        <i className="bx bx-plus"></i> Add Addon
+                    </button>
+                </div>
+
+                <div className="border rounded">
+
+                    {
+                        form.addons?.length > 0 ? (
+                            form.addons.map((addon, index) => (
+
+                                <div
+                                    key={index}
+                                    className="d-flex gap-2 p-3 border-bottom"
+                                >
+
+                                    <input
+                                        type="text"
+                                        placeholder="Addon Name"
+                                        className="form-control"
+                                        value={addon.addonName}
+                                        onChange={(e) =>
+                                            updateAddon(
+                                                index,
+                                                "addonName",
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+
+                                    <input
+                                        type="number"
+                                        placeholder="Price"
+                                        className="form-control"
+                                        style={{ maxWidth: "140px" }}
+                                        value={addon.price}
+                                        onChange={(e) =>
+                                            updateAddon(
+                                                index,
+                                                "price",
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={() => removeAddon(index)}
+                                    >
+                                        <i className="bx bx-trash"></i>
+                                    </button>
+
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center text-muted py-4">
+                                No addons added
+                            </div>
+                        )
+                    }
+
+                </div>
+
+            </div>
+        );
+    };
+
+    const renderCustomizationBuilder = () => {
+
+        const addCustomization = () => {
+            setForm((prev) => ({
+                ...prev,
+                customizationOptions: [
+                    ...(prev.customizationOptions || []),
+                    {
+                        label: "",
+                    },
+                ],
+            }));
+        };
+
+        const updateCustomization = (index, value) => {
+            setForm((prev) => {
+
+                const updated = [...prev.customizationOptions];
+
+                updated[index] = {
+                    label: value,
+                };
+
+                return {
+                    ...prev,
+                    customizationOptions: updated,
+                };
+            });
+        };
+
+        const removeCustomization = (index) => {
+            setForm((prev) => ({
+                ...prev,
+                customizationOptions:
+                    prev.customizationOptions.filter((_, i) => i !== index),
+            }));
+        };
+
+        return (
+            <div>
+
+                <div className="d-flex justify-content-between align-items-center mb-3">
+
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        onClick={addCustomization}
+                    >
+                        <i className="bx bx-plus"></i> Add Option
+                    </button>
+
+                </div>
+
+                <div className="border rounded">
+
+                    {
+                        form.customizationOptions?.length > 0 ? (
+                            form.customizationOptions.map((item, index) => (
+
+                                <div
+                                    key={index}
+                                    className="d-flex gap-2 p-3 border-bottom"
+                                >
+
+                                    <input
+                                        type="text"
+                                        placeholder="Example: No Onion"
+                                        className="form-control"
+                                        value={item.label}
+                                        onChange={(e) =>
+                                            updateCustomization(
+                                                index,
+                                                e.target.value
+                                            )
+                                        }
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={() => removeCustomization(index)}
+                                    >
+                                        <i className="bx bx-trash"></i>
+                                    </button>
+
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center text-muted py-4">
+                                No customization options added
+                            </div>
+                        )
+                    }
+
+                </div>
+
+            </div>
+        );
+    };
+
+    const formatTime = (seconds) => {
+        const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
+
+        const secs = String(seconds % 60).padStart(2, "0");
+
+        return `${mins}:${secs}`;
+    };
+
     const renderField = (field) => {
         let dynamicLabel = field.label;
         let dynamicPlaceholder = field.placeholder;
@@ -1347,13 +1854,61 @@ const CommonMasterForm = ({
             name: field.name,
             value: form[field.name] ?? "",
             onChange: handleChange,
-            className: `form-control ${errors[field.name] ? "is-invalid" : ""}`,
-            placeholder: dynamicPlaceholder || `Enter ${dynamicLabel.toLowerCase()}`,
-            maxLength: field.maxLength,
+
+            className:
+                `form-control ${errors[field.name]
+                    ? "is-invalid"
+                    : ""
+                } ${field.readOnly
+                    ? "bg-light"
+                    : ""
+                }`,
+
+            placeholder:
+                dynamicPlaceholder ||
+                `Enter ${dynamicLabel.toLowerCase()}`,
+
+            maxLength:
+                field.maxLength,
+
+            readOnly: field.readOnly || (module === "franchise" && (
+                (
+                    form.inviteStatus ===
+                    "INVITE_SENT" &&
+
+                    ![
+                        "status",
+                        "isActiveForBilling",
+                        "allowMenuControl",
+                        "allowReports"
+                    ].includes(field.name)
+                )
+
+                ||
+
+                // ✅ INACTIVE LOCK
+                (
+                    form.status ===
+                    "INACTIVE" && field.name !== "status"
+                )
+
+            )
+            ),
+
+            disabled:
+                field.disabled,
         };
 
         if (field.type === "combo-builder") {
             return renderComboBuilder();
+        }
+
+        if (field.type === "addon-builder") {
+            return renderAddonBuilder();
+        }
+
+        if (field.type === "customization-builder") {
+            return renderCustomizationBuilder();
         }
 
         if (field.type === "textarea") {
@@ -1361,6 +1916,51 @@ const CommonMasterForm = ({
                 <>
                     <textarea {...commonProps} rows="3" />
                     {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
+                </>
+            );
+        }
+
+        if (field.type === "dynamic-select") {
+
+            let options = [];
+
+            if (field.name === "taxId") {
+                options = taxes || [];
+            }
+
+            return (
+                <>
+                    <select
+                        name={field.name}
+                        value={form[field.name] ?? ""}
+                        onChange={handleChange}
+                        className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                    >
+                        <option value="">
+                            Select {field.label}
+                        </option>
+
+                        {
+                            options.map((option) => (
+                                <option
+                                    key={option[field.optionValue]}
+                                    value={option[field.optionValue]}
+                                >
+                                    {option[field.optionLabel]}
+                                    {" "}
+                                    ({option.taxPercentage}%)
+                                </option>
+                            ))
+                        }
+
+                    </select>
+
+                    {
+                        errors[field.name] &&
+                        <div className="invalid-feedback">
+                            {errors[field.name]}
+                        </div>
+                    }
                 </>
             );
         }
@@ -1429,10 +2029,123 @@ const CommonMasterForm = ({
             );
         }
 
+
+
+        if (field.type === "menu-price-preview") {
+
+            if (!form.price) {
+                return null;
+            }
+
+            const basePrice =
+                Number(form.price || 0);
+
+            let discountedPrice =
+                basePrice;
+
+            let discountAmount = 0;
+
+            if (form.hasOffer) {
+
+                if (form.offerType === "PERCENTAGE") {
+
+                    discountAmount =
+                        (basePrice * Number(form.offerValue || 0)) / 100;
+
+                } else {
+
+                    discountAmount =
+                        Number(form.offerValue || 0);
+                }
+
+                discountedPrice =
+                    basePrice - discountAmount;
+            }
+
+            discountedPrice =
+                Math.max(0, discountedPrice);
+
+            const selectedTax =
+                taxes.find(
+                    (tax) => tax._id === form.taxId
+                );
+
+            const taxPercentage =
+                Number(selectedTax?.taxPercentage || 0);
+
+            const taxAmount =
+                (discountedPrice * taxPercentage) / 100;
+
+            const finalPrice =
+                discountedPrice +
+                (
+                    form.isTaxApplicable
+                        ? taxAmount
+                        : 0
+                );
+
+            return (
+                <div className="border rounded p-3 bg-light mb-0">
+
+                    <div className="fs-5 text-primary fw-bold">
+                        Final Price Preview
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-2">
+                        <span>Base Price</span>
+                        <span>₹{basePrice.toFixed(2)}</span>
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-2">
+                        <span>Discount</span>
+                        <span className="text-danger">
+                            - ₹{discountAmount.toFixed(2)}
+                        </span>
+                    </div>
+
+                    <div className="d-flex justify-content-between mb-2">
+                        <span>
+                            Tax ({taxPercentage}%)
+                        </span>
+
+                        <span className="text-success">
+                            + ₹{taxAmount.toFixed(2)}
+                        </span>
+                    </div>
+
+                    <hr />
+
+                    <div className="d-flex justify-content-between fw-bold">
+                        <span>Final Selling Price</span>
+
+                        <span>
+                            ₹{finalPrice.toFixed(2)}
+                        </span>
+                    </div>
+
+                </div>
+            );
+        }
+
         return (
             <>
-                <input type={field.type || "text"} {...commonProps} />
-                {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
+                <input
+                    type={field.type === "number" ? "text" : field.type || "text"}
+
+                    inputMode={
+                        field.type === "number"
+                            ? "numeric"
+                            : undefined
+                    }
+                    min={field.type === "number" ? "0" : undefined}
+                    {...commonProps}
+                />
+
+                {errors[field.name] && (
+                    <div className="invalid-feedback">
+                        {errors[field.name]}
+                    </div>
+                )}
             </>
         );
     };
@@ -1578,7 +2291,7 @@ const CommonMasterForm = ({
                                                 ]
                                                 : module === "franchise"
                                                     ? [
-                                                        { icon: "bx-barcode", val: form.franchiseCode || "No code yet" },
+                                                        { icon: "bx-barcode", val: form.franchiseId || "No code yet" },
                                                         { icon: "bx-user", val: form.ownerName || "No owner yet" },
                                                         { icon: "bx-phone", val: form.contact || "No contact yet" },
                                                         { icon: "bx-map", val: form.location || "No location yet" },
@@ -1633,7 +2346,7 @@ const CommonMasterForm = ({
                                                                                     {
                                                                                         icon: "bx-package",
                                                                                         val: form.packSize && form.unit
-                                                                                            ? `${form.packSize} ${form.unit}`
+                                                                                            ? `${form.packSize} ${formatLabel(form.unit)}`
                                                                                             : "No pack size yet"
                                                                                     },
                                                                                     { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
@@ -1658,6 +2371,32 @@ const CommonMasterForm = ({
                                         <hr />
 
                                         <div className="d-grid gap-2">
+                                            {
+                                                module === "franchise" &&
+                                                mode === "edit" &&
+                                                isFranchiseCompleted && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-warning me-2"
+                                                        onClick={handleSendInvitation}
+                                                        disabled={
+                                                            resendTimer > 0 ||
+                                                            form.inviteStatus === "ACTIVE"
+                                                        }
+                                                    >
+                                                        {
+                                                            form.inviteStatus === "ACTIVE"
+                                                                ? "ERP Activated"
+                                                                : resendTimer > 0
+                                                                    ? `Resend in ${formatTime(resendTimer)}`
+                                                                    : form.inviteStatus === "INVITE_SENT"
+                                                                        ? "Resend Invitation"
+                                                                        : "Send Invitation"
+                                                        }
+                                                    </button>
+                                                )
+                                            }
+
                                             <button type="submit" className="btn btn-primary" disabled={submitting}>
                                                 {submitting ? (
                                                     <>
@@ -1779,8 +2518,6 @@ const CommonMasterForm = ({
             </div>
 
         </React.Fragment>
-
-
     );
 };
 

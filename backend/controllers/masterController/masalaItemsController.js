@@ -15,7 +15,7 @@ exports.createMasalaItem = async (req, res) => {
 // GET ALL (hide deleted)
 exports.getMasalaItems = async (req, res) => {
   try {
-    const data = await MasalaItem.find({ isDeleted: false }).sort({ createdAt: -1 });
+    const data = await MasalaItem.find({ isDeleted: false }).populate("taxId").sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -26,7 +26,7 @@ exports.getMasalaItems = async (req, res) => {
 // GET SINGLE
 exports.getMasalaItemById = async (req, res) => {
   try {
-    const data = await MasalaItem.findById(req.params.id);
+    const data = await MasalaItem.findById(req.params.id).populate("taxId");
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });

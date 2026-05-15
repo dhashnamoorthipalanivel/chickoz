@@ -1,56 +1,30 @@
 const Enquiry = require("../models/enquiryModel");
 const Lead = require("../models/leadModel");
 
-const generateReferenceId =
-  async () => {
+const generateReferenceId = async () => {
+  const enquiries = await Enquiry.find({}).select("referenceId");
 
-    const enquiries =
-      await Enquiry.find({})
-        .select("referenceId");
+  let maxNumber = 0;
 
-    let maxNumber = 0;
+  enquiries.forEach((item) => {
+    if (!item.referenceId) return;
 
-    enquiries.forEach((item) => {
+    const num = parseInt(item.referenceId.replace("REF", ""), 10);
 
-      if (!item.referenceId)
-        return;
+    if (!isNaN(num) && num > maxNumber) {
+      maxNumber = num;
+    }
+  });
 
-      const num = parseInt(
-        item.referenceId.replace(
-          "REF",
-          ""
-        ),
-        10
-      );
+  const nextNumber = maxNumber + 1;
 
-      if (
-        !isNaN(num) &&
-        num > maxNumber
-      ) {
-        maxNumber = num;
-      }
-    });
-
-    const nextNumber =
-      maxNumber + 1;
-
-    return `REF${String(
-      nextNumber
-    ).padStart(3, "0")}`;
-  };
+  return `REF${String(nextNumber).padStart(3, "0")}`;
+};
 
 // ✅ CREATE ENQUIRY
 exports.createEnquiry = async (req, res) => {
   try {
-    console.log("BODY:", req.body);
-
-    const referenceId =
-  await generateReferenceId();
-
-console.log(
-  "Generated REF:",
-  referenceId
-);
+    const referenceId = await generateReferenceId();
 
     const enquiry = await Enquiry.create({
       ...req.body,
@@ -81,12 +55,12 @@ exports.getEnquiries = async (req, res) => {
     const { search, status, leadSource } = req.query;
 
     let query = {
-  isDeleted: false,
+      isDeleted: false,
 
-  status: {
-    $ne: "CONVERTED_TO_LEAD",
-  },
-};
+      status: {
+        $ne: "CONVERTED_TO_LEAD",
+      },
+    };
 
     // 🔍 Search
     if (search) {
@@ -168,7 +142,6 @@ exports.deleteEnquiry = async (req, res) => {
 // 🔥 CONVERT TO LEAD (VERY IMPORTANT)
 exports.convertToLead = async (req, res) => {
   try {
-
     const enquiry = await Enquiry.findOne({
       _id: req.params.id,
       isDeleted: false,
@@ -184,16 +157,13 @@ exports.convertToLead = async (req, res) => {
     // ❌ ALREADY CONVERTED
     if (enquiry.isConverted) {
       return res.status(400).json({
-        message:
-          "Already converted to lead",
+        message: "Already converted to lead",
       });
     }
 
     // 🔥 CREATE LEAD
     const lead = await Lead.create({
-
-      referenceId:
-        enquiry.referenceId,
+      referenceId: enquiry.referenceId,
 
       name: enquiry.name,
 
@@ -203,43 +173,36 @@ exports.convertToLead = async (req, res) => {
 
       place: enquiry.place,
 
+      postCode: enquiry.postCode,
+
       address: enquiry.address,
 
-      interestedPackage:
-        enquiry.interestedPackage,
+      interestedPackage: enquiry.interestedPackage,
 
-      leadSource:
-        enquiry.leadSource,
+      leadSource: enquiry.leadSource,
 
-      assignedTo:
-        enquiry.assignedTo,
+      assignedTo: enquiry.assignedTo,
     });
 
     // 🔥 UPDATE ENQUIRY
-    enquiry.status =
-      "CONVERTED_TO_LEAD";
+    enquiry.status = "CONVERTED_TO_LEAD";
 
     enquiry.isConverted = true;
 
-    enquiry.convertedAt =
-      new Date();
+    enquiry.convertedAt = new Date();
 
-    enquiry.leadId =
-      lead._id;
+    enquiry.leadId = lead._id;
 
     await enquiry.save();
 
     res.status(200).json({
       success: true,
 
-      message:
-        "Converted to lead successfully",
+      message: "Converted to lead successfully",
 
       lead,
     });
-
   } catch (error) {
-
     console.error(error);
 
     res.status(500).json({
@@ -249,27 +212,18 @@ exports.convertToLead = async (req, res) => {
   }
 };
 
-exports.getNextReferenceId =
-  async (req, res) => {
+exports.getNextReferenceId = async (req, res) => {
+  try {
+    const nextId = await generateReferenceId();
 
-    try {
+    res.json({
+      referenceId: nextId,
+    });
+  } catch (err) {
+    console.error("NEXT ID ERROR:", err);
 
-  const nextId =
-    await generateReferenceId();
-
-  res.json({
-    referenceId: nextId,
-  });
-
-} catch (err) {
-
-  console.error(
-    "NEXT ID ERROR:",
-    err
-  );
-
-  res.status(500).json({
-    message: err.message,
-  });
-}
-  };
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};

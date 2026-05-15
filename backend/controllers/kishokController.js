@@ -13,7 +13,7 @@ exports.getKishoks = async (req, res) => {
 
     res.status(200).json(data);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).json({
       message: error.message,
     });
@@ -67,6 +67,7 @@ exports.createKishokFromLead = async (lead) => {
       alreadyExists.deletedAt = null;
 
       alreadyExists.customerName = lead.name;
+      alreadyExists.leadStatus = lead.leadStatus;
 
       alreadyExists.phone = lead.phone;
 
@@ -97,34 +98,54 @@ exports.createKishokFromLead = async (lead) => {
 
     // ✅ NORMAL EXIST
     if (alreadyExists && !alreadyExists.isDeleted) {
-      return;
-    }
+
+  alreadyExists.customerName = lead.name;
+
+  alreadyExists.phone = lead.phone;
+
+  alreadyExists.place = lead.place;
+
+  alreadyExists.packageName =
+    lead?.interestedPackage?.packageName || "";
+
+  alreadyExists.cartSize =
+    trainingData.cartSize;
+
+  alreadyExists.cartAmount =
+    trainingData.cartAmount;
+
+  alreadyExists.brandingType =
+    trainingData.brandingType;
+
+  alreadyExists.accessories =
+    trainingData.accessories;
+
+  // ✅ IMPORTANT
+  alreadyExists.requiredDate =
+    trainingData.cartRequiredDate;
+
+  alreadyExists.priority =
+    trainingData.cartPriority;
+
+  await alreadyExists.save();
+
+  return;
+}
 
     await Kishok.create({
       referenceId: lead.referenceId,
-
+      leadStatus:lead.leadStatus,
       customerName: lead.name,
-
       phone: lead.phone,
-
       place: lead.place,
-
       packageName: lead?.interestedPackage?.packageName || "",
-
       cartSize: trainingData.cartSize,
-
-      cartAmount:  Number( trainingData.cartAmount ||lead.interestedPackage?.cartAmount ||0),
-
+      cartAmount: Number( trainingData.cartAmount || lead.interestedPackage?.cartAmount || 0, ),
       brandingType: trainingData.brandingType,
-
       accessories: trainingData.accessories,
-
       requiredDate: trainingData.cartRequiredDate,
-
       priority: trainingData.cartPriority || "Normal",
-
       manufactureStatus: "PENDING",
-
       pendingAmount: trainingData.cartAmount || 0,
     });
 
@@ -176,22 +197,18 @@ exports.updateKishok = async (req, res) => {
       referenceId: data.referenceId,
     });
 
-    if ( lead && lead.stages &&lead.stages.TRAINING && lead.stages.TRAINING.data) {
+    if (
+      lead &&
+      lead.stages &&
+      lead.stages.TRAINING &&
+      lead.stages.TRAINING.data
+    ) {
+      lead.stages.TRAINING.data.cartManufactureStatus = data.manufactureStatus;
 
-  lead.stages
-    .TRAINING
-    .data
-    .cartManufactureStatus =
-      data.manufactureStatus;
+      lead.stages.TRAINING.data.cartAssignedVendor = data.vendorName;
 
-  lead.stages
-    .TRAINING
-    .data
-    .cartAssignedVendor =
-      data.vendorName;
-
-  await lead.save();
-}
+      await lead.save();
+    }
 
     res.status(200).json({
       message: "Kishok updated successfully",
@@ -199,31 +216,27 @@ exports.updateKishok = async (req, res) => {
       data,
     });
   } catch (error) {
-      console.log(error);
+    console.log(error);
     res.status(500).json({
       message: error.message,
     });
   }
 };
 
-exports.removeKishokFromLead =
-  async (referenceId) => {
+exports.removeKishokFromLead = async (referenceId) => {
+  try {
+    await Kishok.findOneAndUpdate(
+      { referenceId },
 
-    try {
-
-      await Kishok.findOneAndUpdate(
-        { referenceId },
-
-        {
-          isDeleted: true,
-          deletedAt: new Date(),
-        }
-      );
-
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({
-    message: error.message,
-  });
-    }
-  };
+      {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    );
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};

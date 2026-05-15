@@ -12,6 +12,16 @@ const KishokStageForm = ({
   const stage = stages[activeStage];
   const stageData = formData || {};
 
+  const isLocked =[
+    "HOLD",
+    "RETURN",
+    "CANCELLED",
+  ].includes(
+    formData?.leadStatus
+  ) ||
+
+  formData?.isFranchiseCreated;
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -34,7 +44,40 @@ const KishokStageForm = ({
 
   return (
     <div className="card">
-      <div className="card-body">
+      <div className="card-body" style={{ pointerEvents: isLocked ? "none" : "auto", opacity: isLocked ? 0.8 : 1, }}>
+        {
+  isLocked && (
+
+    <div className="alert alert-danger mb-3">
+
+      {
+        formData?.isFranchiseCreated ? (
+
+          <>
+            <strong>
+              Franchise already created.
+            </strong>
+
+            {" "}Editing is disabled.
+          </>
+
+        ) : (
+
+          <>
+            Lead is{" "}
+
+            <strong>
+              {formData?.leadStatus}
+            </strong>
+
+            . Editing is disabled.
+          </>
+        )
+      }
+
+    </div>
+  )
+}
         <div className="row g-3">
           {stage === "REQUIREMENT" && (
             <>
@@ -78,18 +121,18 @@ const KishokStageForm = ({
               <div className="col-md-6">
                 <label className="form-label">Required Date <span className="text-danger">*</span></label>
                 <input
-                  type="date"
-                  name="requiredDate"
-                  value={
-                    formData.requiredDate
-                      ? new Date(formData.requiredDate)
-                        .toISOString()
-                        .split("T")[0]
-                      : ""
-                  }
-                  className="form-control"
-                  onChange={handleChange}
-                />
+   type="date"
+   name="requiredDate"
+   value={
+      formData.requiredDate
+         ? new Date(formData.requiredDate)
+              .toISOString()
+              .split("T")[0]
+         : ""
+   }
+   className="form-control"
+   readOnly
+/>
               </div>
 
               <div className="col-md-6">
@@ -99,6 +142,7 @@ const KishokStageForm = ({
                   className="form-select"
                   value={formData.priority || ""}
                   onChange={handleChange}
+                  disabled
                 >
                   <option value="">Select</option>
                   <option>Normal</option>
@@ -379,6 +423,27 @@ const KishokStageForm = ({
                       toast.error("Please fill all payment fields");
                       return;
                     }
+
+                    const enteredAmount =
+  Number(formData.tempAmount);
+
+const pendingAmount =
+  Math.max(
+    cartAmount - paidAmount,
+    0
+  );
+
+if (
+  enteredAmount >
+  pendingAmount
+) {
+
+  toast.error(
+    "Amount exceeds pending amount"
+  );
+
+  return;
+}
 
                     const newPayment = {
                       amount: Number(

@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import LeadStageForm from "./LeadStageForm";
 import LeadInfoFrom from "./LeadInfoFrom";
 import { useLeadStore, usePaymentModes } from "../../../store/store";
-import { getLeadById, updateLead } from "../../../api/leadApi";
+import { createFranchise, getLeadById, updateLead } from "../../../api/leadApi";
 import { useNavigate, useParams } from "react-router-dom";
 
 const stages = [
@@ -28,10 +28,11 @@ const formatLabel = (value) =>
 
 const LeadWizardForm = ({ onBack, }) => {
   const [activeStage, setActiveStage] = useState(0);
+
+  const [showFranchiseModal, setShowFranchiseModal] = useState(false);
+
   const [formData, setFormData] = useState({
-
     stages: {
-
       SITE_VISIT: {
         completed: false,
 
@@ -192,31 +193,31 @@ const LeadWizardForm = ({ onBack, }) => {
       try {
         const res = await getLeadById(id);
 
-const leadData = res.data;
+        const leadData = res.data;
 
-if (
-  leadData?.interestedPackage &&
-  typeof leadData.interestedPackage === "object"
-) {
+        if (
+          leadData?.interestedPackage &&
+          typeof leadData.interestedPackage === "object"
+        ) {
 
-  leadData.stages.TRAINING.data.cartAmount =
-    leadData.stages.TRAINING.data.cartRequired === "yes"
-      ? Number(
-          leadData.interestedPackage.cartAmount || 0
-        )
-      : 0;
+          leadData.stages.TRAINING.data.cartAmount =
+            leadData.stages.TRAINING.data.cartRequired === "yes"
+              ? Number(
+                leadData.interestedPackage.cartAmount || 0
+              )
+              : 0;
 
-  leadData.stages.TRAINING.data.cartSize =
-    leadData.interestedPackage.cartSize || "";
+          leadData.stages.TRAINING.data.cartSize =
+            leadData.interestedPackage.cartSize || "";
 
-  leadData.stages.TRAINING.data.brandingType =
-    leadData.interestedPackage.brandingType || "";
+          leadData.stages.TRAINING.data.brandingType =
+            leadData.interestedPackage.brandingType || "";
 
-  leadData.stages.TRAINING.data.accessories =
-    leadData.interestedPackage.accessories || "";
-}
+          leadData.stages.TRAINING.data.accessories =
+            leadData.interestedPackage.accessories || "";
+        }
 
-setFormData(leadData);
+        setFormData(leadData);
 
         const stagesData = res.data.stages || {};
 
@@ -376,15 +377,15 @@ setFormData(leadData);
 
         // FULLY COMPLETED
         if (
-          trainingStatus ==="Completed"
+          trainingStatus === "Completed"
           &&
-          cartManufactureStatus ==="COMPLETED"
+          cartManufactureStatus === "COMPLETED"
         ) {
           return "completed";
         }
         // CANCELLED
         if (
-          cartManufactureStatus ==="CANCELLED"
+          cartManufactureStatus === "CANCELLED"
         ) {
           return "cancelled";
         }
@@ -395,49 +396,49 @@ setFormData(leadData);
 
 
       // NORMAL FLOW
-      return trainingStatus ==="Completed"
-        ? "completed": "in-progress";
+      return trainingStatus === "Completed"
+        ? "completed" : "in-progress";
     }
 
-if (
-  stageKey ===
-  "FINAL_SETUP"
-) {
+    if (
+      stageKey ===
+      "FINAL_SETUP"
+    ) {
 
-  const finalData =
-    formData?.stages
-      ?.FINAL_SETUP?.data || {};
+      const finalData =
+        formData?.stages
+          ?.FINAL_SETUP?.data || {};
 
-  const {
-    contractSigned,
-    bankDetails,
-    kycDocument,
-    royaltyDocument,
-  } = finalData;
+      const {
+        contractSigned,
+        bankDetails,
+        kycDocument,
+        royaltyDocument,
+      } = finalData;
 
-  // NOTHING
-  if (
-    !contractSigned &&
-    !bankDetails &&
-    !kycDocument &&
-    !royaltyDocument
-  ) {
-    return "not-started";
-  }
+      // NOTHING
+      if (
+        !contractSigned &&
+        !bankDetails &&
+        !kycDocument &&
+        !royaltyDocument
+      ) {
+        return "not-started";
+      }
 
-  // ONLY YES = COMPLETED
-  if (
-    contractSigned === "Yes" &&
-    bankDetails &&
-    kycDocument &&
-    royaltyDocument
-  ) {
-    return "completed";
-  }
+      // ONLY YES = COMPLETED
+      if (
+        contractSigned === "Yes" &&
+        bankDetails &&
+        kycDocument &&
+        royaltyDocument
+      ) {
+        return "completed";
+      }
 
-  // NO / PARTIAL
-  return "in-progress";
-}
+      // NO / PARTIAL
+      return "in-progress";
+    }
 
     const required = stageRequiredFields[stageKey] || [];
 
@@ -459,12 +460,12 @@ if (
   };
 
   const allStagesCompleted =
-  stages.every(
-    (stage) =>
-      getStageStatus(
-        stage.key
-      ) === "completed"
-  );
+    stages.every(
+      (stage) =>
+        getStageStatus(
+          stage.key
+        ) === "completed"
+    );
 
   const handleNext = async () => {
 
@@ -492,31 +493,33 @@ if (
       const payload = structuredClone(formData);
 
       const finalSetup =
-  payload?.stages
-    ?.FINAL_SETUP?.data;
+        payload?.stages
+          ?.FINAL_SETUP?.data;
 
-if (
-  finalSetup?.kycDocument instanceof File
-) {
+      if (
+        finalSetup?.kycDocument instanceof File
+      ) {
 
-  finalSetup.kycDocumentName =
-    finalSetup.kycDocument.name;
+        finalSetup.kycDocumentName =
+          finalSetup.kycDocument.name;
 
-  finalSetup.kycDocument =
-    finalSetup.kycDocument.name;
-}
+        finalSetup.kycDocument =
+          finalSetup.kycDocument.name;
+      }
 
-if (
-  finalSetup?.royaltyDocument instanceof File
-) {
+      if (
+        finalSetup?.royaltyDocument instanceof File
+      ) {
 
-  finalSetup.royaltyDocumentName =
-    finalSetup.royaltyDocument.name;
+        finalSetup.royaltyDocumentName =
+          finalSetup.royaltyDocument.name;
 
-  finalSetup.royaltyDocument =
-    finalSetup.royaltyDocument.name;
-}
-
+        finalSetup.royaltyDocument =
+          finalSetup.royaltyDocument.name;
+      }
+      
+      console.log("payload: ", payload);
+      
       await updateLead(formData._id, payload);
 
       setFormData(updatedData);
@@ -545,52 +548,53 @@ if (
     }
   };
 
+  //  Save draft
   const handleSave = async () => {
     try {
       const payload =
-  JSON.parse(
-    JSON.stringify(formData)
-  );
+        JSON.parse(
+          JSON.stringify(formData)
+        );
 
-const finalSetup =
-  payload?.stages
-    ?.FINAL_SETUP?.data;
+      const finalSetup =
+        payload?.stages
+          ?.FINAL_SETUP?.data;
 
-// ✅ KYC
-if (
-  formData?.stages
-    ?.FINAL_SETUP?.data
-    ?.kycDocument instanceof File
-) {
+      // ✅ KYC
+      if (
+        formData?.stages
+          ?.FINAL_SETUP?.data
+          ?.kycDocument instanceof File
+      ) {
 
-  finalSetup.kycDocument =
-    formData.stages
-      .FINAL_SETUP.data
-      .kycDocument.name;
+        finalSetup.kycDocument =
+          formData.stages
+            .FINAL_SETUP.data
+            .kycDocument.name;
 
-  finalSetup.kycDocumentName =
-    formData.stages
-      .FINAL_SETUP.data
-      .kycDocument.name;
-}
+        finalSetup.kycDocumentName =
+          formData.stages
+            .FINAL_SETUP.data
+            .kycDocument.name;
+      }
 
-// ✅ ROYALTY
-if (
-  formData?.stages
-    ?.FINAL_SETUP?.data
-    ?.royaltyDocument instanceof File
-) {
+      // ✅ ROYALTY
+      if (
+        formData?.stages
+          ?.FINAL_SETUP?.data
+          ?.royaltyDocument instanceof File
+      ) {
 
-  finalSetup.royaltyDocument =
-    formData.stages
-      .FINAL_SETUP.data
-      .royaltyDocument.name;
+        finalSetup.royaltyDocument =
+          formData.stages
+            .FINAL_SETUP.data
+            .royaltyDocument.name;
 
-  finalSetup.royaltyDocumentName =
-    formData.stages
-      .FINAL_SETUP.data
-      .royaltyDocument.name;
-}
+        finalSetup.royaltyDocumentName =
+          formData.stages
+            .FINAL_SETUP.data
+            .royaltyDocument.name;
+      }
 
       const currentStage = stages[activeStage].key;
 
@@ -608,6 +612,8 @@ if (
           },
         },
       };
+
+      console.log("payload: ", payload);
 
       await updateLead(
         formData._id,
@@ -634,90 +640,129 @@ if (
     }
   };
 
-  const handleComplete = async () => {
+  // Stage completed
+ const handleComplete =
+  async () => {
+
     if (
       !allStagesCompleted
     ) {
+
       toast.error(
         "Complete all stages first"
       );
+
       return;
     }
-
-    
 
     try {
 
       const payload =
-  JSON.parse(
-    JSON.stringify(formData)
-  );
+        structuredClone(
+          formData
+        );
 
-const finalSetup =
-  payload?.stages
-    ?.FINAL_SETUP?.data;
+      const finalSetup =
+        payload?.stages
+          ?.FINAL_SETUP?.data;
 
-// ✅ KYC
-if (
-  formData?.stages
-    ?.FINAL_SETUP?.data
-    ?.kycDocument instanceof File
-) {
+      // ✅ KYC
+      if (
+        finalSetup?.kycDocument instanceof File
+      ) {
 
-  finalSetup.kycDocument =
-    formData.stages
-      .FINAL_SETUP.data
-      .kycDocument.name;
+        finalSetup.kycDocumentName =
+          finalSetup.kycDocument.name;
 
-  finalSetup.kycDocumentName =
-    formData.stages
-      .FINAL_SETUP.data
-      .kycDocument.name;
-}
+        finalSetup.kycDocument =
+          finalSetup.kycDocument.name;
+      }
 
-// ✅ ROYALTY
-if (
-  formData?.stages
-    ?.FINAL_SETUP?.data
-    ?.royaltyDocument instanceof File
-) {
+      // ✅ ROYALTY
+      if (
+        finalSetup?.royaltyDocument instanceof File
+      ) {
 
-  finalSetup.royaltyDocument =
-    formData.stages
-      .FINAL_SETUP.data
-      .royaltyDocument.name;
+        finalSetup.royaltyDocumentName =
+          finalSetup.royaltyDocument.name;
 
-  finalSetup.royaltyDocumentName =
-    formData.stages
-      .FINAL_SETUP.data
-      .royaltyDocument.name;
-}
+        finalSetup.royaltyDocument =
+          finalSetup.royaltyDocument.name;
+      }
 
-      const updatedData = {
-        ...formData,
-        leadStatus:
-          "COMPLETED",
-      };
+      // ✅ COMPLETE STATUS
+      payload.leadStatus =
+        "COMPLETED";
 
       await updateLead(
         formData._id,
-        updatedData
+        payload
       );
 
-      setFormData(
-        updatedData
-      );
+      setFormData((prev) => ({
+
+        ...prev,
+
+        leadStatus:
+          "COMPLETED",
+      }));
+
+      await fetchLeads();
 
       toast.success(
-        "Lead Process Completed"
+        "Lead Completed Successfully"
       );
 
     } catch (error) {
+
+      console.log(error);
+
       toast.error(
         "Completion Failed"
       );
     }
   };
+
+  // Franchise created 
+  const handleCreateFranchise =
+    async () => {
+
+      try {
+
+        await createFranchise(
+          formData._id
+        );
+
+        toast.success(
+          "Franchise Created Successfully"
+        );
+
+        setFormData((prev) => ({
+
+          ...prev,
+
+          isFranchiseCreated:
+            true,
+
+          leadStatus:
+            "COMPLETED",
+        }));
+
+        setShowFranchiseModal(
+          false
+        );
+
+        navigate("/crm-lead");
+
+      } catch (error) {
+
+        toast.error(
+          error.response?.data
+            ?.message ||
+          "Franchise Creation Failed"
+        );
+      }
+    };
 
 
   const { paymentModes, fetchPaymentModes } = usePaymentModes();
@@ -728,9 +773,10 @@ if (
       "HOLD",
       "RETURN",
       "CANCELLED",
+      "COMPLETED"
     ];
 
-    // 🚨 MANUAL STATUS SELECTED
+    // MANUAL STATUS
     if (
       manualStatuses.includes(
         formData.leadStatus
@@ -739,13 +785,22 @@ if (
       return;
     }
 
+    const allCompleted =
+      stages.every(
+        (stage) =>
+          getStageStatus(
+            stage.key
+          ) === "completed"
+      );
+
+    let autoStatus = "NOT_STARTED";
+
     const allStages =
       Object.values(
         formData.stages || {}
       );
 
-    let totalFields = 0;
-    let filledFields = 0;
+    let hasAnyData = false;
 
     allStages.forEach((stage) => {
 
@@ -753,66 +808,34 @@ if (
         stage.data || {}
       ).forEach((value) => {
 
-        // skip arrays empty
-        if (Array.isArray(value)) {
-
-          totalFields++;
-
-          if (value.length > 0) {
-            filledFields++;
-          }
-
-          return;
-        }
-
-        totalFields++;
-
         if (
-          typeof value === "string"
-        ) {
-
-          if (value.trim() !== "") {
-            filledFields++;
-          }
-
-        } else if (
+          value !== "" &&
           value !== null &&
-          value !== false &&
-          value !== 0 &&
-          value !== undefined
+          value !== undefined &&
+          value !== false
         ) {
-
-          filledFields++;
+          hasAnyData = true;
         }
       });
     });
 
-    let autoStatus =
-      "NOT_STARTED";
-
-    if (
-      filledFields > 0 &&
-      filledFields < totalFields
-    ) {
-
-      autoStatus =
-        "IN_PROGRESS";
-
-    } else if (
-      totalFields > 0 &&
-      filledFields === totalFields
-    ) {
-
-      autoStatus =
-        "COMPLETED";
+    // 🔥 ONLY IN PROGRESS
+    if (hasAnyData) {
+      autoStatus = "IN_PROGRESS";
     }
 
-    setFormData((prev) => ({
-      ...prev,
+    // 🔥 DO NOT AUTO COMPLETE
+    // Mark Completed button click pannina mattum complete aaganum
 
-      leadStatus:
-        autoStatus,
-    }));
+    if (
+      formData.leadStatus !== autoStatus
+    ) {
+
+      setFormData((prev) => ({
+        ...prev,
+        leadStatus: autoStatus,
+      }));
+    }
 
   }, [formData.stages]);
 
@@ -924,7 +947,34 @@ if (
               setFormData={setFormData}
               stages={stages.map((s) => s.key)}
               paymentModes={paymentModes}
+
+              isLocked={
+                [
+                  "HOLD",
+                  "RETURN",
+                  "CANCELLED",
+                ].includes(
+                  formData?.leadStatus
+                ) ||
+
+                formData?.isFranchiseCreated
+              }
             />
+
+            {
+              formData?.isFranchiseCreated && (
+
+                <div className="alert alert-success mb-3">
+
+                  <i className="bx bx-check-circle me-1"></i>
+
+                  Franchise already created.
+                  Editing is disabled.
+
+                </div>
+              )
+            }
+
             {/* Buttons */}
             <div className="card mt-3">
               <div className="card-body">
@@ -940,35 +990,50 @@ if (
                     Previous
                   </button>
 
-                  <div className="d-flex gap-2">
+                  {!(
+                    [
+                      "HOLD",
+                      "RETURN",
+                      "CANCELLED",
+                    ].includes(
+                      formData?.leadStatus
+                    ) ||
 
-                    <button
-                      className="btn btn-light border"
-                      onClick={handleSave}
-                    >
-                      Save Draft
-                    </button>
+                    formData?.isFranchiseCreated
+                  ) && (
+                      <div className="d-flex gap-2">
+                        <button className="btn btn-light border" onClick={handleSave}>
+                          Save Draft
+                        </button>
 
-                    {activeStage !== stages.length - 1 ? (
-                      <button
-                        className="btn btn-primary"
-                        onClick={handleNext}
-                      >
-                        Save & Next
-                        <i className="bx bx-right-arrow-alt ms-1"></i>
-                      </button>
-                    ) : (
-                      <button
-                        className="btn btn-success"
-                        onClick={handleComplete}
-                        disabled={!allStagesCompleted}
-                      >
-                        Mark Completed
-                      </button>
-                    )}
+                        {activeStage !== stages.length - 1 ? (
+                          <button
+                            className="btn btn-primary"
+                            onClick={handleNext}
+                          >
+                            Save & Next
+                            <i className="bx bx-right-arrow-alt ms-1"></i>
+                          </button>
+                        ) : (
+                          <button
+                            className="btn btn-success"
+                            onClick={handleComplete}
+                            disabled={!allStagesCompleted}
+                          >
+                            Mark Completed
+                          </button>
+                        )}
 
-                  </div>
-
+                        {activeStage === stages.length - 1 &&
+                          formData?.leadStatus === "COMPLETED" && allStagesCompleted && !formData?.isFranchiseCreated && (
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => setShowFranchiseModal(true)}>
+                              Create Franchise
+                            </button>
+                          )
+                        }
+                      </div>)}
                 </div>
 
               </div>
@@ -976,12 +1041,105 @@ if (
           </div>
 
           <div className="col-xl-4">
-            <LeadInfoFrom formData={formData} setFormData={setFormData} />
+            <LeadInfoFrom formData={formData} setFormData={setFormData} isLocked={
+              formData?.isFranchiseCreated
+            } />
           </div>
 
         </div>
 
       </div>
+
+      {
+        showFranchiseModal && (
+
+          <div
+            className="modal fade show d-block"
+            tabIndex="-1"
+            style={{
+              background:
+                "rgba(0,0,0,0.5)"
+            }}
+          >
+
+            <div className="modal-dialog modal-dialog-centered">
+
+              <div className="modal-content">
+
+                <div className="modal-header border-0 pb-0">
+
+                  <button
+                    type="button"
+                    className="btn-close"
+
+                    onClick={() =>
+                      setShowFranchiseModal(
+                        false
+                      )
+                    }
+                  ></button>
+
+                </div>
+
+                <div className="modal-body text-center pb-4">
+
+                  <div className="avatar-md mx-auto mb-4">
+
+                    <div
+                      className="avatar-title bg-primary-subtle text-primary rounded-circle font-size-32"
+                    >
+                      <i className="bx bx-store"></i>
+                    </div>
+
+                  </div>
+
+                  <h5>
+                    Create Franchise?
+                  </h5>
+
+                  <p className="text-muted mb-0">
+
+                    Are you sure you want
+                    to create franchise
+                    for this lead?
+
+                  </p>
+
+                </div>
+
+                <div className="modal-footer border-0 pt-0 justify-content-center gap-2">
+
+                  <button
+                    className="btn btn-secondary px-4"
+
+                    onClick={() =>
+                      setShowFranchiseModal(
+                        false
+                      )
+                    }
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="btn btn-primary px-4"
+
+                    onClick={
+                      handleCreateFranchise
+                    }
+                  >
+                    Create
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        )
+      }
     </div>
   );
 };

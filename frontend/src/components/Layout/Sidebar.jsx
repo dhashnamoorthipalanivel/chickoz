@@ -9,6 +9,17 @@ const Sidebar = () => {
   const menuRef = useRef(null);
   const location = useLocation();
 
+  // Fetch the role 
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const role = user?.role;
+
+  const isAdmin = role === "admin" || role === "super_admin";
+
+  const isFranchise = role === "user" || role === "franchise";
+
+
+
   useEffect(() => {
     const pathName = location.pathname;
 
@@ -174,17 +185,20 @@ const Sidebar = () => {
             </li> */}
 
             {/* CRM */}
-            <li>
-              <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">
-                <Feather.Users className="icon-sm" />
-                <span>CRM</span>
-              </a>
-              <ul className="sub-menu" aria-expanded="false">
-                <li><Link to="/crm-enquiry">Enquiry</Link></li>
-                <li><Link to="/crm-lead">Lead</Link></li>
+            {
+              isAdmin && (
+                <li>
+                  <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">
+                    <Feather.Users className="icon-sm" />
+                    <span>CRM</span>
+                  </a>
+                  <ul className="sub-menu" aria-expanded="false">
+                    <li><Link to="/crm-enquiry">Enquiry</Link></li>
+                    <li><Link to="/crm-lead">Lead</Link></li>
 
-              </ul>
-            </li>
+                  </ul>
+                </li>
+              )}
 
             {/* Manufacture */}
             <li>
@@ -193,12 +207,30 @@ const Sidebar = () => {
                 <span>Manufacture</span>
               </a>
               <ul className="sub-menu" aria-expanded="false">
-                <li><Link to="/manufacture-kishok">Kishok</Link></li>
+                {
+                  isAdmin && (
+
+                    <li>
+                      <Link to="/manufacture-kishok">
+                        Kishok
+                      </Link>
+                    </li>
+                  )
+                }
                 <li>
                   <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">Masala</a>
                   <ul className="sub-menu" aria-expanded="true">
                     <li><Link to="/manufacture-masala-franchise-request">Franchise Requests</Link></li>
-                    <li><Link to="/manufacture-masala-admin-process">Admin Processing</Link></li>
+                    {
+                      isAdmin && (
+
+                        <li>
+                          <Link to="/manufacture-masala-admin-process">
+                            Admin Processing
+                          </Link>
+                        </li>
+                      )
+                    }
                   </ul>
                 </li>
 
@@ -219,38 +251,70 @@ const Sidebar = () => {
             </li>
 
             {/* Master */}
-            <li>
-              <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">
-                <Feather.Layers className="icon-sm" />
-                <span>Master</span>
-              </a>
-              <ul className="sub-menu" aria-expanded="false">
-                <li><Link to="/master-Franchise">Franchise</Link></li>
-                <li><Link to="/master-package">Package</Link></li>
-                <li><Link to="/master-tax">Tax</Link></li>
-                {/* <li><Link to="/master-food-category">Food Category</Link></li> */}
-                {/* <li><Link to="/master-kitchen-station">Kitchen Station</Link></li> */}
+            {
+              isAdmin && (
                 <li>
+                  <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">
+                    <Feather.Layers className="icon-sm" />
+                    <span>Master</span>
+                  </a>
+                  <ul className="sub-menu" aria-expanded="false">
+                    <li><Link to="/master-franchise">Franchise</Link></li>
+                    <li><Link to="/master-package">Package</Link></li>
+                    <li><Link to="/master-tax">Tax</Link></li>
+                    {/* <li><Link to="/master-food-category">Food Category</Link></li> */}
+                    {/* <li><Link to="/master-kitchen-station">Kitchen Station</Link></li> */}
+                    <li>
 
-                  <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">Menu</a>
-                  <ul className="sub-menu" aria-expanded="true">
-                    <li><Link to="/master-menu-item">Menu Item</Link></li>
-                    <li><Link to="/master-franchise-menu-visibility">Franchise Menu Visibility</Link></li>
-                    <li><Link to="/master-franchise-menu-availability">Franchise Menu Availability</Link></li>
+                      <a href="#" onClick={(e) => e.preventDefault()} className="has-arrow">Menu</a>
+                      <ul className="sub-menu" aria-expanded="true">
+                        <li><Link to="/master-menu-item">Menu Item</Link></li>
+                        <li><Link to="/master-franchise-menu-visibility">Franchise Menu Visibility</Link></li>
+                        <li><Link to="/master-franchise-menu-availability">Franchise Menu Availability</Link></li>
+                      </ul>
+
+
+                    </li>
+                    <li><Link to="/master-masala-items">Masala Items</Link></li>
+                    {/* <li><Link to="/master-raw-material">Raw Material</Link></li> */}
+                    {/* <li><Link to="/master-vendor">Vendor</Link></li> */}
+                    {/* <li><Link to="/master-table">Table</Link></li> */}
+                    <li><Link to="/master-payment-mode">Payment mode</Link></li>
+                    <li><Link to="/master-order-type">Order Type</Link></li>
+                    <li><Link to="/master-lead-source">Lead Source</Link></li>
+                    <li><Link to="/master-document">Document</Link></li>
                   </ul>
+                </li>)}
 
+            {
+              isFranchise && (
+                <li>
+                  <a
+                    href="#"
+                    onClick={(e) =>
+                      e.preventDefault()
+                    }
+                    className="has-arrow"
+                  >
 
+                    <Feather.Layers className="icon-sm" />
+                    <span>
+                      Master
+                    </span>
+                  </a>
+                  <ul
+                    className="sub-menu"
+                    aria-expanded="false"
+                  >
+                    <li>
+                      <Link to="/master-franchise-menu-availability">
+                        Franchise Menu Availability
+                      </Link>
+                    </li>
+                  </ul>
                 </li>
-                 <li><Link to="/master-masala-items">Masala Items</Link></li>
-                {/* <li><Link to="/master-raw-material">Raw Material</Link></li> */}
-                {/* <li><Link to="/master-vendor">Vendor</Link></li> */}
-                {/* <li><Link to="/master-table">Table</Link></li> */}
-                <li><Link to="/master-payment-mode">Payment mode</Link></li>
-                <li><Link to="/master-order-type">Order Type</Link></li>
-                <li><Link to="/master-lead-source">Lead Source</Link></li>
-                <li><Link to="/master-document">Document</Link></li>
-              </ul>
-            </li>
+              )
+            }
 
             {/* <li className="menu-title mt-2">Elements</li> */}
 

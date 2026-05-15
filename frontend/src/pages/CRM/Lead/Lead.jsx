@@ -112,24 +112,24 @@ const getCompletedStages =
     // APPROVAL
     if (
 
-  stagesObj?.APPROVAL
-    ?.data?.siteStatus ===
+      stagesObj?.APPROVAL
+        ?.data?.siteStatus ===
       "Approved" &&
 
-  stagesObj?.APPROVAL
-    ?.data?.approvalStatus ===
+      stagesObj?.APPROVAL
+        ?.data?.approvalStatus ===
       "Approved" &&
 
-  stagesObj?.APPROVAL
-    ?.data?.legalStatus ===
+      stagesObj?.APPROVAL
+        ?.data?.legalStatus ===
       "Completed"
 
-) {
+    ) {
 
-  completed.push(
-    "APPROVAL"
-  );
-}
+      completed.push(
+        "APPROVAL"
+      );
+    }
 
     // TRAINING
     if (
@@ -184,14 +184,14 @@ const getCompletedStages =
     }
 
     return completed;
-};
+  };
 
 const Lead = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
- 
 
-  const [selectedLead,setSelectedLead] =useState(null);
+
+  const [selectedLead, setSelectedLead] = useState(null);
   const [data, setData] = useState(initialData);
 
   const { leads, fetchLeads } = useLeadStore();
@@ -301,7 +301,7 @@ const Lead = () => {
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: "70px" }}>S.No</th>
-                    <th>Lead ID</th>
+                    <th>Reference ID</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Place</th>
@@ -332,8 +332,8 @@ const Lead = () => {
                           : row.leadStatus;
 
                       const currentStage = completedStages.length === 0 ? "SITE_VISIT"
-                      : completedStages.length === stages.length ? "COMPLETED": stages[ 
-                        completedStages.length];
+                        : completedStages.length === stages.length ? "COMPLETED" : stages[
+                          completedStages.length];
 
                       const progress = Math.round(
                         (
@@ -352,7 +352,26 @@ const Lead = () => {
 
                           <td>{formatLabel(currentStage)}</td>
 
-                          <td>{statusBadge(leadStatus)}</td>
+                          <td>
+
+                            <div className="d-flex flex-column gap-1">
+
+                              {statusBadge(leadStatus)}
+
+                              {
+                                row.isFranchiseCreated && (
+
+                                  <span className="badge bg-success">
+
+                                    Franchise Created
+
+                                  </span>
+                                )
+                              }
+
+                            </div>
+
+                          </td>
 
                           <td style={{ minWidth: "120px" }}>
                             <div className="progress" style={{ height: "6px" }}>

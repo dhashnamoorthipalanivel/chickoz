@@ -1,44 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-const initialData = [
-    {
-        id: 1,
-        menuCode: "CKZ001",
-        menuName: "Crispy Chicken Burger",
-        category: "BURGERS",
-        price: 149,
-        available: true,
-        image: "https://via.placeholder.com/50x50.png?text=B1",
-    },
-    {
-        id: 2,
-        menuCode: "CKZ002",
-        menuName: "Hot Wings 6pcs",
-        category: "WINGS",
-        price: 199,
-        available: false,
-        image: "https://via.placeholder.com/50x50.png?text=W6",
-    },
-    {
-        id: 3,
-        menuCode: "CKZ003",
-        menuName: "French Fries",
-        category: "SIDES",
-        price: 99,
-        available: true,
-        image: "https://via.placeholder.com/50x50.png?text=FR",
-    },
-    {
-        id: 4,
-        menuCode: "CKZ004",
-        menuName: "Chicken Popcorn",
-        category: "SNACKS",
-        price: 179,
-        available: true,
-        image: "https://via.placeholder.com/50x50.png?text=CP",
-    },
-];
+import { useFranchiseMenuStore } from "../../../store/store";
+import { toast } from "react-toastify";
 
 const formatLabel = (value) => {
     return value
@@ -50,9 +13,41 @@ const formatLabel = (value) => {
 const FranchiseMenuAvailability = () => {
     const [search, setSearch] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("ALL");
-    const [data, setData] = useState(initialData);
 
-    const filtered = data.filter((item) => {
+    const { menus, loading, fetchMyMenus, updateVisibility } = useFranchiseMenuStore();
+
+    useEffect(() => {
+        fetchMyMenus();
+    }, [])
+
+    const handleToggle =
+        async (menuId, value) => {
+
+            try {
+
+                await updateVisibility({
+
+                    menuId,
+
+                    isVisibleInBilling:
+                        value,
+                });
+
+                toast.success(
+                    "Menu visibility updated"
+                );
+
+            } catch (error) {
+
+                console.log(error);
+
+                toast.error(
+                    "Update failed"
+                );
+            }
+        };
+
+    const filtered = menus.filter((item) => {
         const matchSearch =
             item.menuName.toLowerCase().includes(search.toLowerCase()) ||
             item.menuCode.toLowerCase().includes(search.toLowerCase());
@@ -161,7 +156,7 @@ const FranchiseMenuAvailability = () => {
                                             </tr>
                                         ) : (
                                             filtered.map((item) => (
-                                                <tr key={item.id}>
+                                                <tr key={item.menuId}>
                                                     <td>
                                                         <img
                                                             src={item.image}
@@ -181,8 +176,8 @@ const FranchiseMenuAvailability = () => {
                                                             <input
                                                                 className="form-check-input"
                                                                 type="checkbox"
-                                                                checked={item.available}
-                                                                onChange={() => toggleAvailability(item.id)}
+                                                                checked={item.isVisibleInBilling}
+                                                                onChange={(e) => handleToggle(item.menuId, e.target.checked)}
                                                             />
                                                         </div>
                                                     </td>

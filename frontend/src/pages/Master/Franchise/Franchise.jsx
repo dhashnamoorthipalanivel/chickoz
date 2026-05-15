@@ -1,64 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
-
-const initialData = [
-    {
-        id: 1,
-        branchCode: "BR001",
-        branchName: "Erode Main Franchise",
-        location: "Erode",
-        contact: "9874563210",
-        manager: "Prakash",
-        type: "HEAD_OFFICE",
-        status: "UNDER_MAINTENANCE",
-        openingDate: "2026-04-03",
-    },
-    {
-        id: 2,
-        branchCode: "BR002",
-        branchName: "Salem Franchise",
-        location: "Salem",
-        contact: "9786541230",
-        manager: "Karthik",
-        type: "FRANCHISE",
-        status: "ACTIVE",
-        openingDate: "2026-03-25",
-    },
-    {
-        id: 3,
-        branchCode: "BR003",
-        branchName: "Coimbatore Outlet",
-        location: "Coimbatore",
-        contact: "9845612378",
-        manager: "Vignesh",
-        type: "OUTLET",
-        status: "INACTIVE",
-        openingDate: "2026-02-15",
-    },
-    {
-        id: 4,
-        branchCode: "BR004",
-        branchName: "Chennai Kitchen",
-        location: "Chennai",
-        contact: "9958741236",
-        manager: "Arun",
-        type: "KITCHEN",
-        status: "ACTIVE",
-        openingDate: "2026-01-10",
-    },
-    {
-        id: 5,
-        branchCode: "BR005",
-        branchName: "Madurai Warehouse",
-        location: "Madurai",
-        contact: "9871236540",
-        manager: "Suresh",
-        type: "WAREHOUSE",
-        status: "CLOSED",
-        openingDate: "2025-12-05",
-    },
-];
+import { useFranchiseStore } from "../../../store/store";
 
 const formatLabel = (value) => {
     return value
@@ -83,6 +25,28 @@ const statusBadge = (status) => {
     );
 };
 
+const inviteStatusBadge = (status) => {
+    const map = {
+        DRAFT: "bg-secondary",
+        INVITE_SENT: "bg-warning",
+        ACTIVE: "bg-success",
+        EXPIRED: "bg-danger",
+    };
+
+    const labels = {
+        DRAFT: "Draft",
+        INVITE_SENT: "Invite Sent",
+        ACTIVE: "ERP Active",
+        EXPIRED: "Expired",
+    };
+
+    return (
+        <span className={`badge ${map[status] || "bg-secondary"}`}>
+            {labels[status] || status}
+        </span>
+    );
+};
+
 const typeBadge = (type) => {
     const map = {
         HEAD_OFFICE: "bg-primary",
@@ -103,18 +67,25 @@ const Franchise = () => {
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [selected, setSelected] = useState([]);
-    const [data, setData] = useState(initialData);
+    // const [data, setData] = useState(initialData);
     const [page, setPage] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
 
-    const perPage = 5;
 
-    const filtered = data.filter((item) => {
+    const { franchises, fetchFranchises } = useFranchiseStore();
+
+    useEffect(() => {
+        fetchFranchises();
+    }, [])
+
+    const perPage = 10;
+
+    const filtered = franchises.filter((item) => {
         const matchSearch =
-            item.branchName.toLowerCase().includes(search.toLowerCase()) ||
+            item.franchiseName.toLowerCase().includes(search.toLowerCase()) ||
             item.location.toLowerCase().includes(search.toLowerCase()) ||
-            item.branchCode.toLowerCase().includes(search.toLowerCase()) ||
+            item.franchiseCode.toLowerCase().includes(search.toLowerCase()) ||
             item.manager.toLowerCase().includes(search.toLowerCase());
 
         const matchStatus =
@@ -145,17 +116,8 @@ const Franchise = () => {
         setShowDeleteModal(true);
     };
 
-    const handleDelete = () => {
-        setData((prev) => prev.filter((r) => r.id !== deleteId));
-        setShowDeleteModal(false);
-        setDeleteId(null);
-        setSelected((prev) => prev.filter((id) => id !== deleteId));
-    };
 
-    const handleBulkDelete = () => {
-        setData((prev) => prev.filter((r) => !selected.includes(r.id)));
-        setSelected([]);
-    };
+
 
     return (
         <React.Fragment>
@@ -187,20 +149,6 @@ const Franchise = () => {
                                 <div className="card-header">
                                     <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                         <h4 className="card-title mb-0">Franchise Records</h4>
-                                        <div className="d-flex gap-2">
-                                            {selected.length > 0 && (
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={handleBulkDelete}
-                                                >
-                                                    <i className="bx bx-trash me-1"></i> Delete (
-                                                    {selected.length})
-                                                </button>
-                                            )}
-                                            <Link to="/master-franchise/add" className="btn btn-sm btn-primary">
-                                                <i className="bx bx-plus me-1"></i> Add Franchise
-                                            </Link>
-                                        </div>
                                     </div>
                                 </div>
 
@@ -265,32 +213,20 @@ const Franchise = () => {
                                             <thead className="table-light">
                                                 <tr>
                                                     <th style={{ width: "40px" }}>
-                                                        <div className="form-check">
-                                                            <input
-                                                                className="form-check-input"
-                                                                type="checkbox"
-                                                                checked={
-                                                                    selected.length === paged.length &&
-                                                                    paged.length > 0
-                                                                }
-                                                                onChange={toggleAll}
-                                                                id="checkAll"
-                                                            />
-                                                            <label
-                                                                className="form-check-label"
-                                                                htmlFor="checkAll"
-                                                            ></label>
-                                                        </div>
+                                                        S.No
                                                     </th>
                                                     {[
-                                                        "Franchise Code",
+                                                        "Reference ID",
+                                                        "Franchise ID",
                                                         "Franchise Name",
-                                                        "Location",
-                                                        "Contact Number",
+                                                        "Owner Name",
                                                         "Manager Name",
-                                                        "Franchise Type",
-                                                        "Status",
-                                                        "Opening Date",
+                                                        "Contact Number",
+                                                        "Franchise Email",
+                                                        "Package Name",
+                                                        "Business Status",
+"ERP Status",
+"Opening Date",,
                                                     ].map((column, index) => (
                                                         <th key={index}>{column}</th>
                                                     ))}
@@ -307,42 +243,38 @@ const Franchise = () => {
                                                         </td>
                                                     </tr>
                                                 ) : (
-                                                    paged.map((row) => (
+                                                    paged.map((row, index) => (
                                                         <tr
-                                                            key={row.id}
-                                                            className={selected.includes(row.id) ? "table-active" : ""}
+                                                            key={row._id}
+                                                            className={selected.includes(row._id) ? "table-active" : ""}
                                                         >
-                                                            <td>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        className="form-check-input"
-                                                                        type="checkbox"
-                                                                        checked={selected.includes(row.id)}
-                                                                        onChange={() => toggleSelect(row.id)}
-                                                                        id={`check-${row.id}`}
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor={`check-${row.id}`}
-                                                                    ></label>
-                                                                </div>
-                                                            </td>
-
-                                                            <td>{row.branchCode}</td>
-                                                            <td>{row.branchName}</td>
-                                                            <td>{row.location}</td>
-                                                            <td>{row.contact}</td>
+                                                            <td>{(page - 1) * perPage + index + 1}</td>
+                                                            <td>{row.referenceId}</td>
+                                                            <td>{row.franchiseId}</td>
+                                                            <td>{row.franchiseName}</td>
+                                                            <td>{row.ownerName}</td>
                                                             <td>{row.manager}</td>
-                                                            <td>{typeBadge(row.type)}</td>
+                                                            <td>{row.contact}</td>
+                                                            <td>{row.email}</td>
+                                                            <td>{typeBadge(row.packageName)}</td>
                                                             <td>{statusBadge(row.status)}</td>
-                                                            <td>{row.openingDate}</td>
+                                                            <td>{inviteStatusBadge(row.inviteStatus)}</td>
+                                                            <td>
+                                                                {row.openingDate
+                                                                    ? new Date(
+
+                                                                        row.openingDate
+                                                                    ).toLocaleDateString("en-GB")
+                                                                    : "-"
+                                                                }
+                                                            </td>
 
                                                             <td>
                                                                 <div className="d-flex justify-content-center gap-2">
                                                                     <Link
-                                                                        to={`/master-franchise/edit/${row.id}`}
+                                                                        to={`/master-franchise/edit/${row._id}`}
                                                                         className="btn btn-sm btn-outline-primary"
-                                                                         state={{ rowData: row }}
+                                                                        state={{ rowData: row }}
                                                                         title="Edit"
                                                                     >
                                                                         <i className="bx bx-edit-alt"></i>
@@ -350,7 +282,7 @@ const Franchise = () => {
                                                                     <button
                                                                         className="btn btn-sm btn-outline-danger"
                                                                         title="Delete"
-                                                                        onClick={() => confirmDelete(row.id)}
+                                                                        onClick={() => confirmDelete(row._id)}
                                                                     >
                                                                         <i className="bx bx-trash-alt"></i>
                                                                     </button>

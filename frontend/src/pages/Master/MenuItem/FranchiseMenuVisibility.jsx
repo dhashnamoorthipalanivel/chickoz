@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useFranchiseStore } from "../../../store/store";
 
 const initialData = [
     {
         id: 1,
-        franchiseCode: "FR001",
+        franchiseId: "FR001",
         franchiseName: "Chickoz Erode",
         ownerName: "Prakash",
         location: "Erode",
@@ -14,7 +15,7 @@ const initialData = [
     },
     {
         id: 2,
-        franchiseCode: "FR002",
+        franchiseId: "FR002",
         franchiseName: "Chickoz Salem",
         ownerName: "Karthik",
         location: "Salem",
@@ -24,7 +25,7 @@ const initialData = [
     },
     {
         id: 3,
-        franchiseCode: "FR003",
+        franchiseId: "FR003",
         franchiseName: "Chickoz Coimbatore",
         ownerName: "Arun",
         location: "Coimbatore",
@@ -34,7 +35,7 @@ const initialData = [
     },
     {
         id: 4,
-        franchiseCode: "FR004",
+        franchiseId: "FR004",
         franchiseName: "Chickoz Karur",
         ownerName: "Vignesh",
         location: "Karur",
@@ -44,7 +45,7 @@ const initialData = [
     },
     {
         id: 5,
-        franchiseCode: "FR005",
+        franchiseId: "FR005",
         franchiseName: "Chickoz Namakkal",
         ownerName: "Suresh",
         location: "Namakkal",
@@ -94,12 +95,18 @@ const FranchiseMenuVisibility = () => {
     const [typeFilter, setTypeFilter] = useState("ALL");
     const [page, setPage] = useState(1);
 
-    const perPage = 5;
+    const perPage = 10;
 
-    const filtered = initialData.filter((item) => {
+    const {franchises, fetchFranchises} = useFranchiseStore();
+
+    useEffect(() => {
+        fetchFranchises();
+    },[])
+
+    const filtered = franchises.filter((item) => {
         const matchSearch =
             item.franchiseName.toLowerCase().includes(search.toLowerCase()) ||
-            item.franchiseCode.toLowerCase().includes(search.toLowerCase()) ||
+            item.franchiseId.toLowerCase().includes(search.toLowerCase()) ||
             item.location.toLowerCase().includes(search.toLowerCase());
 
         const matchStatus =
@@ -227,7 +234,7 @@ const FranchiseMenuVisibility = () => {
                                         <table className="table table-hover table-centered align-middle mb-0">
                                             <thead className="table-light">
                                                 <tr>
-                                                    <th>Franchise Code</th>
+                                                    <th>Franchise ID</th>
                                                     <th>Franchise Name</th>
                                                     <th>Owner Name</th>
                                                     <th>Location</th>
@@ -248,22 +255,22 @@ const FranchiseMenuVisibility = () => {
                                                     </tr>
                                                 ) : (
                                                     paged.map((row) => (
-                                                        <tr key={row.id}>
-                                                            <td>{row.franchiseCode}</td>
+                                                        <tr key={row._id}>
+                                                            <td>{row.franchiseId}</td>
                                                             <td>{row.franchiseName}</td>
                                                             <td>{row.ownerName}</td>
                                                             <td>{row.location}</td>
                                                             <td>{typeBadge(row.type)}</td>
                                                             <td>
                                                                 <span className="badge bg-soft-primary text-primary px-3 py-2">
-                                                                    {row.assignedMenuCount} Items
+                                                                    {row.assignedMenus?.length || 0} Items
                                                                 </span>
                                                             </td>
                                                             <td>{statusBadge(row.status)}</td>
                                                             <td>
                                                                 <div className="d-flex justify-content-center">
                                                                     <Link
-                                                                        to={`/master-franchise-menu-visibility/edit/${row.id}`}
+                                                                        to={`/master-franchise-menu-visibility/edit/${row._id}`}
                                                                         state={{ rowData: row }}
                                                                         className="btn btn-sm btn-outline-primary"
                                                                         title="Edit Menu Visibility"

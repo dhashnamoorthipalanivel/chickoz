@@ -2,7 +2,16 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { updateLead } from "../../../api/leadApi";
 
-const LeadInfoFrom = ({ formData, setFormData }) => {
+const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
+
+  const statusOnlyLock =
+  [
+    "HOLD",
+    "RETURN",
+    "CANCELLED",
+  ].includes(
+    formData?.leadStatus
+  );
 
   const [localData, setLocalData] = useState({});
   const [isChanged, setIsChanged] = useState(false);
@@ -25,34 +34,34 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
   };
 
   const handleUpdate =
-  async () => {
+    async () => {
 
-    try {
+      try {
 
-      // ✅ UPDATE FRONTEND
-      setFormData(localData);
+        // ✅ UPDATE FRONTEND
+        setFormData(localData);
 
-      // ✅ UPDATE DATABASE
-      await updateLead(
-        localData._id,
-        localData
-      );
+        // ✅ UPDATE DATABASE
+        await updateLead(
+          localData._id,
+          localData
+        );
 
-      toast.success(
-        "Enquiry Info Updated"
-      );
+        toast.success(
+          "Enquiry Info Updated"
+        );
 
-      setIsChanged(false);
+        setIsChanged(false);
 
-    } catch (error) {
+      } catch (error) {
 
-      console.log(error);
+        console.log(error);
 
-      toast.error(
-        "Update Failed"
-      );
-    }
-  };
+        toast.error(
+          "Update Failed"
+        );
+      }
+    };
 
   return (
     <div className="card">
@@ -68,6 +77,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
             <input
               className="form-control"
               value={localData?.referenceId || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               disabled
             />
           </div>
@@ -81,6 +94,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
               className="form-control"
               name="name"
               value={localData?.name || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               onChange={handleChange}
             />
           </div>
@@ -94,6 +111,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
               className="form-control"
               name="phone"
               value={localData?.phone || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               onChange={handleChange}
             />
           </div>
@@ -107,6 +128,26 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
               className="form-control"
               name="place"
               value={localData?.place || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="col-12">
+            <label className="form-label">
+              Post code <span className="text-danger">*</span>
+            </label>
+            <input
+              className="form-control"
+              name="postCode"
+              value={localData?.postCode || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               onChange={handleChange}
             />
           </div>
@@ -123,6 +164,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
                 localData?.interestedPackage
                   ?.packageName || ""
               }
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               onChange={handleChange}
             />
           </div>
@@ -136,6 +181,10 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
               className="form-control"
               name="assignedTo"
               value={localData?.assignedTo || ""}
+              disabled={
+  isLocked ||
+  statusOnlyLock
+}
               onChange={handleChange}
             />
           </div>
@@ -151,6 +200,7 @@ const LeadInfoFrom = ({ formData, setFormData }) => {
               value={
                 localData?.leadStatus || ""
               }
+              disabled={isLocked}
               onChange={handleChange}
             >
               <option value="">

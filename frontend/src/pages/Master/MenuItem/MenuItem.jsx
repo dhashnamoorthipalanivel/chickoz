@@ -2,58 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMenuItems } from "../../../store/store";
 
-const initialData = [
-    {
-        id: 1,
-        menuCode: "CKZ001",
-        menuName: "Crispy Chicken Burger",
-        category: "BURGERS",
-        foodType: "NON_VEG",
-        price: 149,
-        status: "ACTIVE",
-        image: "https://via.placeholder.com/50x50.png?text=B1",
-    },
-    {
-        id: 2,
-        menuCode: "CKZ002",
-        menuName: "Hot Wings 6pcs",
-        category: "WINGS",
-        foodType: "NON_VEG",
-        price: 199,
-        status: "ACTIVE",
-        image: "https://via.placeholder.com/50x50.png?text=W6",
-    },
-    {
-        id: 3,
-        menuCode: "CKZ003",
-        menuName: "French Fries",
-        category: "SIDES",
-        foodType: "VEG",
-        price: 99,
-        status: "INACTIVE",
-        image: "https://via.placeholder.com/50x50.png?text=FR",
-    },
-    {
-        id: 4,
-        menuCode: "CKZ004",
-        menuName: "Chicken Popcorn",
-        category: "SNACKS",
-        foodType: "NON_VEG",
-        price: 179,
-        status: "ACTIVE",
-        image: "https://via.placeholder.com/50x50.png?text=CP",
-    },
-    {
-        id: 5,
-        menuCode: "CKZ005",
-        menuName: "Pepsi Can",
-        category: "BEVERAGES",
-        foodType: "BEVERAGE",
-        price: 60,
-        status: "ACTIVE",
-        image: "https://via.placeholder.com/50x50.png?text=P",
-    },
-];
 
 const formatLabel = (value) => {
     return value
@@ -102,7 +50,6 @@ const MenuItem = () => {
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [categoryFilter, setCategoryFilter] = useState("ALL");
     const [selected, setSelected] = useState([]);
-    const [data, setData] = useState(initialData);
     const [page, setPage] = useState(1);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
@@ -154,22 +101,22 @@ const MenuItem = () => {
         setShowDeleteModal(true);
     };
 
-     const handleDelete = async () => {
-    try {
-        await deleteMenuItem(deleteId);
-        await fetchMenuItems();
+    const handleDelete = async () => {
+        try {
+            await deleteMenuItem(deleteId);
+            await fetchMenuItems();
 
-        setShowDeleteModal(false);
-        setDeleteId(null);
+            setShowDeleteModal(false);
+            setDeleteId(null);
 
-        setSelected((prev) =>
-            prev.filter((item) => item !== deleteId)
-        );
+            setSelected((prev) =>
+                prev.filter((item) => item !== deleteId)
+            );
 
-    } catch (error) {
-        console.log(error);
-    }
-};
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     return (
         <React.Fragment>
@@ -298,61 +245,232 @@ const MenuItem = () => {
                                             <thead className="table-light">
                                                 <tr>
                                                     <th style={{ width: "40px" }}>
-                                                       S.No
+                                                        S.No
                                                     </th>
-                                                   <th>Image</th>
-<th>Code</th>
-<th>Menu Item</th>
-<th>Category</th>
-<th>Portion</th>
-<th>Food Type</th>
-<th>Price</th>
-<th>Item Type</th>
-<th>Status</th>
-<th className="text-center">Actions</th>
+
+                                                    <th>Image</th>
+
+                                                    <th>Menu Details</th>
+
+                                                    <th>Category</th>
+
+                                                    <th>Portion</th>
+
+                                                    <th>Pricing</th>
+
+                                                    <th>Status</th>
+
+                                                    <th className="text-center">
+                                                        Actions
+                                                    </th>
                                                 </tr>
                                             </thead>
 
                                             <tbody>
+
                                                 {paged.length === 0 ? (
+
                                                     <tr>
-                                                        <td colSpan="9" className="text-center py-5 text-muted">
+                                                        <td
+                                                            colSpan="8"
+                                                            className="text-center py-5 text-muted"
+                                                        >
                                                             <i className="bx bx-search-alt display-4 d-block mb-2"></i>
+
                                                             No menu items found.
                                                         </td>
                                                     </tr>
+
                                                 ) : (
+
                                                     paged.map((row, index) => (
+
                                                         <tr
                                                             key={row._id}
-                                                            className={selected.includes(row._id) ? "table-active" : ""}
+                                                            className={
+                                                                selected.includes(row._id)
+                                                                    ? "table-active"
+                                                                    : ""
+                                                            }
                                                         >
-                                                            <td>{(page - 1) * perPage + index + 1}</td>
 
+                                                            {/* S.NO */}
                                                             <td>
+                                                                {(page - 1) * perPage + index + 1}
+                                                            </td>
+
+                                                            {/* IMAGE */}
+                                                            <td>
+
                                                                 <img
-                                                                    src={row.image}
+                                                                    src={
+                                                                        row.image ||
+                                                                        "https://placehold.co/45x45?text=Menu"
+                                                                    }
                                                                     alt={row.menuName}
                                                                     className="rounded"
                                                                     width="45"
                                                                     height="45"
-                                                                    style={{ objectFit: "cover" }}
+                                                                    style={{
+                                                                        objectFit: "cover",
+                                                                    }}
                                                                 />
+
                                                             </td>
 
-                                                            <td>{row.menuCode}</td>
-                                                            <td>{row.menuName}</td>
-                                                            <td>{formatLabel(row.category)}</td>
-                                                            <td>{row.portionQty} {formatLabel(row.
-portionName
-)}</td>
-                                                            <td>{foodTypeBadge(row.foodType)}</td>
-                                                            <td>₹ {row.price}</td>
-                                                            <td>{itemTypeBadge(row.isCombo)}</td>
-                                                            <td>{statusBadge(row.status)}</td>
-
+                                                            {/* MENU DETAILS */}
                                                             <td>
+
+                                                                <div className="fw-semibold">
+                                                                    {row.menuName}
+                                                                </div>
+
+                                                                <div className="text-muted small">
+                                                                    #{row.menuCode}
+                                                                </div>
+
+                                                                <div className="d-flex gap-1 flex-wrap mt-1">
+
+                                                                    {/* FOOD TYPE */}
+                                                                    <span
+                                                                        className={`badge ${row.foodType === "VEG"
+                                                                                ? "bg-success-subtle text-success"
+                                                                                : row.foodType === "NON_VEG"
+                                                                                    ? "bg-danger-subtle text-danger"
+                                                                                    : "bg-info-subtle text-info"
+                                                                            }`}
+                                                                    >
+                                                                        {formatLabel(row.foodType)}
+                                                                    </span>
+
+                                                                    {/* ITEM TYPE */}
+                                                                    <span
+                                                                        className={`badge ${row.isCombo
+                                                                                ? "bg-warning-subtle text-warning"
+                                                                                : "bg-primary-subtle text-primary"
+                                                                            }`}
+                                                                    >
+                                                                        {row.isCombo
+                                                                            ? "Combo"
+                                                                            : "Single"}
+                                                                    </span>
+
+                                                                    {/* ADDON */}
+                                                                    {
+                                                                        row.isAddonAllowed && (
+                                                                            <span className="badge bg-dark-subtle text-dark">
+                                                                                Addons
+                                                                            </span>
+                                                                        )
+                                                                    }
+
+                                                                    {/* OFFER */}
+                                                                    {
+                                                                        row.hasOffer && (
+                                                                            <span className="badge bg-success-subtle text-success">
+                                                                                Offer
+                                                                            </span>
+                                                                        )
+                                                                    }
+
+                                                                </div>
+
+                                                            </td>
+
+                                                            {/* CATEGORY */}
+                                                            <td>
+                                                                {formatLabel(row.category)}
+                                                            </td>
+
+                                                            {/* PORTION */}
+                                                            <td>
+                                                                <div className="fw-medium">
+                                                                    {row.portionQty}
+                                                                    {" "}
+                                                                    {formatLabel(row.portionName)}
+                                                                </div>
+                                                            </td>
+
+                                                            {/* PRICING */}
+                                                            <td>
+
+                                                                {
+                                                                    row.hasOffer ? (
+
+                                                                        <>
+                                                                            <div
+                                                                                className="text-decoration-line-through text-muted small"
+                                                                            >
+                                                                                ₹ {row.price}
+                                                                            </div>
+
+                                                                            <div className="fw-semibold text-success">
+
+                                                                                ₹ {
+
+                                                                                    row.offerType === "PERCENTAGE"
+
+                                                                                        ? (
+                                                                                            row.price -
+                                                                                            (
+                                                                                                row.price *
+                                                                                                row.offerValue
+                                                                                            ) / 100
+                                                                                        ).toFixed(2)
+
+                                                                                        : (
+                                                                                            row.price -
+                                                                                            row.offerValue
+                                                                                        ).toFixed(2)
+                                                                                }
+
+                                                                            </div>
+                                                                        </>
+
+                                                                    ) : (
+
+                                                                        <div className="fw-semibold">
+                                                                            ₹ {row.price}
+                                                                        </div>
+
+                                                                    )
+                                                                }
+
+                                                                {
+                                                                    row.isTaxApplicable &&
+                                                                    row.taxId && (
+                                                                        <div className="small text-muted">
+                                                                            {row.taxId.taxName}
+                                                                        </div>
+                                                                    )
+                                                                }
+
+                                                            </td>
+
+                                                            {/* STATUS */}
+                                                            <td>
+
+                                                                <div className="d-flex flex-column gap-1">
+
+                                                                    {statusBadge(row.status)}
+
+                                                                    {
+                                                                        !row.isVisibleInBilling && (
+                                                                            <span className="badge bg-secondary-subtle text-secondary">
+                                                                                Hidden In Billing
+                                                                            </span>
+                                                                        )
+                                                                    }
+
+                                                                </div>
+
+                                                            </td>
+
+                                                            {/* ACTIONS */}
+                                                            <td>
+
                                                                 <div className="d-flex justify-content-center gap-2">
+
                                                                     <Link
                                                                         to={`/master-menu-item/edit/${row._id}`}
                                                                         state={{ rowData: row }}
@@ -361,6 +479,7 @@ portionName
                                                                     >
                                                                         <i className="bx bx-edit-alt"></i>
                                                                     </Link>
+
                                                                     <button
                                                                         className="btn btn-sm btn-outline-danger"
                                                                         title="Delete"
@@ -368,11 +487,17 @@ portionName
                                                                     >
                                                                         <i className="bx bx-trash-alt"></i>
                                                                     </button>
+
                                                                 </div>
+
                                                             </td>
+
                                                         </tr>
+
                                                     ))
+
                                                 )}
+
                                             </tbody>
                                         </table>
                                     </div>
@@ -436,15 +561,23 @@ portionName
                     className="modal fade show d-block"
                     tabIndex="-1"
                     style={{ background: "rgba(0,0,0,0.5)" }}
+                    onClick={() => setShowDeleteModal(false)}
                 >
                     <div className="modal-dialog modal-dialog-centered">
                         <div className="modal-content">
                             <div className="modal-header border-0 pb-0">
                                 <button
                                     type="button"
-                                    className="btn-close"
                                     onClick={() => setShowDeleteModal(false)}
-                                ></button>
+                                    className="d-flex align-items-center justify-content-center rounded-circle border-0 bg-light"
+                                    style={{
+                                        width: "36px",
+                                        height: "36px",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    <i className="bx bx-x fs-4"></i>
+                                </button>
                             </div>
 
                             <div className="modal-body text-center pb-4">

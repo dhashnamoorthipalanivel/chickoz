@@ -31,6 +31,8 @@ app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"))
 app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
 app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
 app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
+app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
+app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"))
 
 // Menu item
 app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
@@ -39,6 +41,10 @@ app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 app.use("/api/enquiry", require("./routes/enquiryRoutes"))
 app.use("/api/lead", require("./routes/leadRoutes"))
 app.use("/api/kishok", require("./routes/kishokRoutes"));
+
+// Customer 
+app.use("/api/customers", require("./routes/customerRoutes"));
+
 /* ===============================
    SERVE REACT FRONTEND (ADD THIS)
 ================================= */

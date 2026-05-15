@@ -23,6 +23,7 @@ const ENQUIRY_CONFIG = {
             { name: "phone", label: "Phone", type: "tel", required: true, placeholder: "Enter phone number", maxLength: 10 },
             { name: "email", label: "Email", type: "email", required: true, placeholder: "Enter email address", maxLength: 100 },
             { name: "place", label: "Place", type: "text", required: true, placeholder: "Enter place / city", maxLength: 100 },
+            {name : "postCode" , label : "Post code / Zip code", type : "text", required : true, placeholder : "Eg: 638001", maxLength : 12},
             { name: "address", label: "Address", type: "textarea", placeholder: "Enter address", col: 12, maxLength: 500 },
         ],
 
@@ -71,6 +72,7 @@ const ENQUIRY_CONFIG = {
         phone: "",
         email: "",
         place: "",
+        postCode : "",
         address: "",
         interestedPackage: "",
         leadSource: "",
@@ -163,7 +165,7 @@ const EnquiryForm = () => {
 
         config.tabs.forEach((tab) => {
             config.fields[tab]?.forEach((field) => {
-                if (field.required && !form[field.name]?.toString().trim()) {
+                if (field.required && !(form[field.name] ??"").toString().trim()) {
                     e[field.name] = `${field.label} is required`;
                 }
 
@@ -191,12 +193,17 @@ const EnquiryForm = () => {
         }
 
         if (name === "phone") {
-            const numericValue = value.replace(/\D/g, "");
-            setForm((prev) => ({
-                ...prev,
-                [name]: numericValue,
-            }));
-        } else if (fieldConfig?.type === "email") {
+
+  const numericValue =
+    value
+      .replace(/\D/g, "")
+      .slice(0, 10);
+
+  setForm((prev) => ({
+    ...prev,
+    [name]: numericValue,
+  }));
+} else if (fieldConfig?.type === "email") {
             setForm((prev) => ({
                 ...prev,
                 [name]: value,
@@ -239,6 +246,7 @@ const EnquiryForm = () => {
                 phone: form.phone,
                 email: form.email,
                 place: form.place,
+                postCode : form.postCode,
                 address: form.address,
                 interestedPackage: form.interestedPackage,
                 leadSource: form.leadSource,

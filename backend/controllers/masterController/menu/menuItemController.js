@@ -22,6 +22,7 @@ exports.getMenus = async (req, res) => {
       isDeleted: false,
     })
       .populate("comboItems.menuId", "menuName menuCode price")
+.populate("taxId", "taxName taxPercentage")
       .sort({ sortOrder: 1, createdAt: -1 });
 
     res.json(data);
@@ -39,7 +40,7 @@ exports.getMenuById = async (req, res) => {
   try {
     const data = await Menu.findById(req.params.id).populate(
       "comboItems.menuId",
-      "menuName menuCode price"
+      "menuName menuCode price",
     );
 
     if (!data) {
@@ -89,14 +90,11 @@ exports.updateMenu = async (req, res) => {
       payload.comboItems = [];
     }
 
-    const data = await Menu.findByIdAndUpdate(
-      req.params.id,
-      payload,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).populate("comboItems.menuId", "menuName menuCode price");
+    const data = await Menu.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true,
+    }).populate("comboItems.menuId", "menuName menuCode price")
+.populate("taxId", "taxName taxPercentage")
 
     if (!data) {
       return res.status(404).json({
@@ -123,7 +121,7 @@ exports.deleteMenu = async (req, res) => {
         isDeleted: true,
         deletedAt: new Date(),
       },
-      { new: true }
+      { new: true },
     );
 
     if (!data) {

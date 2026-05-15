@@ -36,6 +36,11 @@ const leadSchema = new mongoose.Schema(
       required: true,
     },
 
+    postCode: {
+      type: String,
+      default: "",
+    },
+
     address: {
       type: String,
       default: "",
@@ -339,24 +344,24 @@ const leadSchema = new mongoose.Schema(
           },
 
           kycDocument: {
-  type: String,
-  default: "",
-},
+            type: String,
+            default: "",
+          },
 
-kycDocumentName: {
-  type: String,
-  default: "",
-},
+          kycDocumentName: {
+            type: String,
+            default: "",
+          },
 
-royaltyDocument: {
-  type: String,
-  default: "",
-},
+          royaltyDocument: {
+            type: String,
+            default: "",
+          },
 
-royaltyDocumentName: {
-  type: String,
-  default: "",
-},
+          royaltyDocumentName: {
+            type: String,
+            default: "",
+          },
         },
       },
     },
@@ -375,6 +380,11 @@ royaltyDocumentName: {
 
     // 🗑️ SOFT DELETE
     isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    isFranchiseCreated: {
       type: Boolean,
       default: false,
     },

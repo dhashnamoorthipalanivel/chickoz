@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
+const Franchise = require("../models/masterModels/franchiseModel");
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -214,15 +215,28 @@ const resetPassword = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    let franchise = null;
+
+    // ✅ FRANCHISE USER
+    if (user.franchiseId) {
+      franchise = await Franchise.findById(user.franchiseId);
+    }
 
     res.status(200).json({
-      success: true,
       user,
+      franchise,
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({
-      success: false,
       message: error.message,
     });
   }
@@ -245,6 +259,130 @@ const logoutUser = async (req, res) => {
   }
 };
 
+const sendChangePasswordOtp = async (req, res) => {
+  try {
+    const {
+      currentPassword,
+
+      newPassword,
+    } = req.body;
+
+    // FIND USER
+    const user = await User.findById(req.user.id);
+
+const userWithPassword = await User.findById(req.user.id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+
+        message: "User not found",
+      });
+    }
+
+    // VERIFY CURRENT PASSWORD
+    const isMatch = await userWithPassword.comparePassword( currentPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+
+        message: "Current password is incorrect",
+      });
+    }
+
+    // GENERATE OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // SAVE OTP
+    user.changePasswordOtp = otp;
+
+    user.changePasswordOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+    // SAVE TEMP PASSWORD
+    user.tempNewPassword = newPassword;
+
+    await user.save();
+
+    console.log("CHANGE PASSWORD OTP:", otp);
+
+    res.status(200).json({
+      success: true,
+
+      message: "OTP sent successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
+
+const verifyChangePasswordOtp = async (req, res) => {
+  try {
+    const { otp } = req.body;
+
+    // FIND USER
+    const user = await User.findById(req.user.id).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+
+        message: "User not found",
+      });
+    }
+
+    // OTP CHECK
+    console.log("DB OTP:", user.changePasswordOtp);
+
+    console.log("ENTERED OTP:", otp);
+
+    if (String(user.changePasswordOtp) !== String(otp)) {
+      return res.status(400).json({
+        success: false,
+
+        message: "Invalid OTP",
+      });
+    }
+
+    // OTP EXPIRY
+    if (new Date() > user.changePasswordOtpExpiry) {
+      return res.status(400).json({
+        success: false,
+
+        message: "OTP expired",
+      });
+    }
+
+    // UPDATE PASSWORD
+    user.password = user.tempNewPassword;
+
+    // CLEAR TEMP DATA
+    user.changePasswordOtp = null;
+
+    user.changePasswordOtpExpiry = null;
+
+    user.tempNewPassword = null;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -252,4 +390,6 @@ module.exports = {
   resetPassword,
   getMe,
   logoutUser,
+  sendChangePasswordOtp,
+  verifyChangePasswordOtp,
 };

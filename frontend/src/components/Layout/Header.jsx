@@ -5,6 +5,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { logoutUser } from '../../api/authAPI'
 import { toast } from 'react-toastify';
 import logo from '/assets/images/logo-1.png'
+import { useAuthStore } from '../../store/store';
 
 const Header = ({ toggleSidebar }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -14,6 +15,9 @@ const Header = ({ toggleSidebar }) => {
 
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const {clearProfile} = useAuthStore();
 
   const handleLogOut = async () => {
     try {
@@ -22,6 +26,8 @@ const Header = ({ toggleSidebar }) => {
 
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+
+      clearProfile();
 
       toast.success(res.message || "Logout successful");
 
@@ -168,8 +174,10 @@ const Header = ({ toggleSidebar }) => {
               className="btn header-item bg-light-subtle border-start border-end"
               onClick={() => setIsProfileOpen(!isProfileOpen)}
             >
-              <img className="rounded-circle header-profile-user" src="/assets/images/users/avatar-1.jpg" alt="Header Avatar" />
-              <span className="d-none d-xl-inline-block ms-1 fw-medium">Shawn L.</span>
+              <img className="rounded-circle header-profile-user" src={user?.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user?.firstName || "User"
+              ) + "&background=0D8ABC&color=fff"} alt="Header Avatar" />
+              <span className="d-none d-xl-inline-block ms-1 fw-medium">{user?.firstName || "User"}</span>
+              <small className="d-block text-muted">{user?.role}</small>
               <i className="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
             </button>
             <div className={`dropdown-menu dropdown-menu-end ${isProfileOpen ? 'show' : ''}`} style={{ right: 0 }}>
