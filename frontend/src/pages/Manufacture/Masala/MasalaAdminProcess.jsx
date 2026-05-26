@@ -1,47 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMasalaRequestStore } from "../../../store/store";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
 
-const initialData = [
-  {
-    id: 1,
-    requestId: "REQ001",
-    franchiseId: "FR001",
-    franchiseName: "Chennai Branch",
-    itemCount: 3,
-    totalQty: 25,
-    requiredDate: "2026-04-28",
-    priority: "Urgent",
-    paymentOption: "Advance",
-    status: "REQUESTED",
-    createdDate: "2026-04-24",
-  },
-  {
-    id: 2,
-    requestId: "REQ002",
-    franchiseId: "FR002",
-    franchiseName: "Coimbatore Branch",
-    itemCount: 2,
-    totalQty: 12,
-    requiredDate: "2026-04-30",
-    priority: "Normal",
-    paymentOption: "Credit",
-    status: "APPROVED",
-    createdDate: "2026-04-23",
-  },
-  {
-    id: 3,
-    requestId: "REQ003",
-    franchiseId: "FR003",
-    franchiseName: "Madurai Branch",
-    itemCount: 4,
-    totalQty: 30,
-    requiredDate: "2026-05-01",
-    priority: "Urgent",
-    paymentOption: "Cash",
-    status: "DISPATCHED",
-    createdDate: "2026-04-22",
-  },
-];
+
 
 const formatLabel = (value) =>
   value
@@ -68,11 +31,10 @@ const statusBadge = (status) => {
 
 const priorityBadge = (priority) => (
   <span
-    className={`badge ${
-      priority === "Urgent"
+    className={`badge ${priority === "Urgent"
         ? "bg-danger"
         : "bg-warning text-dark"
-    }`}
+      }`}
   >
     {priority}
   </span>
@@ -82,16 +44,85 @@ const MasalaAdminProcess = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const filtered = initialData.filter((item) => {
+  const {
+    requests,
+    fetchAllRequests,
+    updateRequestStatus,
+    loading,
+  } = useMasalaRequestStore();
+
+  useEffect(() => {
+    fetchAllRequests();
+  }, [fetchAllRequests]);
+
+  const handleStatusUpdate = async (id, status, requestId) => {
+
+  try {
+
+    const payload = {
+      status,
+    };
+
+    const response = await updateRequestStatus(
+      id,
+      payload
+    );
+
+    if (response?.success) {
+
+      // instant UI refresh
+      await fetchAllRequests();
+
+      toast.success(
+        `${requestId} status updated to ${formatLabel(status)}`
+      );
+
+    } else {
+
+      toast.error(
+        response?.message || "Failed to update status"
+      );
+    }
+
+  } catch (error) {
+
+    console.log(error);
+
+    toast.error(
+      error?.response?.data?.message ||
+      "Failed to update status"
+    );
+  }
+};
+
+  const filtered = requests.filter((item) => {
+
+    const searchText =
+      search.toLowerCase();
+
     const matchSearch =
-      item.requestId.toLowerCase().includes(search.toLowerCase()) ||
-      item.franchiseId.toLowerCase().includes(search.toLowerCase()) ||
-      item.franchiseName.toLowerCase().includes(search.toLowerCase());
+
+      item.requestId
+        ?.toLowerCase()
+        .includes(searchText) ||
+
+      item.franchise?.franchiseId
+        ?.toLowerCase()
+        .includes(searchText) ||
+
+      item.franchise?.franchiseName
+        ?.toLowerCase()
+        .includes(searchText);
 
     const matchStatus =
-      statusFilter === "ALL" || item.status === statusFilter;
 
-    return matchSearch && matchStatus;
+      statusFilter === "ALL" ||
+      item.status === statusFilter;
+
+    return (
+      matchSearch &&
+      matchStatus
+    );
   });
 
   return (
@@ -168,6 +199,9 @@ const MasalaAdminProcess = () => {
 
             {/* Table */}
             <div className="table-responsive">
+
+              
+
               <table className="table table-hover table-bordered align-middle text-nowrap mb-0">
 
                 <thead className="table-light">
@@ -188,7 +222,19 @@ const MasalaAdminProcess = () => {
                 </thead>
 
                 <tbody>
-                  {filtered.length === 0 ? (
+                  { loading ? (
+
+                      <tr>
+                        <td
+                          colSpan="12"
+                          className="text-center py-5"
+                        >
+                          Loading requests...
+                        </td>
+                      </tr>
+
+                    ) :
+                    filtered.length === 0 ? (
                     <tr>
                       <td
                         colSpan="12"
@@ -199,51 +245,104 @@ const MasalaAdminProcess = () => {
                     </tr>
                   ) : (
                     filtered.map((row, index) => (
-                      <tr key={row.id}>
+                      <tr key={row._id}>
                         <td>{index + 1}</td>
                         <td>{row.requestId}</td>
-                        <td>{row.franchiseId}</td>
-                        <td>{row.franchiseName}</td>
-                        <td>{row.itemCount}</td>
+                        <td>{row.franchise?.franchiseId}</td>
+                        <td>
+                          {row.franchise?.franchiseName}
+                        </td>
+                        <td>
+                          {row.totalItems}
+                        </td>
                         <td>{row.totalQty}</td>
-                        <td>{row.requiredDate}</td>
+                        <td>
+                          {
+                            new Date(row.requiredDate)
+                              .toLocaleDateString()
+                          }
+                        </td>
                         <td>{priorityBadge(row.priority)}</td>
                         <td>{row.paymentOption}</td>
                         <td>{statusBadge(row.status)}</td>
-                        <td>{row.createdDate}</td>
+                        <td>
+                          {
+                            new Date(row.createdAt)
+                              .toLocaleDateString()
+                          }
+                        </td>
 
                         <td>
                           <div className="d-flex justify-content-center gap-2">
 
                             <Link
-                              to={`/manufacture-masala-admin-process/view/${row.id}`}
-                              state={{ rowData: row }}
+                              to={`/manufacture-masala-admin-process/view/${row._id}`}
+                              // state={{ rowData: row }}
                               className="btn btn-sm btn-outline-primary"
                               title="View"
                             >
                               <i className="bx bx-show"></i>
                             </Link>
 
-                            <button
-                              className="btn btn-sm btn-outline-success"
-                              title="Approve"
-                            >
-                              <i className="bx bx-check"></i>
-                            </button>
+                            {
+                              row.status === "REQUESTED" && (
 
-                            <button
-                              className="btn btn-sm btn-outline-info"
-                              title="Dispatch"
-                            >
-                              <i className="bx bx-send"></i>
-                            </button>
+                                <button
+                                  className="btn btn-sm btn-outline-success"
+                                  title="Approve"
+                                  onClick={() =>
+                                    handleStatusUpdate(
+                                      row._id,
+                                      "APPROVED",
+    row.requestId
+                                    )
+                                  }
+                                >
+                                  <i className="bx bx-check"></i>
+                                </button>
 
-                            <button
-                              className="btn btn-sm btn-outline-danger"
-                              title="Reject"
-                            >
-                              <i className="bx bx-x"></i>
-                            </button>
+                              )
+                            }
+
+                            {
+                              row.status === "APPROVED" && (
+
+                                <button
+                                  className="btn btn-sm btn-outline-info"
+                                  title="Dispatch"
+                                  onClick={() =>
+                                    handleStatusUpdate(
+                                      row._id,
+                                      "DISPATCHED",
+                                      row.requestId
+                                    )
+                                  }
+                                >
+                                  <i className="bx bx-send"></i>
+                                </button>
+
+                              )
+                            }
+
+                            {
+                              row.status === "REQUESTED" && (
+
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  title="Reject"
+                                  onClick={() =>
+                                    handleStatusUpdate(
+                                      row._id,
+                                      "REJECTED",
+                                      row.requestId
+                                    )
+                                  }
+                                >
+                                  <i className="bx bx-x"></i>
+                                </button>
+
+                              )
+                            }
 
                           </div>
                         </td>

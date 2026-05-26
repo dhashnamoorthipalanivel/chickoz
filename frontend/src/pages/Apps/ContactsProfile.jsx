@@ -9,8 +9,6 @@ const ContactsProfile = () => {
     fetchProfile();
   }, []);
 
-  console.log("Profile :", profile);
-  console.log("Franchise :", franchise)
 
   return (
     <React.Fragment>
@@ -120,7 +118,7 @@ const ContactsProfile = () => {
                       </a>
                     </li>
 
-                    <li className="nav-item">
+                    {/* <li className="nav-item">
                       <a
                         className="nav-link"
                         data-bs-toggle="tab"
@@ -128,7 +126,7 @@ const ContactsProfile = () => {
                       >
                         Work Info
                       </a>
-                    </li>
+                    </li> */}
 
                     <li className="nav-item">
                       <a
@@ -229,9 +227,9 @@ const ContactsProfile = () => {
                         }
                       </p>
 
-                      <hr />
+                      {/* <hr /> */}
 
-                      <h5 className="mb-3">
+                      {/* <h5 className="mb-3">
                         Module Access
                       </h5>
 
@@ -261,13 +259,13 @@ const ContactsProfile = () => {
                           Store
                         </span>
 
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </div>
 
                 {/* WORK INFO */}
-                <div
+                {/* <div
                   className="tab-pane"
                   id="work"
                 >
@@ -343,7 +341,7 @@ const ContactsProfile = () => {
 
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* SECURITY */}
                 <div

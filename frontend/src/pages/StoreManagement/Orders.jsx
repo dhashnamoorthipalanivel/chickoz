@@ -68,8 +68,8 @@ const Orders = () => {
   const paymentBadge = (status) => (
     <span
       className={`badge ${status === "Paid"
-          ? "bg-success"
-          : "bg-danger"
+        ? "bg-success"
+        : "bg-danger"
         }`}
     >
       {status}

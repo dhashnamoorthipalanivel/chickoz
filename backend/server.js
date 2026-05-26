@@ -41,6 +41,7 @@ app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 app.use("/api/enquiry", require("./routes/enquiryRoutes"))
 app.use("/api/lead", require("./routes/leadRoutes"))
 app.use("/api/kishok", require("./routes/kishokRoutes"));
+app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
 
 // Customer 
 app.use("/api/customers", require("./routes/customerRoutes"));

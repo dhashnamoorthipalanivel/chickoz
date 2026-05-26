@@ -50,137 +50,154 @@ const Franchise = require("../models/masterModels/franchiseModel");
 //   }
 // };
 
-exports.createCustomer =  async (req, res) => {
-        try {
-            const {
-                customerName,
-                mobile,
-                email,
-                franchiseId,
-            } = req.body;
+exports.createCustomer = async (req, res) => {
+  try {
+    const { customerName, mobile, email, franchiseId } = req.body;
 
-            // VALIDATION
-            if (
-                !customerName ||
-                !mobile ||
-                !franchiseId
-            ) {
-                return res.status(400).json({
-                    message:
-                        "Customer name, mobile and franchise are required",
-                });
-            }
+    // VALIDATION
+    if (!customerName || !mobile || !franchiseId) {
+      return res.status(400).json({
+        message: "Customer name, mobile and franchise are required",
+      });
+    }
 
-            // CHECK FRANCHISE
-            const franchise = await Franchise.findById(
-                    franchiseId
-                );
+    // CHECK FRANCHISE
+    const franchise = await Franchise.findById(franchiseId);
 
-            if (!franchise) {
-                return res.status(404).json({
-                    message:  "Franchise not found",
-                });
-            }
+    if (!franchise) {
+      return res.status(404).json({
+        message: "Franchise not found",
+      });
+    }
 
-            // CHECK GLOBAL CUSTOMER
-            let customer = await Customer.findOne({
-                    mobile,
-                });
+    // CHECK GLOBAL CUSTOMER
+    let customer = await Customer.findOne({
+      mobile,
+    });
 
-            // CREATE CUSTOMER IF NOT EXISTS
-            if (!customer) {
-                customer = await Customer.create({
-                        customerName,
-                        mobile,
-                        email,
-                    });
-            }
+    // CREATE CUSTOMER IF NOT EXISTS
+    if (!customer) {
+      customer = await Customer.create({
+        customerName,
+        mobile,
+        email,
+      });
+    }
 
-            // CHECK CUSTOMER ALREADY EXISTS
-            // IN THIS FRANCHISE
+    // CHECK CUSTOMER ALREADY EXISTS
+    // IN THIS FRANCHISE
 
-            const existingCustomerFranchise = await CustomerFranchise.findOne({
-                    customerId: customer._id,
-                    franchiseId,
-                });
+    const existingCustomerFranchise = await CustomerFranchise.findOne({
+      customerId: customer._id,
+      franchiseId,
+    });
 
-            if (
-                existingCustomerFranchise
-            ) {
-                return res.status(400).json({
-                    message: "Customer already exists in this franchise",
-                });
-            }
+    if (existingCustomerFranchise) {
+      return res.status(400).json({
+        message: "Customer already exists in this franchise",
+      });
+    }
 
-            // CREATE FRANCHISE MAPPING
-            await CustomerFranchise.create({
-                customerId:customer._id,
-                franchiseId,
-            });
+    // CREATE FRANCHISE MAPPING
+    await CustomerFranchise.create({
+      customerId: customer._id,
+      franchiseId,
+    });
 
-            res.status(201).json({
-                success: true,
-                message:"Customer created successfully",
-                customer,
-            });
-
-        } catch (error) {
-            console.log("CREATE CUSTOMER ERROR:", error.message);
-            res.status(500).json({
-                message:  error.message,
-            });
-        }
-    };
+    res.status(201).json({
+      success: true,
+      message: "Customer created successfully",
+      customer,
+    });
+  } catch (error) {
+    console.log("CREATE CUSTOMER ERROR:", error.message);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
 // GET CUSTOMER BY MOBILE
 exports.getCustomerByMobile = async (req, res) => {
-        try {
-            const {
-                mobile,
-                franchiseId,
-            } = req.params;
+  try {
+    const { mobile, franchiseId } = req.params;
 
-            // FIND CUSTOMER
-            const customer = await Customer.findOne({
-                    mobile,
-                });
+    // FIND CUSTOMER
+    const customer = await Customer.findOne({
+      mobile,
+    });
 
-            // NO GLOBAL CUSTOMER
-            if (!customer) {
-                return res.status(404).json({
-                    message: "Customer not found",
-                });
-            }
+    // NO GLOBAL CUSTOMER
+    if (!customer) {
+      return res.status(404).json({
+        message: "Customer not found",
+      });
+    }
 
-            // CHECK CUSTOMER
-            // INSIDE FRANCHISE
-            const customerFranchise = await CustomerFranchise.findOne({
-                    customerId: customer._id,
-                    franchiseId,
-                });
+    // CHECK CUSTOMER
+    // INSIDE FRANCHISE
+    const customerFranchise = await CustomerFranchise.findOne({
+      customerId: customer._id,
+      franchiseId,
+    });
 
-            // NOT FOUND
-            // IN THIS FRANCHISE
+    // NOT FOUND
+    // IN THIS FRANCHISE
 
-            if (!customerFranchise) {
-                return res.status(404).json({
-                    message:"Customer not found in this franchise",
-                });
-            }
+    if (!customerFranchise) {
+      return res.status(404).json({
+        message: "Customer not found in this franchise",
+      });
+    }
 
-            // SUCCESS
-            res.status(200).json({
-                success: true,
-                customer,
-            });
+    // SUCCESS
+    res.status(200).json({
+      success: true,
+      customer,
+    });
+  } catch (error) {
+    console.log("GET CUSTOMER ERROR:", error.message);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
 
-        } catch (error) {
-            console.log(
-                "GET CUSTOMER ERROR:",
-                error.message
+exports.getFranchiseCustomers =
+    async (req, res) => {
+
+    try {
+
+        const { franchiseId } =
+            req.params;
+
+        const mappings =
+            await CustomerFranchise
+                .find({
+                    franchiseId
+                })
+                .populate(
+                    "customerId"
+                );
+
+        const customers =
+            mappings.map(
+                (item) =>
+                    item.customerId
             );
-            res.status(500).json({
-                message:error.message,
-            });
-        }
-    };
+
+        res.status(200).json({
+
+            success: true,
+
+            customers,
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            message:
+                error.message
+        });
+    }
+};

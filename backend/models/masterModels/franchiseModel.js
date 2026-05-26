@@ -133,19 +133,19 @@ const franchiseSchema = new mongoose.Schema(
     },
 
     inviteCount: {
-   type: Number,
-   default: 0,
-},
+      type: Number,
+      default: 0,
+    },
 
-passwordSetupAt: {
-   type: Date,
-   default: null,
-},
+    passwordSetupAt: {
+      type: Date,
+      default: null,
+    },
 
-isLoginEnabled: {
-   type: Boolean,
-   default: true,
-},
+    isLoginEnabled: {
+      type: Boolean,
+      default: true,
+    },
     assignedMenus: [
       {
         menuId: {

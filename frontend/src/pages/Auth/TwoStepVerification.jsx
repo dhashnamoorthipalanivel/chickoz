@@ -12,9 +12,6 @@ const AuthTwoStepVerification = () => {
     const { verifyChangePasswordOtp, clearProfile, } = useAuthStore();
 
     const handleVerify = async () => {
-
-        console.log("Verification button clicked");
-
         setLoading(true);
         try {
             const otpValue = code.join("");
@@ -24,13 +21,9 @@ const AuthTwoStepVerification = () => {
                 return;
             }
 
-            console.log("CALLING VERIFY API");
-
             const response = await verifyChangePasswordOtp({
                 otp: code.join(""),
             })
-
-            console.log("VERIFY RESPONSE:",response);
 
             toast.success(response.message);
 

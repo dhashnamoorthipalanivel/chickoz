@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMasalaRequestStore } from "../../../store/store";
+import { useEffect } from "react";
 
 const initialData = [
   {
@@ -56,11 +58,10 @@ const statusBadge = (status) => {
 const priorityBadge = (priority) => {
   return (
     <span
-      className={`badge ${
-        priority === "Urgent"
-          ? "bg-danger"
-          : "bg-warning text-dark"
-      }`}
+      className={`badge ${priority === "Urgent"
+        ? "bg-danger"
+        : "bg-warning text-dark"
+        }`}
     >
       {priority}
     </span>
@@ -71,16 +72,42 @@ const MasalaFranchiseRequest = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const filtered = initialData.filter((item) => {
+  const { requests, fetchMyRequests, loading } = useMasalaRequestStore();
+
+  console.log("Request :", requests)
+
+  useEffect(() => {
+    fetchMyRequests();
+  }, [])
+
+  const filtered = requests.filter((item) => {
+
+    const searchText =
+      search.toLowerCase();
+
     const matchSearch =
-      item.requestId.toLowerCase().includes(search.toLowerCase()) ||
-      item.franchiseId.toLowerCase().includes(search.toLowerCase()) ||
-      item.franchiseName.toLowerCase().includes(search.toLowerCase());
+
+      item.requestId
+        ?.toLowerCase()
+        .includes(searchText) ||
+
+      item.franchise?.franchiseId
+        ?.toString()
+        .toLowerCase()
+        .includes(searchText) ||
+
+      item.franchise?.franchiseName
+        ?.toLowerCase()
+        .includes(searchText);
 
     const matchStatus =
-      statusFilter === "ALL" || item.status === statusFilter;
+      statusFilter === "ALL" ||
+      item.status === statusFilter;
 
-    return matchSearch && matchStatus;
+    return (
+      matchSearch &&
+      matchStatus
+    );
   });
 
   return (
@@ -166,6 +193,9 @@ const MasalaFranchiseRequest = () => {
 
             {/* Table */}
             <div className="table-responsive">
+
+
+
               <table className="table table-hover table-bordered align-middle text-nowrap mb-0">
 
                 <thead className="table-light">
@@ -186,57 +216,104 @@ const MasalaFranchiseRequest = () => {
                 </thead>
 
                 <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan="12"
-                        className="text-center py-5 text-muted"
-                      >
-                        No request records found.
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((row, index) => (
-                      <tr key={row.id}>
-                        <td>{index + 1}</td>
-                        <td>{row.requestId}</td>
-                        <td>{row.franchiseId}</td>
-                        <td>{row.franchiseName}</td>
-                        <td>{row.itemCount}</td>
-                        <td>{row.totalQty}</td>
-                        <td>{row.requiredDate}</td>
-                        <td>{priorityBadge(row.priority)}</td>
-                        <td>{row.paymentOption}</td>
-                        <td>{statusBadge(row.status)}</td>
-                        <td>{row.createdDate}</td>
 
-                        <td>
-                          <div className="d-flex justify-content-center gap-2">
+                  {
+                    loading ? (
 
-                            <Link
-                              to={`/masala/franchise-request/view/${row.id}`}
-                              state={{ rowData: row }}
-                              className="btn btn-sm btn-outline-primary"
-                              title="View"
-                            >
-                              <i className="bx bx-show"></i>
-                            </Link>
-
-                            <Link
-                              to={`/manufacture-masala-franchise-request/edit/${row.id}`}
-                              state={{ rowData: row }}
-                              className="btn btn-sm btn-outline-warning"
-                              title="Edit"
-                            >
-                              <i className="bx bx-edit"></i>
-                            </Link>
-
-                          </div>
+                      <tr>
+                        <td
+                          colSpan="12"
+                          className="text-center py-5"
+                        >
+                          Loading requests...
                         </td>
-
                       </tr>
-                    ))
-                  )}
+
+                    ) : filtered.length === 0 ? (
+
+                      <tr>
+                        <td
+                          colSpan="12"
+                          className="text-center py-5 text-muted"
+                        >
+                          No request records found.
+                        </td>
+                      </tr>
+
+                    ) : (
+
+                      filtered.map((row, index) => (
+                        <tr key={row._id}>
+
+                          <td>{index + 1}</td>
+
+                          <td>{row.requestId}</td>
+
+                          <td>
+                            {row.franchise?.franchiseId}
+                          </td>
+
+                          <td>
+                            {row.franchise?.franchiseName}
+                          </td>
+
+                          <td>{row.totalItems}</td>
+
+                          <td>{row.totalQty}</td>
+
+                          <td>
+                            {
+                              new Date(row.requiredDate)
+                                .toLocaleDateString()
+                            }
+                          </td>
+
+                          <td>
+                            {priorityBadge(row.priority)}
+                          </td>
+
+                          <td>{row.paymentOption}</td>
+
+                          <td>
+                            {statusBadge(row.status)}
+                          </td>
+
+                          <td>
+                            {
+                              new Date(row.createdAt)
+                                .toLocaleDateString()
+                            }
+                          </td>
+
+                          <td>
+                            <div className="d-flex justify-content-center gap-2">
+
+                              <Link
+                                to={`/manufacture-masala-franchise-request/view/${row._id}`}
+                                state={{ rowData: row }}
+                                className="btn btn-sm btn-outline-primary"
+                                title="View"
+                              >
+                                <i className="bx bx-show"></i>
+                              </Link>
+
+                              <Link
+                                to={`/manufacture-masala-franchise-request/edit/${row._id}`}
+                                state={{ rowData: row }}
+                                className="btn btn-sm btn-outline-warning"
+                                title="Edit"
+                              >
+                                <i className="bx bx-edit"></i>
+                              </Link>
+
+                            </div>
+                          </td>
+
+                        </tr>
+                      ))
+                    )
+                  }
+
                 </tbody>
 
               </table>

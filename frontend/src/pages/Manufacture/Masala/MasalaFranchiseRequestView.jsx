@@ -1,40 +1,26 @@
-// ======================================================
-// MasalaAdminProcessView.jsx
-// FULL UPDATED PROFESSIONAL CODE
-// ======================================================
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 
 import {
     Link,
+    useNavigate,
     useParams,
 } from "react-router-dom";
 
-import { toast } from "react-toastify";
-
 import { useMasalaRequestStore } from "../../../store/store";
 
-const MasalaAdminProcessView = () => {
+const MasalaFranchiseRequestView = () => {
 
     const { id } = useParams();
-
-    const [adminRemarks, setAdminRemarks] =
-        useState("");
-
-    const [selectedStatus, setSelectedStatus] =
-        useState("");
-
-
+    const navigate = useNavigate();
 
     const {
         singleRequest,
         fetchSingleRequest,
-        updateRequestStatus,
         loading,
     } = useMasalaRequestStore();
 
     // ======================================================
-    // FETCH DATA
+    // FETCH REQUEST
     // ======================================================
 
     useEffect(() => {
@@ -46,18 +32,9 @@ const MasalaAdminProcessView = () => {
 
     }, [id]);
 
+    // const data = singleRequest;
 
-    const data = singleRequest;
-    useEffect(() => {
-
-        if (data?.status) {
-
-            setSelectedStatus(
-                data.status
-            );
-        }
-
-    }, [data]);
+    const data ;
 
     // ======================================================
     // LOADING
@@ -66,8 +43,11 @@ const MasalaAdminProcessView = () => {
     if (loading || !data) {
 
         return (
+
             <div className="text-center py-5">
+
                 Loading...
+
             </div>
         );
     }
@@ -106,61 +86,6 @@ const MasalaAdminProcessView = () => {
             ? "bg-danger"
             : "bg-warning text-dark";
 
-    // ======================================================
-    // UPDATE STATUS
-    // ======================================================
-
-    const handleStatusUpdate = async () => {
-
-        if (!selectedStatus) {
-
-            toast.error(
-                "Please select status"
-            );
-
-            return;
-        }
-
-        try {
-
-            const payload = {
-
-                status:
-                    selectedStatus,
-
-                adminRemarks,
-            };
-
-            const response =
-                await updateRequestStatus(
-                    id,
-                    payload
-                );
-
-            if (response.success) {
-
-                toast.success(
-                    `${data.requestId} moved to ${formatLabel(selectedStatus)} successfully`
-                );
-
-                fetchSingleRequest(id);
-
-                setAdminRemarks("");
-
-                setSelectedStatus("");
-            }
-
-        } catch (error) {
-
-            console.log(error);
-
-            toast.error(
-                error?.response?.data?.message ||
-                "Failed to update status"
-            );
-        }
-    };
-
     return (
 
         <div className="page-content">
@@ -178,8 +103,26 @@ const MasalaAdminProcessView = () => {
                         <div className="page-title-box d-sm-flex align-items-center justify-content-between">
 
                             <h4 className="mb-sm-0 font-size-18">
-                                Admin Process View
+
+                                Franchise Request View
+
                             </h4>
+
+                            <div>
+
+    <button
+        type="button"
+        className="btn btn-light border d-flex align-items-center gap-1"
+        onClick={() => navigate(-1)}
+    >
+
+        <i className="bx bx-arrow-back"></i>
+
+        Back
+
+    </button>
+
+</div>
 
                             <div className="page-title-right">
 
@@ -195,8 +138,8 @@ const MasalaAdminProcessView = () => {
 
                                     <li className="breadcrumb-item">
 
-                                        <Link to="/manufacture-masala-admin-process">
-                                            Admin Process
+                                        <Link to="/manufacture-masala-franchise-request">
+                                            Franchise Requests
                                         </Link>
 
                                     </li>
@@ -239,6 +182,7 @@ const MasalaAdminProcessView = () => {
 
                                     Request ID :
                                     {" "}
+
                                     <strong>
                                         {data.requestId}
                                     </strong>
@@ -279,10 +223,6 @@ const MasalaAdminProcessView = () => {
                     </div>
 
                 </div>
-
-                {/* ====================================================== */}
-                {/* MAIN */}
-                {/* ====================================================== */}
 
                 <div className="row">
 
@@ -609,7 +549,7 @@ const MasalaAdminProcessView = () => {
                         </div>
 
                         {/* ====================================================== */}
-                        {/* PROCESS PANEL */}
+                        {/* ADMIN REMARKS */}
                         {/* ====================================================== */}
 
                         <div className="card">
@@ -617,114 +557,101 @@ const MasalaAdminProcessView = () => {
                             <div className="card-header">
 
                                 <h5 className="mb-0">
-                                    Process Request
+                                    Admin Remarks
                                 </h5>
 
                             </div>
 
                             <div className="card-body">
 
-                                {/* STATUS */}
+                                <p className="mb-0 text-muted">
 
-                                <div className="mb-3">
+                                    {data.adminRemarks || "-"}
 
-                                    <label className="form-label">
-                                        Update Status
-                                    </label>
-
-                                    <select
-                                        className="form-select"
-                                        value={selectedStatus}
-                                        onChange={(e) =>
-                                            setSelectedStatus(
-                                                e.target.value
-                                            )
-                                        }
-                                    >
-
-                                        <option value="">
-                                            Select Status
-                                        </option>
-
-                                        <option value="UNDER_REVIEW">
-                                            Under Review
-                                        </option>
-
-                                        <option value="APPROVED">
-                                            Approved
-                                        </option>
-
-                                        <option value="PROCESSING">
-                                            Processing
-                                        </option>
-
-                                        <option value="DISPATCHED">
-                                            Dispatched
-                                        </option>
-
-                                        <option value="DELIVERED">
-                                            Delivered
-                                        </option>
-
-                                        <option value="REJECTED">
-                                            Rejected
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-                                {/* REMARKS */}
-
-                                <div className="mb-3">
-
-                                    <label className="form-label">
-                                        Admin Remarks
-                                    </label>
-
-                                    <textarea
-                                        rows="4"
-                                        className="form-control"
-                                        placeholder="Enter remarks..."
-                                        value={adminRemarks}
-                                        onChange={(e) =>
-                                            setAdminRemarks(
-                                                e.target.value
-                                            )
-                                        }
-                                    ></textarea>
-
-                                </div>
-
-                                {/* BUTTON */}
-
-                                <div className="d-grid gap-2">
-
-                                    <button
-                                        className="btn btn-primary"
-                                        onClick={
-                                            handleStatusUpdate
-                                        }
-                                    >
-
-                                        <i className="bx bx-check-circle me-1"></i>
-
-                                        Update Status
-
-                                    </button>
-
-                                    <Link
-                                        to="/manufacture-masala-admin-process"
-                                        className="btn btn-light border"
-                                    >
-                                        Back to List
-                                    </Link>
-
-                                </div>
+                                </p>
 
                             </div>
 
                         </div>
+
+                        {/* ====================================================== */}
+                        {/* DISPATCH DETAILS */}
+                        {/* ====================================================== */}
+
+                        {
+                            data.status === "DISPATCHED" && (
+
+                                <div className="card">
+
+                                    <div className="card-header">
+
+                                        <h5 className="mb-0">
+                                            Dispatch Details
+                                        </h5>
+
+                                    </div>
+
+                                    <div className="card-body">
+
+                                        <div className="mb-3">
+
+                                            <small className="text-muted">
+                                                Transport Name
+                                            </small>
+
+                                            <div>
+                                                {data.transportName || "-"}
+                                            </div>
+
+                                        </div>
+
+                                        <div className="mb-3">
+
+                                            <small className="text-muted">
+                                                Tracking Number
+                                            </small>
+
+                                            <div>
+                                                {data.trackingNumber || "-"}
+                                            </div>
+
+                                        </div>
+
+                                        <div className="mb-3">
+
+                                            <small className="text-muted">
+                                                Dispatch Remarks
+                                            </small>
+
+                                            <div>
+                                                {data.dispatchRemarks || "-"}
+                                            </div>
+
+                                        </div>
+
+                                        <div>
+
+                                            <small className="text-muted">
+                                                Dispatch Date
+                                            </small>
+
+                                            <div>
+
+                                                {
+                                                    new Date(
+                                                        data.dispatchedDate
+                                                    ).toLocaleString()
+                                                }
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            )
+                        }
 
                         {/* ====================================================== */}
                         {/* STATUS TIMELINE */}
@@ -787,19 +714,28 @@ const MasalaAdminProcessView = () => {
                                                 </div>
                                             )
                                         )
+
                                     ) : (
+
                                         <div className="text-muted">
                                             No history available
                                         </div>
+
                                     )
                                 }
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
     );
 };
 
-export default MasalaAdminProcessView;
+export default MasalaFranchiseRequestView;

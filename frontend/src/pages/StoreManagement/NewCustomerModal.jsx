@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useCustomerStore } from "../../store/store";
 import { toast } from "react-toastify";
 
-const NewCustomerModal = ({ show, onClose,franchiseId,onCustomerCreated, }) => {
+const NewCustomerModal = ({ show, onClose, franchiseId, onCustomerCreated, }) => {
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -30,50 +30,50 @@ const NewCustomerModal = ({ show, onClose,franchiseId,onCustomerCreated, }) => {
   };
 
   const handleSave = async () => {
-      try {
-        // VALIDATION
-        if (!form.name ||!form.phone ) {
-          alert( "Name and phone are required" );
-          return;
-        }
+    try {
+      // VALIDATION
+      if (!form.name || !form.phone) {
+        toast.error("Name and phone are required");
+        return;
+      }
 
-        // API PAYLOAD
-        const payload = {
-          customerName: form.name,
-          mobile:form.phone,
-          email:form.email,
-          franchiseId,
-        };
-
-        // CREATE CUSTOMER
-        await createCustomer( payload);
-
-        if (onCustomerCreated) {
-    onCustomerCreated({
-        customerName:form.name,
+      // API PAYLOAD
+      const payload = {
+        customerName: form.name,
         mobile: form.phone,
         email: form.email,
-    });
-}
+        franchiseId,
+      };
 
-        alert("Customer created successfully");
+      // CREATE CUSTOMER
+      await createCustomer(payload);
 
-        // RESET
-        setForm({
-          name: "",
-          email: "",
-          phone: "",
+      if (onCustomerCreated) {
+        onCustomerCreated({
+          customerName: form.name,
+          mobile: form.phone,
+          email: form.email,
         });
-
-        onClose();
-
-      } catch (error) {
-        console.log(error);
-        toast.error(
-          error?.response?.data?.message || "Failed to create customer"
-        );
       }
-    };
+
+      toast.success ("Customer created successfully");
+
+      // RESET
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+      });
+
+      onClose();
+
+    } catch (error) {
+      console.log(error);
+      toast.error(
+        error?.response?.data?.message || "Failed to create customer"
+      );
+    }
+  };
 
   return (
     <div className="modal fade show d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,0.5)" }}>

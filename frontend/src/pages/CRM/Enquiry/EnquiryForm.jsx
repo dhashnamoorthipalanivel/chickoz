@@ -256,14 +256,11 @@ const EnquiryForm = () => {
                 remarks: form.remarks,
             };
 
-            console.log("payload: ", payload)
-
             // 🔥 CALL ZUSTAND
 
             if (mode === "add") {
                 const response = await createEnquiry(payload);
                 toast.success("Enquiry created successfully");
-                console.log("response : ", response);
             } else {
                 const response = await updateEnquiry(initialData._id, payload);
                 toast.success("Enquiry updated successfully");

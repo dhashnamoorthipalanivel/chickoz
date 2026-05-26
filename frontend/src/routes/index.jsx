@@ -126,6 +126,7 @@ import MasalaItemsForm from '../pages/Master/MasalaItems/MasalaItemsForm';
 import FranchiseForm from '../pages/Master/Franchise/FranchiseForm';
 import SetUpPassword from '../pages/Auth/SetUpPassword';
 import ChangePassword from '../pages/Auth/ChangePassword';
+import MasalaFranchiseRequestView from '../pages/Manufacture/Masala/masalaFranchiseRequestView';
 
 
 // Full-page auth/error routes (no layout)
@@ -338,6 +339,7 @@ const AppRoutes = () => {
       <Route path="/manufacture-masala-admin-process" element={<W><MasalaAdminProcess /></W>} />
       <Route path="/manufacture-masala-franchise-request/add" element={<W><MasalaFranchiseRequestForm /></W>} />
       <Route path="/manufacture-masala-franchise-request/edit/:id" element={<W><MasalaFranchiseRequestForm /></W>} />
+      <Route path="/manufacture-masala-franchise-request/view/:id" element={<W><MasalaFranchiseRequestView /></W>} />
       <Route path="/manufacture-masala-admin-process/view/:id" element={<W><MasalaAdminProcessView /></W>} />
 
       {/* Store Management */}

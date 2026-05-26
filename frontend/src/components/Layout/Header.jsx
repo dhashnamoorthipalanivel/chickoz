@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as Feather from 'react-feather';
 import { useTheme } from '../../context/ThemeContext';
@@ -17,7 +17,31 @@ const Header = ({ toggleSidebar }) => {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const {clearProfile} = useAuthStore();
+  const { clearProfile } = useAuthStore();
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Date and time 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formattedTime = currentTime.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  const formattedDate = currentTime.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 
   const handleLogOut = async () => {
     try {
@@ -103,6 +127,42 @@ const Header = ({ toggleSidebar }) => {
                 </div>
               </form>
             </div>
+          </div>
+
+          {/* Live Date & Time */}
+          {/* Live Date & Time */}
+          <div className="d-none d-lg-flex align-items-center me-3 gap-3">
+
+            {/* Time */}
+            <div className="d-flex align-items-center gap-1">
+              <Feather.Clock size={16} className="text-primary" />
+
+              <span
+                style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: layoutMode === 'light' ? '#2d3748' : '#e2e8f0'
+                }}
+              >
+                {formattedTime}
+              </span>
+            </div>
+
+            {/* Date */}
+            <div className="d-flex align-items-center gap-1">
+              <Feather.Calendar size={16} className="text-primary" />
+
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: layoutMode === 'light' ? '#718096' : '#94a3b8'
+                }}
+              >
+                {formattedDate}
+              </span>
+            </div>
+
           </div>
 
           {/* Theme Toggle Button */}

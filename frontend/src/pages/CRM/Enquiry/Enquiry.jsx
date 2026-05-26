@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useEnquiryStore } from "../../../store/store";
+import { toast } from "react-toastify";
 
 const formatLabel = (value) => {
   if (!value) return "";
@@ -136,9 +137,20 @@ const [convertId, setConvertId] =
 
     try {
 
-      await convertToLead(convertId);
+      const enquiryData =
+        enquiries.find(
+          (item) =>
+            item._id === convertId
+        );
+
+      const response =
+        await convertToLead(convertId);
 
       await fetchEnquiries();
+
+      toast.success(
+        `${enquiryData?.referenceId} enquiry converted to lead successfully`
+      );
 
       setShowConvertModal(false);
 
@@ -147,6 +159,11 @@ const [convertId, setConvertId] =
     } catch (error) {
 
       console.log(error);
+
+      toast.error(
+        error?.response?.data?.message ||
+        "Failed to convert enquiry"
+      );
     }
   };
 

@@ -17,3 +17,9 @@ export const getCustomerByMobileApi = async (mobile, franchiseId) => {
 
   return response.data;
 };
+
+export const getFranchiseCustomersApi = async (franchiseId) => {
+  const response = await API.get(`/franchise/${franchiseId}`);
+
+  return response.data;
+};

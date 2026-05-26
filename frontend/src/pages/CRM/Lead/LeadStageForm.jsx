@@ -319,11 +319,12 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
 
                                 <input type="date" name="visitDate" className="form-control"
                                     value={
-                                        stageData.visitDate
-                                            ? String(stageData.visitDate)
-                                                .split("T")[0]
-                                            : ""
-                                    } onChange={handleChange} />
+  stageData.visitDate
+    ? new Date(stageData.visitDate)
+        .toISOString()
+        .split("T")[0]
+    : ""
+} onChange={handleChange} />
                             </div>
 
                             <div className="col-md-6">

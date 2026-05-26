@@ -65,7 +65,20 @@ import {
   updateAssignedMenus,
   updateMenuVisibility,
 } from "../api/franchiseMenuApi";
-import { getMe, sendChangePasswordOtpApi, verifyChangePasswordOtpApi } from "../api/authAPI";
+import {
+  getMe,
+  sendChangePasswordOtpApi,
+  verifyChangePasswordOtpApi,
+} from "../api/authAPI";
+import {
+  createMasalaRequest,
+  getAllMasalaRequests,
+  getMyMasalaRequests,
+  getSingleMasalaRequest,
+  updateMasalaRequest,
+  updateMasalaRequestStatus,
+} from "../api/masalaRequestApi";
+import { createCustomerApi, getCustomerByMobileApi, getFranchiseCustomersApi } from "../api/customerApi";
 
 // Package
 export const usePackageStore = create((set) => ({
@@ -665,9 +678,10 @@ export const useAuthStore = create((set) => ({
   franchise: null,
   loading: false,
 
-  clearProfile: () => set({
-        profile: null,
-        franchise: null,
+  clearProfile: () =>
+    set({
+      profile: null,
+      franchise: null,
     }),
 
   fetchProfile: async () => {
@@ -703,11 +717,9 @@ export const useAuthStore = create((set) => ({
   },
 
   verifyChangePasswordOtp: async (payload) => {
-
     try {
       const response = await verifyChangePasswordOtpApi(payload);
       return response;
-
     } catch (error) {
       throw error;
     }
@@ -763,6 +775,184 @@ export const useCustomerStore = create((set) => ({
       set({
         customer: null,
         customerLoading: false,
+      });
+
+      throw error;
+    }
+  },
+
+  getFranchiseCustomers: async (franchiseId) => {
+
+    const response = await getFranchiseCustomersApi(
+            franchiseId
+        );
+
+    return response.customers;
+},
+
+}));
+
+// Masala request
+// ======================================================
+// MASALA REQUEST STORE
+// ======================================================
+
+export const useMasalaRequestStore = create((set) => ({
+  requests: [],
+
+  singleRequest: null,
+
+  loading: false,
+
+  // ======================================================
+  // CREATE REQUEST
+  // ======================================================
+  createRequest: async (payload) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await createMasalaRequest(payload);
+
+      set({
+        loading: false,
+      });
+
+      return res.data;
+    } catch (error) {
+      set({
+        loading: false,
+      });
+
+      console.log(error);
+
+      throw error;
+    }
+  },
+
+  // ======================================================
+  // GET MY REQUESTS
+  // ======================================================
+  fetchMyRequests: async () => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await getMyMasalaRequests();
+
+      set({
+        requests: res.data.data,
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ======================================================
+  // GET SINGLE REQUEST
+  // ======================================================
+  fetchSingleRequest: async (id) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await getSingleMasalaRequest(id);
+
+      set({
+        singleRequest: res.data.data,
+        loading: false,
+      });
+
+      return res.data;
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ======================================================
+  // ADMIN GET ALL REQUESTS
+  // ======================================================
+  fetchAllRequests: async (params) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await getAllMasalaRequests(params);
+
+      set({
+        requests: res.data.data,
+        loading: false,
+      });
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+    }
+  },
+
+  // ======================================================
+  // UPDATE REQUEST
+  // ======================================================
+  editRequest: async (id, payload) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await updateMasalaRequest(id, payload);
+
+      set({
+        loading: false,
+      });
+
+      return res.data;
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
+      });
+
+      throw error;
+    }
+  },
+
+  // ======================================================
+  // ADMIN UPDATE STATUS
+  // ======================================================
+  updateRequestStatus: async (id, payload) => {
+    try {
+      set({
+        loading: true,
+      });
+
+      const res = await updateMasalaRequestStatus(id, payload);
+
+      set({
+        loading: false,
+      });
+
+      return res.data;
+    } catch (error) {
+      console.log(error);
+
+      set({
+        loading: false,
       });
 
       throw error;

@@ -39,11 +39,10 @@ const OrdersView = () => {
 
   const paymentBadge = (status) => (
     <span
-      className={`badge ${
-        status === "Paid"
+      className={`badge ${status === "Paid"
           ? "bg-success"
           : "bg-danger"
-      }`}
+        }`}
     >
       {status}
     </span>

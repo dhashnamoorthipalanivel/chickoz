@@ -7,6 +7,7 @@ import * as Feather from 'react-feather';
 
 const Sidebar = () => {
   const menuRef = useRef(null);
+  const metisMenuRef = useRef(null);
   const location = useLocation();
 
   // Fetch the role 
@@ -21,57 +22,88 @@ const Sidebar = () => {
 
 
   useEffect(() => {
-    const pathName = location.pathname;
 
-    // Clear ALL active/show classes first so no stale highlights remain
-    menuRef.current?.querySelectorAll('li').forEach(li => {
-      li.classList.remove('mm-active');
-    });
-    menuRef.current?.querySelectorAll('ul.sub-menu').forEach(ul => {
-      ul.classList.remove('mm-show');
-    });
-    menuRef.current?.querySelectorAll('a').forEach(a => {
-      a.classList.remove('active');
+  // initialize only once
+  if (!metisMenuRef.current) {
+
+    metisMenuRef.current =
+      new MetisMenu("#side-menu");
+  }
+
+  const pathName =
+    location.pathname;
+
+  // clear old states
+  menuRef.current
+    ?.querySelectorAll(".mm-active")
+    .forEach((el) => {
+      el.classList.remove("mm-active");
     });
 
-    // Now set active only on the exact match
-    menuRef.current?.querySelectorAll('a').forEach((item) => {
-      const href = item.getAttribute('href');
-      const isExactMatch = href === pathName || (pathName === '/' && href === '/');
-      if (isExactMatch) {
-        item.classList.add('active');
-        let parent = item.parentElement; // li
-        if (parent) {
-          parent.classList.add('mm-active');
-          let parent2 = parent.parentElement; // ul.sub-menu
-          if (parent2) {
-            parent2.classList.add('mm-show');
-            let parent3 = parent2.parentElement; // li (parent menu item)
-            if (parent3) {
-              parent3.classList.add('mm-active');
-              let parent4 = parent3.parentElement; // ul.sub-menu (nested)
-              if (parent4) {
-                parent4.classList.add('mm-show');
-                let parent5 = parent4.parentElement; // li (top group)
-                if (parent5) {
-                  parent5.classList.add('mm-active');
-                }
-              }
-            }
-          }
-        }
+  menuRef.current
+    ?.querySelectorAll(".mm-show")
+    .forEach((el) => {
+      el.classList.remove("mm-show");
+    });
+
+  menuRef.current
+    ?.querySelectorAll(".active")
+    .forEach((el) => {
+      el.classList.remove("active");
+    });
+
+  // activate current route
+  const activeLink =
+    menuRef.current?.querySelector(
+      `a[href="${pathName}"]`
+    );
+
+  if (activeLink) {
+
+    activeLink.classList.add(
+      "active"
+    );
+
+    let parent =
+      activeLink.parentElement;
+
+    while (parent) {
+
+      if (parent.tagName === "LI") {
+
+        parent.classList.add(
+          "mm-active"
+        );
       }
-    });
 
-    let menu = new MetisMenu('#side-menu');
+      if (parent.tagName === "UL") {
 
-    return () => {
-      if (menu) {
-        menu.dispose();
+        parent.classList.add(
+          "mm-show"
+        );
       }
-    };
 
-  }, [location.pathname]);
+      parent =
+        parent.parentElement;
+    }
+  }
+
+}, [location.pathname]);
+
+
+useEffect(() => {
+
+  return () => {
+
+    if (metisMenuRef.current) {
+
+      metisMenuRef.current.dispose();
+
+      metisMenuRef.current = null;
+    }
+  };
+
+}, []);
 
   return (
     <div className="vertical-menu">

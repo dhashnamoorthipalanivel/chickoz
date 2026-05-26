@@ -25,6 +25,14 @@ const KishokView = () => {
 
           : "bg-secondary";
 
+          const formatLabel = (value) =>
+        value
+            ?.toLowerCase()
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) =>
+                c.toUpperCase()
+            );
+
   return (
     <div className="page-content">
       <div className="container-fluid">
@@ -67,7 +75,7 @@ const KishokView = () => {
 
               <div className="text-end">
                 <span className={`badge ${badgeClass} fs-6`}>
-                  {data.manufactureStatus?.replace("_", " ")}
+                  {formatLabel(data.manufactureStatus?.replace("_", " "))}
                 </span>
               </div>
 
@@ -210,7 +218,7 @@ const KishokView = () => {
                   <label className="form-label text-muted">
                     Production Status
                   </label>
-                  <div>{data.manufactureStatus}</div>
+                  <div>{formatLabel(data.manufactureStatus)}</div>
                 </div>
 
                 <div>

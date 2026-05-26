@@ -2,22 +2,23 @@ import React, { useEffect, useMemo, useState } from "react";
 import ProductDetailModal from "./ProductDetailModal";
 import NewCustomerModal from "./NewCustomerModal";
 import { useAuthStore, useCustomerStore, useFranchiseMenuStore } from "../../store/store";
+import Select from "react-select";
 
-const customers = [
-    { id: 1, name: "Walk In Customer", phone: "" },
-    { id: 2, name: "Arun Kumar", phone: "9876543210" },
-    { id: 3, name: "Suresh", phone: "9123456780" },
-];
 
 const Billing = () => {
 
-    const { franchise } = useAuthStore();
+    const { franchise, fetchProfile, profile } = useAuthStore();
     const { menus, fetchMyMenus } = useFranchiseMenuStore();
-    const { getCustomerByMobile } = useCustomerStore();
+    const { getCustomerByMobile, getFranchiseCustomers } = useCustomerStore();
 
     const [selectedCategory, setSelectedCategory] = useState("All");
 
     const [search, setSearch] = useState("");
+
+    useEffect(() => {
+        console.log("Franchise : ", franchise);
+        console.log("Profile :", profile);
+    }, [franchise])
 
     // const [selectedCustomer, setSelectedCustomer] = useState("Walk In Customer");
 
@@ -27,8 +28,7 @@ const Billing = () => {
     const [mobileNumber, setMobileNumber] = useState("");
 
     const [selectedCustomer, setSelectedCustomer] = useState(null);
-
-
+    const [customers, setCustomers] = useState([]);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
     const [showProductModal, setShowProductModal] = useState(false);
@@ -37,6 +37,14 @@ const Billing = () => {
 
     const [loadingMenus, setLoadingMenus] = useState(true);
     const [showBillPreview, setShowBillPreview] = useState(false);
+
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            await fetchProfile();
+        };
+        loadProfile();
+    }, []);
 
     useEffect(() => {
         const loadMenus = async () => {
@@ -53,6 +61,39 @@ const Billing = () => {
         };
         loadMenus();
     }, []);
+
+    useEffect(() => {
+
+    const loadCustomers =
+        async () => {
+
+        try {
+
+            const currentFranchiseId =
+
+                franchise?._id ||
+
+                franchise?.franchise?._id;
+
+            if (!currentFranchiseId)
+                return;
+
+            const response =
+                await getFranchiseCustomers(
+                    currentFranchiseId
+                );
+
+            setCustomers(response);
+
+        } catch (error) {
+
+            console.log(error);
+        }
+    };
+
+    loadCustomers();
+
+}, [franchise]);
 
     const billingMenus = menus.filter(
         (item) =>
@@ -170,6 +211,12 @@ const Billing = () => {
                 return;
             }
 
+            console.log(
+                "SEARCH FRANCHISE ID : ",
+                franchise?._id ||
+                franchise?.franchise?._id
+            );
+
             const response = await getCustomerByMobile(mobile);
 
             setSelectedCustomer(response.customer);
@@ -256,6 +303,10 @@ const Billing = () => {
 
         const cartItem = {
 
+            cartId:
+                Date.now() +
+                Math.random(),
+
             ...product,
 
             qty,
@@ -302,7 +353,7 @@ const Billing = () => {
             prev
                 .map((item) =>
 
-                    item._id === id
+                    item.cartId === id
                         ? {
                             ...item,
                             qty:
@@ -321,7 +372,7 @@ const Billing = () => {
     const removeFromCart = (id) => {
         setCart((prev) =>
             prev.filter(
-                (item) => item._id !== id
+                (item) => item.cartId !== id
             )
         );
     };
@@ -582,34 +633,35 @@ const Billing = () => {
                                         </label>
 
                                         <div className="d-flex gap-2">
-                                            <div className="position-relative w-100">
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder="Search customer mobile"
-                                                    maxLength={10}
-                                                    value={
-                                                        selectedCustomer ? selectedCustomer.customerName : mobileNumber
-                                                    }
-                                                    onChange={async (e) => {
-                                                        const value = e.target.value.replace(
-                                                            /\D/g,
-                                                            "");
-                                                        setMobileNumber(value);
-                                                        if (value.length < 10) {
-                                                            setSelectedCustomer(null);
-                                                            return;
-                                                        }
 
-                                                        try {
-                                                            const response = await getCustomerByMobile(value, franchise?._id || franchise?.franchise?._id);
-                                                            setSelectedCustomer(response.customer);
-                                                        } catch (error) {
-                                                            setSelectedCustomer(null);
-                                                        }
+                                            <div className="position-relative w-100">
+
+                                                <Select
+
+                                                    options={customers}
+
+                                                    placeholder="Select Customer"
+
+                                                    value={selectedCustomer}
+
+                                                    getOptionLabel={(c) =>
+                                                        `${c.customerName} (${c.mobile})`
+                                                    }
+
+                                                    getOptionValue={(c) => c._id}
+
+                                                    onChange={(customer) => {
+
+                                                        setSelectedCustomer(customer);
+
+                                                        setMobileNumber(
+                                                            customer.mobile
+                                                        )
                                                     }}
                                                 />
+
                                             </div>
+
                                             <button
                                                 className="btn btn-outline-primary"
                                                 onClick={() =>
@@ -618,6 +670,7 @@ const Billing = () => {
                                             >
                                                 <i className="bx bx-plus"></i>
                                             </button>
+
                                         </div>
                                     </div>
 
@@ -635,12 +688,19 @@ const Billing = () => {
                                             readOnly
                                             value={
                                                 `${franchise?.franchise?.franchiseName ||
+
                                                 franchise?.franchiseName ||
+
                                                 "Main Franchise"
+
                                                 } ${franchise?.franchise?.franchiseCode
-                                                    ? `(${profile.franchise.franchiseCode})`
+
+                                                    ? `(${franchise.franchise.franchiseCode})`
+
                                                     : franchise?.franchiseCode
-                                                        ? `(${profile.franchiseCode})`
+
+                                                        ? `(${franchise.franchiseCode})`
+
                                                         : ""
                                                 }`
                                             }
@@ -742,10 +802,10 @@ const Billing = () => {
 
                                             ) : (
 
-                                                cart.map((item) => (
+                                                cart.map((item, index) => (
 
                                                     <div
-                                                        key={item._id}
+                                                        key={item.cartId}
                                                         className="d-flex justify-content-between align-items-center mb-3"
                                                     >
 
@@ -784,7 +844,7 @@ const Billing = () => {
                                                                             {
                                                                                 item.customizations.map(
                                                                                     (c, i) => (
-                                                                                        <div key={i}>
+                                                                                        <div key={`${c}-${i}`}>
                                                                                             • {c}
                                                                                         </div>
                                                                                     )
@@ -804,7 +864,7 @@ const Billing = () => {
                                                                             {
                                                                                 item.addons.map(
                                                                                     (a, i) => (
-                                                                                        <div key={i}>
+                                                                                        <div key={`${a.addonName}-${i}`}>
                                                                                             + {a.addonName}
                                                                                         </div>
                                                                                     )
@@ -826,7 +886,7 @@ const Billing = () => {
                                                                 className="btn btn-sm btn-light"
                                                                 onClick={() =>
                                                                     updateQty(
-                                                                        item._id,
+                                                                        item.cartId,
                                                                         "dec"
                                                                     )
                                                                 }
@@ -842,7 +902,7 @@ const Billing = () => {
                                                                 className="btn btn-sm btn-light"
                                                                 onClick={() =>
                                                                     updateQty(
-                                                                        item._id,
+                                                                        item.cartId,
                                                                         "inc"
                                                                     )
                                                                 }
@@ -866,14 +926,8 @@ const Billing = () => {
                                                         <button
                                                             className="btn btn-sm btn-outline-danger"
                                                             onClick={() =>
-                                                                removeFromCart(
-                                                                    item._id
-                                                                )
-                                                            }
-                                                        >
-
+                                                                removeFromCart(item.cartId)}>
                                                             <i className="bx bx-trash"></i>
-
                                                         </button>
 
                                                     </div>
@@ -1057,7 +1111,7 @@ const Billing = () => {
                                                     ) => (
 
                                                         <div
-                                                            key={index}
+                                                            key={item.cartId}
                                                             className="d-flex justify-content-between mb-3"
                                                         >
 

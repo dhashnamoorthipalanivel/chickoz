@@ -111,7 +111,7 @@ const ProductDetailModal = ({
 
   const singleItemPrice = discountedPrice + addonTotal + taxAmount;
 
-    const savedAmount = basePrice -discountedPrice;
+  const savedAmount = basePrice - discountedPrice;
 
   const totalPrice = singleItemPrice * qty;
 
@@ -247,16 +247,16 @@ const ProductDetailModal = ({
                 <div className="border rounded-4 p-3 bg-light mt-3">
 
                   {
-    hasValidOffer && (
+                    hasValidOffer && (
 
-        <div className="text-danger fw-semibold">
+                      <div className="text-danger fw-semibold">
 
-            Save ₹ {savedAmount.toFixed(2)}
+                        Save ₹ {savedAmount.toFixed(2)}
 
-        </div>
+                      </div>
 
-    )
-}
+                    )
+                  }
 
                   <div className="fs-2 fw-bold">
 
@@ -264,19 +264,19 @@ const ProductDetailModal = ({
 
                   </div>
 
-                 {
-    hasValidOffer && (
+                  {
+                    hasValidOffer && (
 
-        <div className="small text-success">
+                      <div className="small text-success">
 
-            Original:
-            {" "}
-            ₹ {basePrice.toFixed(2)}
+                        Original:
+                        {" "}
+                        ₹ {basePrice.toFixed(2)}
 
-        </div>
+                      </div>
 
-    )
-}
+                    )
+                  }
 
                   <div className="small mt-2">
 
@@ -374,7 +374,7 @@ const ProductDetailModal = ({
                     }
 
                     {
-                     product.addons?.length > 0 && (
+                      product.addons?.length > 0 && (
 
                         <span className="badge bg-primary-subtle text-primary">
 
@@ -436,7 +436,7 @@ const ProductDetailModal = ({
                             (item, index) => (
 
                               <div
-                                key={index}
+                                key={`${item.menuId?._id}-${index}`}
                                 className="d-flex justify-content-between border rounded-3 p-2"
                               >
 
@@ -492,13 +492,12 @@ const ProductDetailModal = ({
                               return (
 
                                 <button
-                                  key={index}
+                                 key={`${addon.addonName}-${index}`}
                                   type="button"
-                                  className={`btn ${
-                                    selected
+                                  className={`btn ${selected
                                       ? "btn-primary"
                                       : "btn-outline-secondary"
-                                  } rounded-pill`}
+                                    } rounded-pill`}
                                   onClick={() =>
                                     toggleAddon(addon)
                                   }
@@ -550,13 +549,12 @@ const ProductDetailModal = ({
                               return (
 
                                 <button
-                                  key={index}
+                                  key={`${item.label}-${index}`}
                                   type="button"
-                                  className={`btn ${
-                                    selected
+                                  className={`btn ${selected
                                       ? "btn-primary"
                                       : "btn-outline-secondary"
-                                  } rounded-pill`}
+                                    } rounded-pill`}
                                   onClick={() =>
                                     toggleCustomization(
                                       item.label
