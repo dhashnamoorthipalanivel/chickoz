@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-// const path = require("path");   // ADD THIS
+const path = require("path");   // ADD THIS
 
 dotenv.config();
 connectDB();
@@ -50,19 +50,15 @@ app.use("/api/customers", require("./routes/customerRoutes"));
    SERVE REACT FRONTEND (ADD THIS)
 ================================= */
 
-// const __dirnamePath = path.resolve();
+const __dirnamePath = path.resolve();
 
-// app.use(express.static(path.join(__dirnamePath, "public")));
+app.use(express.static(path.join(__dirnamePath, "public")));
 
-// app.use((req, res) => {
-//   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
-// });
+app.use((req, res) => {
+  res.sendFile(path.join(__dirnamePath, "public", "index.html"));
+});
 
 /* =============================== */
-
-app.get("/api/auth/test", (req, res) => {
-  res.send("Auth Route Working");
-});
 
 const PORT = process.env.PORT || 5000;
 
