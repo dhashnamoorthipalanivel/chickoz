@@ -60,17 +60,17 @@ app.use("/api/customers", require("./routes/customerRoutes"));
    SERVE REACT FRONTEND (ADD THIS)
 ================================= */
 
-const __dirnamePath = path.resolve();
+// const __dirnamePath = path.resolve();
 
-app.use(express.static(path.join(__dirnamePath, "public")));
+// app.use(express.static(path.join(__dirnamePath, "public")));
 
-// app.use((req, res) => {
+// // app.use((req, res) => {
+// //   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
+// // });
+
+// app.get("*", (req, res) => {
 //   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
 // });
-
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirnamePath, "public", "index.html"));
-});
 
 /* =============================== */
 
@@ -80,6 +80,10 @@ const PORT = process.env.PORT;
 // app.listen(PORT, () => {
 //   console.log(`Server running on port ${PORT}`);
 // });
+
+app.get("/", (req, res) => {
+  res.send("Backend Running Successfully");
+});
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
