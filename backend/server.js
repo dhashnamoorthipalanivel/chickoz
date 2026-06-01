@@ -5,6 +5,11 @@ const connectDB = require("./config/db");
 const path = require("path");   // ADD THIS
 
 dotenv.config();
+
+console.log("MONGO_URI:", process.env.MONGO_URI);
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+
 connectDB();
 
 const app = express();
