@@ -23,7 +23,7 @@ app.use(express.urlencoded({
 
 // routes
 // authentication
-// app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/auth", require("./routes/authRoutes"));
 
 // // master
 // app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
