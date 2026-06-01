@@ -74,7 +74,7 @@ const PORT = process.env.PORT;
 // });
 
 app.get("/", (req, res) => {
-  res.send("Server Working");
+  res.send("Backend Running");
 });
 
 app.listen(PORT, "0.0.0.0", () => {
