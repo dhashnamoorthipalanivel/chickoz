@@ -10,7 +10,12 @@ console.log("MONGO_URI:", process.env.MONGO_URI);
 console.log("JWT_SECRET:", process.env.JWT_SECRET);
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 
-connectDB();
+connectDB().then(() => {
+    console.log("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB Error:", err);
+  });
 
 const app = express();
 
@@ -73,4 +78,12 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.error("UNHANDLED REJECTION:", err);
 });
