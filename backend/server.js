@@ -108,7 +108,8 @@ app.use(express.json());
 
 console.log("STEP 5");
 
-const authRoutes = require("./routes/authRoutes");
+// const authRoutes = require("./routes/authRoutes");
+const authController = require("./controllers/authController");
 console.log("STEP 6");
 
 app.use("/api/auth", authRoutes);
