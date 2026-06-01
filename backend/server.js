@@ -59,7 +59,11 @@ const __dirnamePath = path.resolve();
 
 app.use(express.static(path.join(__dirnamePath, "public")));
 
-app.use((req, res) => {
+// app.use((req, res) => {
+//   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
+// });
+
+app.get("*", (req, res) => {
   res.sendFile(path.join(__dirnamePath, "public", "index.html"));
 });
 
