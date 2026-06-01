@@ -1,6 +1,8 @@
 const crypto = require("crypto");
-const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
+// const User = require("../models/User");
+const User = require("../models/user")
+// const generateToken = require("../utils/generateToken");
+const generateToken = require("../utils/generateToken")
 // const Franchise = require("../models/masterModels/franchiseModel");
 
 // @desc    Register user
