@@ -104,6 +104,16 @@ console.log("STEP 4");
 
 const app = express();
 
+app.use(express.json());
+
+console.log("STEP 5");
+
+const authRoutes = require("./routes/authRoutes");
+console.log("STEP 6");
+
+app.use("/api/auth", authRoutes);
+console.log("STEP 7");
+
 app.get("/", (req, res) => {
   res.send("Backend Running");
 });
