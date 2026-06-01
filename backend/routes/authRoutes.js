@@ -10,7 +10,7 @@ const {
   verifyChangePasswordOtp,
 } = require("../controllers/authController");
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/temp");
 const router = express.Router();
 
 router.post("/register", registerUser);
