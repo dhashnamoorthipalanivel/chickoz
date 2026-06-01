@@ -96,13 +96,17 @@ console.log("STEP 1");
 const express = require("express");
 console.log("STEP 2");
 
+const connectDB = require("./config/db");
+console.log("STEP 3");
+
+connectDB();
+console.log("STEP 4");
+
 const app = express();
 
 app.get("/", (req, res) => {
   res.send("Backend Running");
 });
-
-console.log("STEP 3");
 
 const PORT = process.env.PORT || 3000;
 
