@@ -7,12 +7,7 @@ const path = require("path");   // ADD THIS
 dotenv.config();
 console.log("SERVER STARTING...");
 
-connectDB().then(() => {
-    console.log("MongoDB Connected");
-  })
-  .catch((err) => {
-    console.error("MongoDB Error:", err);
-  });
+// connectDB()
 
 const app = express();
 
@@ -79,7 +74,7 @@ const PORT = process.env.PORT;
 // });
 
 app.get("/", (req, res) => {
-  res.send("Backend Running Successfully");
+  res.send("Server Working");
 });
 
 app.listen(PORT, "0.0.0.0", () => {
