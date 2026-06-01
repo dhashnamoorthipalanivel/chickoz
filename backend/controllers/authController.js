@@ -3,7 +3,7 @@ const crypto = require("crypto");
 const User = require("../models/User")
 // const generateToken = require("../utils/generateToken");
 const generateToken = require("../utils/generateToken");
-const Franchise = require("../models/masterModels/franchiseModel");
+// const Franchise = require("../models/masterModels/franchiseModel");
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -228,9 +228,9 @@ const getMe = async (req, res) => {
     let franchise = null;
 
     // ✅ FRANCHISE USER
-    if (user.franchiseId) {
-      franchise = await Franchise.findById(user.franchiseId);
-    }
+    // if (user.franchiseId) {
+    //   franchise = await Franchise.findById(user.franchiseId);
+    // }
 
     res.status(200).json({
       user,
