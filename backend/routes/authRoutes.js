@@ -27,10 +27,12 @@
 
 const express = require("express");
 
+const {
+  loginUser,
+} = require("../controllers/authController");
+
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.send("Auth Route Working");
-});
+router.post("/login", loginUser);
 
 module.exports = router;
