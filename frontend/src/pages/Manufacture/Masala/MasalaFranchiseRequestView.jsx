@@ -32,9 +32,9 @@ const MasalaFranchiseRequestView = () => {
 
     }, [id]);
 
-    // const data = singleRequest;
+    const data = singleRequest;
 
-    const data ;
+    // const data ;
 
     // ======================================================
     // LOADING
