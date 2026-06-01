@@ -23,30 +23,30 @@ app.use(express.urlencoded({
 
 // routes
 // authentication
-app.use("/api/auth", require("./routes/authRoutes"));
+// app.use("/api/auth", require("./routes/authRoutes"));
 
-// master
-app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
-app.use("/api/taxes", require("./routes/masterRoutes/taxRoutes"));
-app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
-app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
-app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
-app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
-app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
-app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
-app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"))
+// // master
+// app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
+// app.use("/api/taxes", require("./routes/masterRoutes/taxRoutes"));
+// app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
+// app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
+// app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
+// app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
+// app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
+// app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
+// app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"))
 
 // Menu item
-app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
+// app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 
 // CRM
-app.use("/api/enquiry", require("./routes/enquiryRoutes"))
-app.use("/api/lead", require("./routes/leadRoutes"))
-app.use("/api/kishok", require("./routes/kishokRoutes"));
-app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
+// app.use("/api/enquiry", require("./routes/enquiryRoutes"))
+// app.use("/api/lead", require("./routes/leadRoutes"))
+// app.use("/api/kishok", require("./routes/kishokRoutes"));
+// app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
 
 // Customer 
-app.use("/api/customers", require("./routes/customerRoutes"));
+// app.use("/api/customers", require("./routes/customerRoutes"));
 
 /* ===============================
    SERVE REACT FRONTEND (ADD THIS)
