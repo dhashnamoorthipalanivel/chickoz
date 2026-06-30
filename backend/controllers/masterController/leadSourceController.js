@@ -1,4 +1,4 @@
-const LeadSource = require('../../models/masterModels/LeadSourceModel');
+const LeadSource = require('../../models/masterModels/leadSourceModel');
 
 // CREATE
 exports.createLeadSource = async (req, res) => {

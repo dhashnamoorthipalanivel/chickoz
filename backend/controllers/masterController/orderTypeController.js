@@ -1,4 +1,4 @@
-const OrderType = require('../../models/masterModels/OrderTypeModel');
+const OrderType = require('../../models/masterModels/orderTypeModel');
 
 // CREATE
 exports.createOrderType = async (req, res) => {
