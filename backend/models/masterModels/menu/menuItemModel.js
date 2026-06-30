@@ -116,9 +116,9 @@ const menuSchema = new mongoose.Schema(
     },
 
     isTaxApplicable: {
-  type: Boolean,
-  default: false,
-},
+      type: Boolean,
+      default: false,
+    },
 
     taxId: {
       type: mongoose.Schema.Types.ObjectId,

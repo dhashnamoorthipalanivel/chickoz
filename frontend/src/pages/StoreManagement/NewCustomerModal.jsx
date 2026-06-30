@@ -37,6 +37,11 @@ const NewCustomerModal = ({ show, onClose, franchiseId, onCustomerCreated, }) =>
         return;
       }
 
+      if (!franchiseId) {
+        toast.error("Franchise not found. Please refresh the page and try again.");
+        return;
+      }
+
       // API PAYLOAD
       const payload = {
         customerName: form.name,

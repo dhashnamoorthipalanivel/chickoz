@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import {loginUser} from "../../api/authAPI"
-import logo from '/assets/images/logo-1.png'
+import {loginUser} from "../../api/authAPI";
+import logo from '/assets/images/logo-1.png';
 
 const Login = () => {
 
@@ -143,7 +143,7 @@ const Login = () => {
                             <label className="form-label">Password</label>
                           </div>
                           <div className="flex-shrink-0">
-                            <Link to="/auth-recoverpw" className="text-muted">Forgot password?</Link>
+                            <Link to="/" className="text-muted">Forgot password?</Link>
                           </div>
                         </div>
 
