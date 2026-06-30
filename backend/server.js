@@ -12,52 +12,58 @@ console.log("ENV CHECK — JWT_SECRET defined:", !!process.env.JWT_SECRET);
 
 connectDB();
 
-const app = express();
+try {
+  const app = express();
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || true,
-    credentials: true,
-  })
-);
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(
+    cors({
+      origin: process.env.CLIENT_URL || true,
+      credentials: true,
+    })
+  );
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Auth
-app.use("/api/auth", require("./routes/authRoutes"));
+  // Auth
+  app.use("/api/auth", require("./routes/authRoutes"));
 
-// Master
-app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
-app.use("/api/taxes", require("./routes/masterRoutes/taxRoutes"));
-app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
-app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
-app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
-app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
-app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
-app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
-app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"));
-app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
+  // Master
+  app.use("/api/packages", require("./routes/masterRoutes/packageRoutes"));
+  app.use("/api/taxes", require("./routes/masterRoutes/taxRoutes"));
+  app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
+  app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
+  app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
+  app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
+  app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
+  app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
+  app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"));
+  app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 
-// CRM
-app.use("/api/enquiry", require("./routes/enquiryRoutes"));
-app.use("/api/lead", require("./routes/leadRoutes"));
-app.use("/api/kishok", require("./routes/kishokRoutes"));
-app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
+  // CRM
+  app.use("/api/enquiry", require("./routes/enquiryRoutes"));
+  app.use("/api/lead", require("./routes/leadRoutes"));
+  app.use("/api/kishok", require("./routes/kishokRoutes"));
+  app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
 
-// Customer
-app.use("/api/customers", require("./routes/customerRoutes"));
+  // Customer
+  app.use("/api/customers", require("./routes/customerRoutes"));
 
-// Serve React frontend
-app.use(express.static(path.join(__dirname, "public")));
-app.get("/{*path}", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+  // Serve React frontend
+  app.use(express.static(path.join(__dirname, "public")));
+  app.get("/{*path}", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  });
 
-const PORT = process.env.PORT || 3000;
+  const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+} catch (err) {
+  console.error("STARTUP ERROR:", err.message);
+  console.error(err.stack);
+}
 
 process.on("uncaughtException", (err) => {
   console.error("UNCAUGHT EXCEPTION:", err);
