@@ -10,7 +10,12 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || true,
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -39,10 +44,9 @@ app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
 app.use("/api/customers", require("./routes/customerRoutes"));
 
 // Serve React frontend
-const __dirnamePath = path.resolve();
-app.use(express.static(path.join(__dirnamePath, "public")));
+app.use(express.static(path.join(__dirname, "public")));
 app.get("/{*path}", (req, res) => {
-  res.sendFile(path.join(__dirnamePath, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
