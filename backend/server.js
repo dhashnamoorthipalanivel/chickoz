@@ -6,6 +6,10 @@ const path = require("path");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
+console.log("ENV CHECK — MONGO_URI defined:", !!process.env.MONGO_URI);
+console.log("ENV CHECK — PORT:", process.env.PORT);
+console.log("ENV CHECK — JWT_SECRET defined:", !!process.env.JWT_SECRET);
+
 connectDB();
 
 const app = express();

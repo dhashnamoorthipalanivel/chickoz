@@ -10,8 +10,8 @@ const connectDB = async () => {
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error("MongoDB Connection Error:", error);
-    process.exit(1);
+    console.error("MongoDB Connection Error:", error.message);
+    console.error("MONGO_URI value:", process.env.MONGO_URI ? "IS SET" : "UNDEFINED");
   }
 };
 
