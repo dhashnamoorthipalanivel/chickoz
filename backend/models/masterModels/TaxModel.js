@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 
 const taxSchema = new mongoose.Schema(
   {
-    taxCode: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      uppercase: true,
-    },
-
     taxName: {
       type: String,
       required: true,

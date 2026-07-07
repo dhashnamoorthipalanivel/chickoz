@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 
 const paymentModeSchema = new mongoose.Schema(
 {
-  paymentCode: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    uppercase: true
-  },
-
   paymentName: {
     type: String,
     required: true,

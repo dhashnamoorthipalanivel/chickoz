@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 
 const orderTypeSchema = new mongoose.Schema(
 {
-  orderTypeCode: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    uppercase: true
-  },
-
   orderTypeName: {
     type: String,
     required: true,

@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 
 const packageSchema = new mongoose.Schema(
   {
-    packageCode: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      uppercase: true,
-    },
-
     packageName: {
       type: String,
       required: true,
@@ -37,6 +29,43 @@ const packageSchema = new mongoose.Schema(
       default: 0,
     },
 
+    description: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
+    packageType: {
+      type: String,
+      enum: ["GAS", "ELECTRICAL", "BOTH"],
+      required: true,
+      default: "GAS",
+    },
+
+    photos: {
+      type: [String],
+      default: [],
+    },
+
+    kitchenEquipmentIncluded: {
+      type: Boolean,
+      default: false,
+    },
+
+    packageMaterials: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Material",
+      },
+    ],
+
+    packageMenuItems: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Menu",
+      },
+    ],
+
     price: {
       type: Number,
       required: true,
@@ -49,7 +78,7 @@ const packageSchema = new mongoose.Schema(
 
     royaltyType: {
       type: String,
-      enum: ["PERCENTAGE", "FIXED"],
+      enum: ["PERCENTAGE", "FIXED", "NO_ROYALTY"],
       required: true,
     },
 
@@ -58,7 +87,6 @@ const packageSchema = new mongoose.Schema(
       default: 0,
     },
 
-    // ✅ ADD THIS BLOCK
     isTaxApplicable: {
       type: Boolean,
       default: true,

@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 
 const leadSourceSchema = new mongoose.Schema(
 {
-  leadSourceCode: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    uppercase: true
-  },
-
   leadSourceName: {
     type: String,
     required: true,

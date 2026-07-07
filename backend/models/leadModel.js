@@ -106,6 +106,16 @@ const leadSchema = new mongoose.Schema(
             default: "",
           },
 
+          lat: {
+            type: Number,
+            default: null,
+          },
+
+          lng: {
+            type: Number,
+            default: null,
+          },
+
           deliveryLocation: {
             type: String,
             default: "",
@@ -140,6 +150,35 @@ const leadSchema = new mongoose.Schema(
             type: String,
             default: "",
           },
+
+          documents: [
+            {
+              documentId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Document",
+              },
+              documentName: {
+                type: String,
+                default: "",
+              },
+              documentType: {
+                type: String,
+                default: "",
+              },
+              isMandatory: {
+                type: Boolean,
+                default: false,
+              },
+              submitted: {
+                type: Boolean,
+                default: false,
+              },
+              fileName: {
+                type: String,
+                default: "",
+              },
+            },
+          ],
         },
       },
 

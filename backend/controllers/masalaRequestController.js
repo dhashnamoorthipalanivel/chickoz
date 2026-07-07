@@ -1,5 +1,9 @@
-const MasalaRequest = require("../models/masalaRequestModel");
-const Franchise = require("../models/masterModels/franchiseModel");
+const MasalaRequest    = require("../models/masalaRequestModel");
+const Franchise        = require("../models/masterModels/franchiseModel");
+const MasalaItem       = require("../models/masterModels/masalaItemsModel");
+const Notification     = require("../models/notificationModel");
+
+const LOW_STOCK_THRESHOLD = 10;
 
 // ======================================================
 // HELPER : CALCULATE TOTALS
@@ -170,6 +174,16 @@ exports.createMasalaRequest = async (req, res) => {
     });
 
     await newRequest.save();
+
+    // ── Notify admin of new request ──
+    try {
+      await Notification.create({
+        type: "NEW_MASALA_REQUEST",
+        title: "New Masala Request",
+        message: `${franchiseData.franchiseName} submitted a new masala request (${requestId})`,
+        data: { requestId: newRequest._id, requestCode: requestId, franchiseName: franchiseData.franchiseName },
+      });
+    } catch (_) {}
 
     return res.status(201).json({
       success: true,
@@ -449,13 +463,40 @@ exports.updateMasalaRequestStatus = async (req, res) => {
     }
 
     if (status === "DISPATCHED") {
-      request.transportName = transportName || "";
-
+      request.transportName  = transportName  || "";
       request.trackingNumber = trackingNumber || "";
-
       request.dispatchRemarks = dispatchRemarks || "";
-
       request.dispatchedDate = new Date();
+
+      // ── Reduce stock for each dispatched item ──
+      for (const item of request.items) {
+        try {
+          const masalaItem = await MasalaItem.findById(item.itemId);
+          if (!masalaItem) continue;
+
+          const newStock = Math.max(0, masalaItem.stock - Number(item.quantity || 0));
+          masalaItem.stock = newStock;
+          await masalaItem.save();
+
+          // Create low-stock notification if stock drops to threshold
+          if (newStock <= LOW_STOCK_THRESHOLD) {
+            // Avoid duplicate low-stock notifications within same minute
+            const recentExists = await Notification.findOne({
+              type: "LOW_STOCK",
+              "data.itemId": masalaItem._id,
+              createdAt: { $gte: new Date(Date.now() - 60 * 1000) },
+            });
+            if (!recentExists) {
+              await Notification.create({
+                type: "LOW_STOCK",
+                title: "Low Stock Alert",
+                message: `${masalaItem.itemName} stock is critically low: only ${newStock} units remaining`,
+                data: { itemId: masalaItem._id, itemName: masalaItem.itemName, stock: newStock },
+              });
+            }
+          }
+        } catch (_) {}
+      }
     }
 
     if (status === "DELIVERED") {

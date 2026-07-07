@@ -2,343 +2,306 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFranchiseStore } from "../../../store/store";
 
-const initialData = [
-    {
-        id: 1,
-        franchiseId: "FR001",
-        franchiseName: "Chickoz Erode",
-        ownerName: "Prakash",
-        location: "Erode",
-        type: "FRANCHISE",
-        assignedMenuCount: 12,
-        status: "ACTIVE",
-    },
-    {
-        id: 2,
-        franchiseId: "FR002",
-        franchiseName: "Chickoz Salem",
-        ownerName: "Karthik",
-        location: "Salem",
-        type: "FRANCHISE",
-        assignedMenuCount: 9,
-        status: "ACTIVE",
-    },
-    {
-        id: 3,
-        franchiseId: "FR003",
-        franchiseName: "Chickoz Coimbatore",
-        ownerName: "Arun",
-        location: "Coimbatore",
-        type: "OUTLET",
-        assignedMenuCount: 15,
-        status: "INACTIVE",
-    },
-    {
-        id: 4,
-        franchiseId: "FR004",
-        franchiseName: "Chickoz Karur",
-        ownerName: "Vignesh",
-        location: "Karur",
-        type: "FRANCHISE",
-        assignedMenuCount: 7,
-        status: "ACTIVE",
-    },
-    {
-        id: 5,
-        franchiseId: "FR005",
-        franchiseName: "Chickoz Namakkal",
-        ownerName: "Suresh",
-        location: "Namakkal",
-        type: "OUTLET",
-        assignedMenuCount: 10,
-        status: "ACTIVE",
-    },
-];
-
 const formatLabel = (value) => {
-    return value
-        ?.toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+  if (!value) return "";
+  return value.toString().toLowerCase().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
-const statusBadge = (status) => {
-    const map = {
-        ACTIVE: "bg-success",
-        INACTIVE: "bg-danger",
-    };
-
-    return (
-        <span className={`badge ${map[status] || "bg-secondary"}`}>
-            {formatLabel(status)}
-        </span>
-    );
+const TYPE_STYLE = {
+  FRANCHISE:   { color: "#1D4ED8", bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)",  icon: "bx-store" },
+  OUTLET:      { color: "#B45309", bg: "rgba(245,158,11,0.09)",  border: "rgba(245,158,11,0.22)", icon: "bx-building-house" },
+  HEAD_OFFICE: { color: "#065F46", bg: "rgba(16,185,129,0.08)",  border: "rgba(16,185,129,0.2)",  icon: "bx-building" },
+  KITCHEN:     { color: "#D91E18", bg: "rgba(217,30,24,0.07)",   border: "rgba(217,30,24,0.18)",  icon: "bx-restaurant" },
+  WAREHOUSE:   { color: "#374151", bg: "#f3f4f6",                border: "#e5e7eb",               icon: "bx-archive" },
 };
 
 const typeBadge = (type) => {
-    const map = {
-        FRANCHISE: "bg-primary-subtle text-primary",
-        OUTLET: "bg-warning-subtle text-warning",
-        HEAD_OFFICE: "bg-info-subtle text-info",
-    };
+  if (!type) return null;
+  const s = TYPE_STYLE[type] || { color: "#6b7280", bg: "#f3f4f6", border: "#e5e7eb", icon: "bx-store" };
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "4px 11px", borderRadius: 20,
+      fontSize: 11.5, fontWeight: 700, letterSpacing: 0.3,
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+      whiteSpace: "nowrap",
+    }}>
+      <i className={`bx ${s.icon}`} style={{ fontSize: 12 }} />
+      {formatLabel(type)}
+    </span>
+  );
+};
 
-    return (
-        <span className={`badge ${map[type] || "bg-secondary"}`}>
-            {formatLabel(type)}
-        </span>
-    );
+const statusBadge = (status) => {
+  const active = status === "ACTIVE";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "4px 11px", borderRadius: 20,
+      fontSize: 11.5, fontWeight: 700,
+      color: active ? "#065F46" : "#991B1B",
+      background: active ? "rgba(16,185,129,0.08)" : "rgba(153,27,27,0.07)",
+      border: `1px solid ${active ? "rgba(16,185,129,0.2)" : "rgba(153,27,27,0.18)"}`,
+      whiteSpace: "nowrap",
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: active ? "#10B981" : "#991B1B", flexShrink: 0 }} />
+      {active ? "Active" : "Inactive"}
+    </span>
+  );
 };
 
 const FranchiseMenuVisibility = () => {
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("ALL");
-    const [typeFilter, setTypeFilter] = useState("ALL");
-    const [page, setPage] = useState(1);
+  const [search, setSearch]           = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter]   = useState("ALL");
+  const [page, setPage]               = useState(1);
+  const [perPage, setPerPage]         = useState(10);
 
-    const perPage = 10;
+  const { franchises, fetchFranchises, loading } = useFranchiseStore();
 
-    const {franchises, fetchFranchises} = useFranchiseStore();
+  useEffect(() => { fetchFranchises(); }, []);
 
-    useEffect(() => {
-        fetchFranchises();
-    },[])
+  const filtered = franchises.filter((item) => {
+    const q = search.toLowerCase();
+    const matchSearch =
+      item.franchiseName?.toLowerCase().includes(q) ||
+      item.franchiseId?.toLowerCase().includes(q) ||
+      item.location?.toLowerCase().includes(q) ||
+      item.packageName?.toLowerCase().includes(q);
+    const matchStatus = statusFilter === "ALL" || item.status === statusFilter;
+    const matchType   = typeFilter   === "ALL" || item.type   === typeFilter;
+    return matchSearch && matchStatus && matchType;
+  });
 
-    const filtered = franchises.filter((item) => {
-        const matchSearch =
-            item.franchiseName.toLowerCase().includes(search.toLowerCase()) ||
-            item.franchiseId.toLowerCase().includes(search.toLowerCase()) ||
-            item.location.toLowerCase().includes(search.toLowerCase());
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-        const matchStatus =
-            statusFilter === "ALL" || item.status === statusFilter;
+  return (
+    <React.Fragment>
+      <div className="page-content">
+        <div className="container-fluid">
 
-        const matchType =
-            typeFilter === "ALL" || item.type === typeFilter;
-
-        return matchSearch && matchStatus && matchType;
-    });
-
-    const totalPages = Math.ceil(filtered.length / perPage);
-    const paged = filtered.slice((page - 1) * perPage, page * perPage);
-
-    return (
-        <React.Fragment>
-            <div className="page-content">
-                <div className="container-fluid">
-                    {/* Page Title */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                                <h4 className="mb-sm-0 font-size-18">
-                                    Franchise Menu Visibility
-                                </h4>
-                                <div className="page-title-right">
-                                    <ol className="breadcrumb m-0">
-                                        <li className="breadcrumb-item">
-                                            <Link to="/dashboard">Dashboard</Link>
-                                        </li>
-                                        <li className="breadcrumb-item active">
-                                            Franchise Menu Visibility
-                                        </li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
+          {/* ── Page header ── */}
+          <div className="row">
+            <div className="col-12">
+              <div className="page-title-box d-sm-flex align-items-center justify-content-between">
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    background: "linear-gradient(135deg, #D91E18 0%, #F97316 100%)",
+                    boxShadow: "0 4px 14px rgba(217,30,24,0.32)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                  }}>
+                    <i className="bx bx-show" style={{ color: "#fff", fontSize: 22 }} />
+                  </div>
+                  <div>
+                    <h4 className="mb-0" style={{ fontWeight: 800, fontSize: 18, color: "#1A1A1A" }}>
+                      Franchise Menu Visibility
+                    </h4>
+                    <div style={{ fontSize: 12, color: "#F97316", fontWeight: 600, marginTop: 1 }}>
+                      Masters · Franchise Menu Visibility
                     </div>
-
-                    {/* Table Card */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="card">
-                                <div className="card-header">
-                                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                        <h4 className="card-title mb-0">
-                                            Franchise Menu Assignment Records
-                                        </h4>
-                                        {/* <div>
-                                            <span className="badge bg-info-subtle text-info px-3 py-2">
-                                                Admin Controlled Module
-                                            </span>
-                                        </div> */}
-                                    </div>
-                                </div>
-
-                                <div className="card-body">
-                                    {/* Filters */}
-                                    <div className="row mb-3 g-2">
-                                        <div className="col-sm-12 col-md-5">
-                                            <div className="position-relative">
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder="Search by franchise name, code or location..."
-                                                    value={search}
-                                                    onChange={(e) => {
-                                                        setSearch(e.target.value);
-                                                        setPage(1);
-                                                    }}
-                                                />
-                                                <i
-                                                    className="bx bx-search position-absolute"
-                                                    style={{
-                                                        top: "50%",
-                                                        right: "12px",
-                                                        transform: "translateY(-50%)",
-                                                        color: "#adb5bd",
-                                                    }}
-                                                ></i>
-                                            </div>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-3">
-                                            <select
-                                                className="form-select"
-                                                value={statusFilter}
-                                                onChange={(e) => {
-                                                    setStatusFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Status</option>
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-2">
-                                            <select
-                                                className="form-select"
-                                                value={typeFilter}
-                                                onChange={(e) => {
-                                                    setTypeFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Type</option>
-                                                <option value="FRANCHISE">Franchise</option>
-                                                <option value="OUTLET">Outlet</option>
-                                                <option value="HEAD_OFFICE">Head Office</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-2 text-end d-flex align-items-center justify-content-md-end">
-                                            <span className="text-muted font-size-13">
-                                                {filtered.length} result
-                                                {filtered.length !== 1 ? "s" : ""} found
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Table */}
-                                    <div className="table-responsive">
-                                        <table className="table table-hover table-centered align-middle mb-0">
-                                            <thead className="table-light">
-                                                <tr>
-                                                    <th>Franchise ID</th>
-                                                    <th>Franchise Name</th>
-                                                    <th>Owner Name</th>
-                                                    <th>Location</th>
-                                                    <th>Type</th>
-                                                    <th>Assigned Menu Count</th>
-                                                    <th>Status</th>
-                                                    <th className="text-center">Action</th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {paged.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan="8" className="text-center py-5 text-muted">
-                                                            <i className="bx bx-search-alt display-4 d-block mb-2"></i>
-                                                            No franchise records found.
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    paged.map((row) => (
-                                                        <tr key={row._id}>
-                                                            <td>{row.franchiseId}</td>
-                                                            <td>{row.franchiseName}</td>
-                                                            <td>{row.ownerName}</td>
-                                                            <td>{row.location}</td>
-                                                            <td>{typeBadge(row.type)}</td>
-                                                            <td>
-                                                                <span className="badge bg-soft-primary text-primary px-3 py-2">
-                                                                    {row.assignedMenus?.length || 0} Items
-                                                                </span>
-                                                            </td>
-                                                            <td>{statusBadge(row.status)}</td>
-                                                            <td>
-                                                                <div className="d-flex justify-content-center">
-                                                                    <Link
-                                                                        to={`/master-franchise-menu-visibility/edit/${row._id}`}
-                                                                        state={{ rowData: row }}
-                                                                        className="btn btn-sm btn-outline-primary"
-                                                                        title="Edit Menu Visibility"
-                                                                    >
-                                                                        <i className="bx bx-edit-alt me-1"></i> Edit
-                                                                    </Link>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                        <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
-                                            <div className="text-muted font-size-13">
-                                                Showing {(page - 1) * perPage + 1} –{" "}
-                                                {Math.min(page * perPage, filtered.length)} of{" "}
-                                                {filtered.length} entries
-                                            </div>
-
-                                            <ul className="pagination pagination-rounded mb-0">
-                                                <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p - 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-left"></i>
-                                                    </button>
-                                                </li>
-
-                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                                                    (p) => (
-                                                        <li
-                                                            key={p}
-                                                            className={`page-item ${page === p ? "active" : ""}`}
-                                                        >
-                                                            <button className="page-link" onClick={() => setPage(p)}>
-                                                                {p}
-                                                            </button>
-                                                        </li>
-                                                    )
-                                                )}
-
-                                                <li
-                                                    className={`page-item ${page === totalPages ? "disabled" : ""}`}
-                                                >
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p + 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-right"></i>
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                  </div>
                 </div>
+                <div className="page-title-right">
+                  <ol className="breadcrumb m-0">
+                    <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
+                    <li className="breadcrumb-item active">Franchise Menu Visibility</li>
+                  </ol>
+                </div>
+              </div>
             </div>
-        </React.Fragment>
-    );
+          </div>
+
+          {/* ── Card ── */}
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-header">
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <h4 className="card-title mb-0">Franchise Menu Assignment</h4>
+                      <span style={{
+                        background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)",
+                        color: "#fff", borderRadius: 10,
+                        padding: "2px 9px", fontSize: 11, fontWeight: 700,
+                        boxShadow: "0 2px 6px rgba(217,30,24,0.3)",
+                      }}>{filtered.length}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center", gap: 5,
+                        padding: "5px 12px", borderRadius: 20,
+                        fontSize: 11.5, fontWeight: 700,
+                        color: "#1D4ED8", background: "rgba(59,130,246,0.08)",
+                        border: "1px solid rgba(59,130,246,0.2)",
+                      }}>
+                        <i className="bx bx-lock-alt" style={{ fontSize: 12 }} />Admin Controlled
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-body">
+                  {/* ── Filters ── */}
+                  <div className="row mb-3 g-2 align-items-center">
+                    <div className="col-auto d-flex align-items-center gap-2">
+                      <span style={{ fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>Show</span>
+                      <select className="form-select form-select-sm" style={{ width: 70 }} value={perPage} onChange={(e) => { setPerPage(Number(e.target.value)); setPage(1); }}>
+                        {[5, 10, 25, 50].map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                      <span style={{ fontSize: 13, color: "#6b7280", whiteSpace: "nowrap" }}>entries</span>
+                    </div>
+                    <div className="col-sm-12 col-md-4">
+                      <div className="position-relative">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search by franchise name, ID, location or package..."
+                          value={search}
+                          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                        />
+                        <i className="bx bx-search position-absolute" style={{ top: "50%", right: 12, transform: "translateY(-50%)", color: "#adb5bd" }} />
+                      </div>
+                    </div>
+                    <div className="col-sm-6 col-md-2">
+                      <select className="form-select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+                        <option value="ALL">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
+                      </select>
+                    </div>
+                    <div className="col-sm-6 col-md-2">
+                      <select className="form-select" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}>
+                        <option value="ALL">All Types</option>
+                        <option value="FRANCHISE">Franchise</option>
+                        <option value="OUTLET">Outlet</option>
+                        <option value="HEAD_OFFICE">Head Office</option>
+                        <option value="KITCHEN">Kitchen</option>
+                        <option value="WAREHOUSE">Warehouse</option>
+                      </select>
+                    </div>
+                    <div className="col-md-2 text-end d-flex align-items-center justify-content-md-end">
+                      <span className="text-muted font-size-13">
+                        {filtered.length} result{filtered.length !== 1 ? "s" : ""} found
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── Table ── */}
+                  <div className="table-responsive" style={{ overflowX: "auto" }}>
+                    {loading ? (
+                      <div className="text-center py-5">
+                        <div className="spinner-border" style={{ color: "#D91E18", width: 36, height: 36, borderWidth: 3 }} role="status" />
+                        <div style={{ fontSize: 13, color: "#98a2b3", marginTop: 12 }}>Loading franchises...</div>
+                      </div>
+                    ) : (
+                      <table className="table table-hover table-centered align-middle mb-0 text-nowrap">
+                        <thead className="table-dark">
+                          <tr>
+                            <th style={{ width: 55 }}>S.No</th>
+                            <th>Franchise</th>
+                            <th>Location</th>
+                            <th>Type</th>
+                            <th>Package</th>
+                            <th>Assigned Menus</th>
+                            <th>Status</th>
+                            <th className="text-center">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paged.length === 0 ? (
+                            <tr>
+                              <td colSpan="8" className="text-center py-5 text-muted">
+                                <i className="bx bx-search-alt display-4 d-block mb-2" />
+                                No franchise records found.
+                              </td>
+                            </tr>
+                          ) : paged.map((row, index) => (
+                            <tr key={row._id}>
+                              <td style={{ color: "#98a2b3", fontSize: 12 }}>{(page - 1) * perPage + index + 1}</td>
+                              <td>
+                                <div style={{ fontWeight: 700, fontSize: 13.5, color: "#1A1A1A" }}>{row.franchiseName}</div>
+                                <div style={{ fontSize: 11.5, color: "#9ca3af", fontFamily: "monospace", marginTop: 1 }}>{row.franchiseId}</div>
+                                {row.ownerName && (
+                                  <div style={{ fontSize: 11.5, color: "#6b7280", marginTop: 1 }}>
+                                    <i className="bx bx-user" style={{ fontSize: 11, marginRight: 3 }} />{row.ownerName}
+                                  </div>
+                                )}
+                              </td>
+                              <td style={{ color: "#374151", fontSize: 13 }}>{row.location || "—"}</td>
+                              <td>{typeBadge(row.type)}</td>
+                              <td>
+                                {row.packageName ? (
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11.5, fontWeight: 700, color: "#D91E18", background: "rgba(217,30,24,0.07)", border: "1px solid rgba(217,30,24,0.18)" }}>
+                                    <i className="bx bx-package" style={{ fontSize: 12 }} />
+                                    {row.packageName}
+                                  </span>
+                                ) : (
+                                  <span style={{ color: "#9ca3af", fontSize: 12 }}>No package</span>
+                                )}
+                              </td>
+                              <td>
+                                <span style={{
+                                  display: "inline-flex", alignItems: "center", gap: 5,
+                                  padding: "4px 11px", borderRadius: 20,
+                                  fontSize: 12, fontWeight: 700,
+                                  color: "#1D4ED8", background: "rgba(59,130,246,0.08)",
+                                  border: "1px solid rgba(59,130,246,0.2)",
+                                }}>
+                                  <i className="bx bx-food-menu" style={{ fontSize: 12 }} />
+                                  {row.assignedMenus?.length || 0} items
+                                </span>
+                              </td>
+                              <td>{statusBadge(row.status)}</td>
+                              <td>
+                                <div className="d-flex justify-content-center">
+                                  <Link
+                                    to={`/master-franchise-menu-visibility/edit/${row._id}`}
+                                    state={{ rowData: row }}
+                                    className="ckz-action-btn ckz-action-edit"
+                                    title="Edit Menu Visibility"
+                                  >
+                                    <i className="bx bx-edit-alt" />
+                                  </Link>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+
+                  {/* ── Pagination ── */}
+                  {!loading && totalPages > 1 && (
+                    <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                      <div className="text-muted font-size-13">
+                        Showing {(page - 1) * perPage + 1} – {Math.min(page * perPage, filtered.length)} of {filtered.length} entries
+                      </div>
+                      <ul className="pagination pagination-rounded mb-0">
+                        <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+                          <button className="page-link" onClick={() => setPage(p => p - 1)}><i className="bx bx-chevron-left" /></button>
+                        </li>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                          <li key={p} className={`page-item ${page === p ? "active" : ""}`}>
+                            <button className="page-link" onClick={() => setPage(p)}>{p}</button>
+                          </li>
+                        ))}
+                        <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
+                          <button className="page-link" onClick={() => setPage(p => p + 1)}><i className="bx bx-chevron-right" /></button>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
 };
 
 export default FranchiseMenuVisibility;

@@ -20,14 +20,6 @@ const comboItemSchema = new mongoose.Schema(
 
 const menuSchema = new mongoose.Schema(
   {
-    menuCode: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      uppercase: true,
-    },
-
     menuName: {
       type: String,
       required: true,

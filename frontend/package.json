@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "apexcharts": "^5.10.4",
-    "axios": "^1.14.0",
+    "axios": "^1.18.1",
     "bootstrap": "^5.3.8",
     "boxicons": "^2.1.4",
     "chart.js": "^4.5.1",

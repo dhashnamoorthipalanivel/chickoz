@@ -19,3 +19,7 @@ export const deleteEnquiry = (id) => api.delete(`/enquiry/${id}`);
 export const convertToLead = (id) => api.post(`/enquiry/convert/${id}`);
 
 export const getNextReferenceId = () => api.get("/enquiry/next-id");
+
+// Followup History
+export const getFollowupHistory = (id) => api.get(`/enquiry/${id}/followup`);
+export const addFollowupEntry = (id, data) => api.post(`/enquiry/${id}/followup`, data);

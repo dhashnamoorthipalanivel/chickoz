@@ -1,615 +1,291 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMenuItems } from "../../../store/store";
+import { toast } from "react-toastify";
 
+const formatLabel = (v) => v?.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "";
 
-const formatLabel = (value) => {
-    return value
-        ?.toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+const statusPill = (status) => {
+  const s = status === "ACTIVE"
+    ? { color:"#059669", bg:"rgba(5,150,105,0.08)", border:"rgba(5,150,105,0.2)" }
+    : { color:"#D91E18", bg:"rgba(217,30,24,0.08)", border:"rgba(217,30,24,0.18)" };
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 11px", borderRadius:20, fontSize:11.5, fontWeight:700, letterSpacing:0.3, color:s.color, background:s.bg, border:`1px solid ${s.border}`, whiteSpace:"nowrap" }}>
+      <span style={{ width:6, height:6, borderRadius:"50%", background:s.color, flexShrink:0 }}/>{formatLabel(status)}
+    </span>
+  );
 };
 
-const statusBadge = (status) => {
-    const map = {
-        ACTIVE: "bg-success",
-        INACTIVE: "bg-danger",
-    };
-
-    return (
-        <span className={`badge ${map[status] || "bg-secondary"}`}>
-            {formatLabel(status)}
-        </span>
-    );
+const foodTypePill = (type) => {
+  const map = {
+    VEG:      { color:"#059669", bg:"rgba(5,150,105,0.08)",   border:"rgba(5,150,105,0.2)",   icon:"bxs-circle",    label:"Veg"      },
+    NON_VEG:  { color:"#D91E18", bg:"rgba(217,30,24,0.08)",   border:"rgba(217,30,24,0.18)",  icon:"bxs-circle",    label:"Non-Veg"  },
+    BEVERAGE: { color:"#0891b2", bg:"rgba(8,145,178,0.08)",   border:"rgba(8,145,178,0.2)",   icon:"bx-drink",      label:"Beverage" },
+    DESSERT:  { color:"#d97706", bg:"rgba(217,119,6,0.08)",   border:"rgba(217,119,6,0.2)",   icon:"bx-cookie",     label:"Dessert"  },
+  };
+  const s = map[type] || { color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb", icon:"bx-circle", label: formatLabel(type) };
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:s.color, background:s.bg, border:`1px solid ${s.border}`, whiteSpace:"nowrap" }}>
+      <i className={`bx ${s.icon}`} style={{ fontSize:12 }}/>{s.label}
+    </span>
+  );
 };
 
-const foodTypeBadge = (type) => {
-    const map = {
-        VEG: "bg-success-subtle text-success",
-        NON_VEG: "bg-danger-subtle text-danger",
-        BEVERAGE: "bg-info-subtle text-info",
-    };
-
-    return (
-        <span className={`badge ${map[type] || "bg-secondary"}`}>
-            {formatLabel(type)}
-        </span>
-    );
+const offerCell = (row) => {
+  if (!row.hasOffer) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
+  const isPercent = row.offerType === "PERCENTAGE";
+  return (
+    <div>
+      <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#D91E18", background:"rgba(217,30,24,0.07)", border:"1px solid rgba(217,30,24,0.2)", whiteSpace:"nowrap" }}>
+        <i className="bx bx-purchase-tag-alt" style={{ fontSize:13 }}/>
+        {isPercent ? `${row.offerValue}% Off` : `₹${row.offerValue} Off`}
+      </span>
+      {row.offerEndDate && (
+        <div style={{ fontSize:10.5, color:"#9ca3af", marginTop:2 }}>
+          till {new Date(row.offerEndDate).toLocaleDateString("en-IN", { day:"numeric", month:"short" })}
+        </div>
+      )}
+    </div>
+  );
 };
 
-const itemTypeBadge = (type) => {
-    return (
-        <span className={`badge ${type ? "bg-success" : "bg-primary"}`}>
-            {type ? "Combo" : "Single"}
-        </span>
-    )
-}
+const DeleteModal = ({ onClose, onConfirm, deleting }) => (
+  <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(15,15,15,0.65)", backdropFilter:"blur(6px)", WebkitBackdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16, animation:"fadeIn 0.18s ease" }}>
+    <div style={{ background:"#fff", borderRadius:24, padding:"40px 32px 32px", maxWidth:420, width:"100%", boxShadow:"0 32px 80px rgba(0,0,0,0.22)", animation:"scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)", textAlign:"center", position:"relative" }}>
+      <button onClick={onClose} style={{ position:"absolute", top:14, right:14, width:32, height:32, borderRadius:"50%", background:"#f3f4f6", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#9ca3af", fontSize:20 }} onMouseEnter={e=>{e.currentTarget.style.background="#e5e7eb"}} onMouseLeave={e=>{e.currentTarget.style.background="#f3f4f6"}}><i className="bx bx-x"/></button>
+      <div style={{ position:"relative", display:"inline-flex", marginBottom:22 }}>
+        <div style={{ position:"absolute", inset:-10, borderRadius:"50%", border:"1.5px solid rgba(217,30,24,0.15)", animation:"pulseDot 2.2s ease infinite" }}/>
+        <div style={{ position:"absolute", inset:-20, borderRadius:"50%", border:"1px solid rgba(217,30,24,0.07)" }}/>
+        <div style={{ width:80, height:80, borderRadius:"50%", background:"linear-gradient(135deg,#D91E18 0%,#991B1B 100%)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 10px 28px rgba(217,30,24,0.38)" }}>
+          <i className="bx bx-trash" style={{ color:"#fff", fontSize:32 }}/>
+        </div>
+      </div>
+      <h4 style={{ fontWeight:800, fontSize:20, color:"#1A1A1A", margin:"0 0 10px" }}>Delete Record?</h4>
+      <p style={{ color:"#6b7280", fontSize:13.5, lineHeight:1.65, margin:"0 0 28px" }}>This record will be <span style={{ color:"#D91E18", fontWeight:700 }}>permanently removed</span>. This action cannot be undone.</p>
+      <div style={{ display:"flex", gap:12 }}>
+        <button onClick={onClose} style={{ flex:1, padding:"13px 0", borderRadius:12, border:"1.5px solid #e5e7eb", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:14, cursor:"pointer" }} onMouseEnter={e=>{e.currentTarget.style.background="#f3f4f6"}} onMouseLeave={e=>{e.currentTarget.style.background="#f9fafb"}}>Cancel</button>
+        <button onClick={onConfirm} disabled={deleting} style={{ flex:1, padding:"13px 0", borderRadius:12, border:"none", background:"linear-gradient(135deg,rgba(217,30,24,0.92) 0%,rgba(153,27,27,0.96) 100%)", color:"#fff", fontWeight:700, fontSize:14, cursor:deleting?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, opacity:deleting?0.82:1 }} onMouseEnter={e=>{if(!deleting)e.currentTarget.style.transform="translateY(-1px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
+          {deleting?<><span className="spinner-border spinner-border-sm" style={{ width:15, height:15, borderWidth:2 }}/> Deleting...</>:<><i className="bx bx-trash" style={{ fontSize:17 }}/> Delete</>}
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const MenuItem = () => {
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("ALL");
-    const [categoryFilter, setCategoryFilter] = useState("ALL");
-    const [selected, setSelected] = useState([]);
-    const [page, setPage] = useState(1);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deleteId, setDeleteId] = useState(null);
-
-    const perPage = 10;
-
-    // fetch menu item from store 
-    const { menuItems, fetchMenuItems, deleteMenuItem } = useMenuItems();
-
-
-    useEffect(() => {
-        fetchMenuItems();
-    }, [])
-
-    const filtered = menuItems.filter((item) => {
-        const matchSearch =
-            item.menuName.toLowerCase().includes(search.toLowerCase()) ||
-            item.menuCode.toLowerCase().includes(search.toLowerCase()) ||
-            item.category.toLowerCase().includes(search.toLowerCase());
-
-        const matchStatus =
-            statusFilter === "ALL" || item.status === statusFilter;
-
-        const matchCategory =
-            categoryFilter === "ALL" || item.category === categoryFilter;
-
-        return matchSearch && matchStatus && matchCategory;
-    });
-
-    const totalPages = Math.ceil(filtered.length / perPage);
-    const paged = filtered.slice((page - 1) * perPage, page * perPage);
-
-    const toggleSelect = (id) => {
-        setSelected((prev) =>
-            prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-        );
-    };
-
-    const toggleAll = () => {
-        if (selected.length === paged.length) {
-            setSelected([]);
-        } else {
-            setSelected(paged.map((r) => r._id));
-        }
-    };
-
-    const confirmDelete = (id) => {
-        setDeleteId(id);
-        setShowDeleteModal(true);
-    };
-
-    const handleDelete = async () => {
-        try {
-            await deleteMenuItem(deleteId);
-            await fetchMenuItems();
-
-            setShowDeleteModal(false);
-            setDeleteId(null);
-
-            setSelected((prev) =>
-                prev.filter((item) => item !== deleteId)
-            );
-
-        } catch (error) {
-            console.log(error);
-        }
-    };
-
-    return (
-        <React.Fragment>
-            <div className="page-content">
-                <div className="container-fluid">
-                    {/* Page Title */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                                <h4 className="mb-sm-0 font-size-18">Menu Item Management</h4>
-                                <div className="page-title-right">
-                                    <ol className="breadcrumb m-0">
-                                        <li className="breadcrumb-item">
-                                            <Link to="/dashboard">Dashboard</Link>
-                                        </li>
-                                        <li className="breadcrumb-item active">
-                                            Menu Item Management
-                                        </li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Table Card */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="card">
-                                <div className="card-header">
-                                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                        <h4 className="card-title mb-0">Menu Item Records</h4>
-                                        <div className="d-flex gap-2">
-                                            {selected.length > 0 && (
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={handleBulkDelete}
-                                                >
-                                                    <i className="bx bx-trash me-1"></i> Delete (
-                                                    {selected.length})
-                                                </button>
-                                            )}
-                                            <Link to="/master-menu-item/add" className="btn btn-sm btn-primary">
-                                                <i className="bx bx-plus me-1"></i> Add Menu Item
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="card-body">
-                                    {/* Filters */}
-                                    <div className="row mb-3 g-2">
-                                        <div className="col-sm-12 col-md-5">
-                                            <div className="position-relative">
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder="Search by menu name, code or category..."
-                                                    value={search}
-                                                    onChange={(e) => {
-                                                        setSearch(e.target.value);
-                                                        setPage(1);
-                                                    }}
-                                                />
-                                                <i
-                                                    className="bx bx-search position-absolute"
-                                                    style={{
-                                                        top: "50%",
-                                                        right: "12px",
-                                                        transform: "translateY(-50%)",
-                                                        color: "#adb5bd",
-                                                    }}
-                                                ></i>
-                                            </div>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-3">
-                                            <select
-                                                className="form-select"
-                                                value={statusFilter}
-                                                onChange={(e) => {
-                                                    setStatusFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Status</option>
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-2">
-                                            <select
-                                                className="form-select"
-                                                value={categoryFilter}
-                                                onChange={(e) => {
-                                                    setCategoryFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Categories</option>
-                                                <option value="FRIED_CHICKEN">Fried Chicken</option>
-                                                <option value="NUGGETS">Nuggets</option>
-                                                <option value="FRIES">Fries</option>
-                                                <option value="SANDWICH">Sandwich</option>
-                                                <option value="FRANKIES">Frankies</option>
-                                                <option value="BURGER">Burger</option>
-                                                <option value="MOMOS">Momos</option>
-                                                <option value="MOJITO">Mojito</option>
-                                                <option value="BUBBLE_TEA">Bubble Tea</option>
-                                                <option value="DESSERT">Dessert</option>
-                                                <option value="COMBO">Combo</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-2 text-end d-flex align-items-center justify-content-md-end">
-                                            <span className="text-muted font-size-13">
-                                                {filtered.length} result
-                                                {filtered.length !== 1 ? "s" : ""} found
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Table */}
-                                    <div className="table-responsive">
-                                        <table className="table table-hover table-centered align-middle mb-0">
-                                            <thead className="table-light">
-                                                <tr>
-                                                    <th style={{ width: "40px" }}>
-                                                        S.No
-                                                    </th>
-
-                                                    <th>Image</th>
-
-                                                    <th>Menu Details</th>
-
-                                                    <th>Category</th>
-
-                                                    <th>Portion</th>
-
-                                                    <th>Pricing</th>
-
-                                                    <th>Status</th>
-
-                                                    <th className="text-center">
-                                                        Actions
-                                                    </th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-
-                                                {paged.length === 0 ? (
-
-                                                    <tr>
-                                                        <td
-                                                            colSpan="8"
-                                                            className="text-center py-5 text-muted"
-                                                        >
-                                                            <i className="bx bx-search-alt display-4 d-block mb-2"></i>
-
-                                                            No menu items found.
-                                                        </td>
-                                                    </tr>
-
-                                                ) : (
-
-                                                    paged.map((row, index) => (
-
-                                                        <tr
-                                                            key={row._id}
-                                                            className={
-                                                                selected.includes(row._id)
-                                                                    ? "table-active"
-                                                                    : ""
-                                                            }
-                                                        >
-
-                                                            {/* S.NO */}
-                                                            <td>
-                                                                {(page - 1) * perPage + index + 1}
-                                                            </td>
-
-                                                            {/* IMAGE */}
-                                                            <td>
-
-                                                                <img
-                                                                    src={
-                                                                        row.image ||
-                                                                        "https://placehold.co/45x45?text=Menu"
-                                                                    }
-                                                                    alt={row.menuName}
-                                                                    className="rounded"
-                                                                    width="45"
-                                                                    height="45"
-                                                                    style={{
-                                                                        objectFit: "cover",
-                                                                    }}
-                                                                />
-
-                                                            </td>
-
-                                                            {/* MENU DETAILS */}
-                                                            <td>
-
-                                                                <div className="fw-semibold">
-                                                                    {row.menuName}
-                                                                </div>
-
-                                                                <div className="text-muted small">
-                                                                    #{row.menuCode}
-                                                                </div>
-
-                                                                <div className="d-flex gap-1 flex-wrap mt-1">
-
-                                                                    {/* FOOD TYPE */}
-                                                                    <span
-                                                                        className={`badge ${row.foodType === "VEG"
-                                                                                ? "bg-success-subtle text-success"
-                                                                                : row.foodType === "NON_VEG"
-                                                                                    ? "bg-danger-subtle text-danger"
-                                                                                    : "bg-info-subtle text-info"
-                                                                            }`}
-                                                                    >
-                                                                        {formatLabel(row.foodType)}
-                                                                    </span>
-
-                                                                    {/* ITEM TYPE */}
-                                                                    <span
-                                                                        className={`badge ${row.isCombo
-                                                                                ? "bg-warning-subtle text-warning"
-                                                                                : "bg-primary-subtle text-primary"
-                                                                            }`}
-                                                                    >
-                                                                        {row.isCombo
-                                                                            ? "Combo"
-                                                                            : "Single"}
-                                                                    </span>
-
-                                                                    {/* ADDON */}
-                                                                    {
-                                                                        row.isAddonAllowed && (
-                                                                            <span className="badge bg-dark-subtle text-dark">
-                                                                                Addons
-                                                                            </span>
-                                                                        )
-                                                                    }
-
-                                                                    {/* OFFER */}
-                                                                    {
-                                                                        row.hasOffer && (
-                                                                            <span className="badge bg-success-subtle text-success">
-                                                                                Offer
-                                                                            </span>
-                                                                        )
-                                                                    }
-
-                                                                </div>
-
-                                                            </td>
-
-                                                            {/* CATEGORY */}
-                                                            <td>
-                                                                {formatLabel(row.category)}
-                                                            </td>
-
-                                                            {/* PORTION */}
-                                                            <td>
-                                                                <div className="fw-medium">
-                                                                    {row.portionQty}
-                                                                    {" "}
-                                                                    {formatLabel(row.portionName)}
-                                                                </div>
-                                                            </td>
-
-                                                            {/* PRICING */}
-                                                            <td>
-
-                                                                {
-                                                                    row.hasOffer ? (
-
-                                                                        <>
-                                                                            <div
-                                                                                className="text-decoration-line-through text-muted small"
-                                                                            >
-                                                                                ₹ {row.price}
-                                                                            </div>
-
-                                                                            <div className="fw-semibold text-success">
-
-                                                                                ₹ {
-
-                                                                                    row.offerType === "PERCENTAGE"
-
-                                                                                        ? (
-                                                                                            row.price -
-                                                                                            (
-                                                                                                row.price *
-                                                                                                row.offerValue
-                                                                                            ) / 100
-                                                                                        ).toFixed(2)
-
-                                                                                        : (
-                                                                                            row.price -
-                                                                                            row.offerValue
-                                                                                        ).toFixed(2)
-                                                                                }
-
-                                                                            </div>
-                                                                        </>
-
-                                                                    ) : (
-
-                                                                        <div className="fw-semibold">
-                                                                            ₹ {row.price}
-                                                                        </div>
-
-                                                                    )
-                                                                }
-
-                                                                {
-                                                                    row.isTaxApplicable &&
-                                                                    row.taxId && (
-                                                                        <div className="small text-muted">
-                                                                            {row.taxId.taxName}
-                                                                        </div>
-                                                                    )
-                                                                }
-
-                                                            </td>
-
-                                                            {/* STATUS */}
-                                                            <td>
-
-                                                                <div className="d-flex flex-column gap-1">
-
-                                                                    {statusBadge(row.status)}
-
-                                                                    {
-                                                                        !row.isVisibleInBilling && (
-                                                                            <span className="badge bg-secondary-subtle text-secondary">
-                                                                                Hidden In Billing
-                                                                            </span>
-                                                                        )
-                                                                    }
-
-                                                                </div>
-
-                                                            </td>
-
-                                                            {/* ACTIONS */}
-                                                            <td>
-
-                                                                <div className="d-flex justify-content-center gap-2">
-
-                                                                    <Link
-                                                                        to={`/master-menu-item/edit/${row._id}`}
-                                                                        state={{ rowData: row }}
-                                                                        className="btn btn-sm btn-outline-primary"
-                                                                        title="Edit"
-                                                                    >
-                                                                        <i className="bx bx-edit-alt"></i>
-                                                                    </Link>
-
-                                                                    <button
-                                                                        className="btn btn-sm btn-outline-danger"
-                                                                        title="Delete"
-                                                                        onClick={() => confirmDelete(row._id)}
-                                                                    >
-                                                                        <i className="bx bx-trash-alt"></i>
-                                                                    </button>
-
-                                                                </div>
-
-                                                            </td>
-
-                                                        </tr>
-
-                                                    ))
-
-                                                )}
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                        <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
-                                            <div className="text-muted font-size-13">
-                                                Showing {(page - 1) * perPage + 1} –{" "}
-                                                {Math.min(page * perPage, filtered.length)} of{" "}
-                                                {filtered.length} entries
-                                            </div>
-
-                                            <ul className="pagination pagination-rounded mb-0">
-                                                <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p - 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-left"></i>
-                                                    </button>
-                                                </li>
-
-                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                                                    (p) => (
-                                                        <li
-                                                            key={p}
-                                                            className={`page-item ${page === p ? "active" : ""}`}
-                                                        >
-                                                            <button className="page-link" onClick={() => setPage(p)}>
-                                                                {p}
-                                                            </button>
-                                                        </li>
-                                                    )
-                                                )}
-
-                                                <li
-                                                    className={`page-item ${page === totalPages ? "disabled" : ""
-                                                        }`}
-                                                >
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p + 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-right"></i>
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [categoryFilter, setCategoryFilter] = useState("ALL");
+  const [foodTypeFilter, setFoodTypeFilter] = useState("ALL");
+  const [offerFilter, setOfferFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const { menuItems, fetchMenuItems, deleteMenuItem } = useMenuItems();
+  useEffect(() => { fetchMenuItems(); }, []);
+
+  const filtered = menuItems.filter(item =>
+    (item.menuName?.toLowerCase().includes(search.toLowerCase()) ||
+     item.category?.toLowerCase().includes(search.toLowerCase()) ||
+     item.description?.toLowerCase().includes(search.toLowerCase())) &&
+    (statusFilter === "ALL" || item.status === statusFilter) &&
+    (categoryFilter === "ALL" || item.category === categoryFilter) &&
+    (foodTypeFilter === "ALL" || item.foodType === foodTypeFilter) &&
+    (offerFilter === "ALL" || (offerFilter === "WITH_OFFER" ? !!item.hasOffer : !item.hasOffer))
+  );
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page-1)*perPage, page*perPage);
+
+  const confirmDelete = (id) => { setDeleteId(id); setShowDeleteModal(true); };
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteMenuItem(deleteId); await fetchMenuItems();
+      toast.success("Menu item deleted"); setShowDeleteModal(false); setDeleteId(null);
+    } catch (e) { toast.error(e?.response?.data?.message || "Failed to delete"); }
+    finally { setDeleting(false); }
+  };
+
+  return (
+    <React.Fragment>
+      <div className="page-content"><div className="container-fluid">
+        <div className="row"><div className="col-12">
+          <div className="page-title-box d-sm-flex align-items-center justify-content-between">
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <i className="bx bx-food-menu" style={{ color:"#fff", fontSize:22 }}/>
+              </div>
+              <div>
+                <h4 className="mb-0" style={{ fontWeight:800, fontSize:18, color:"#1A1A1A" }}>Menu Item Management</h4>
+                <div style={{ fontSize:12, color:"#F97316", fontWeight:600, marginTop:1 }}>Masters · Menu</div>
+              </div>
+            </div>
+            <ol className="breadcrumb m-0"><li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li><li className="breadcrumb-item active">Menu Item</li></ol>
+          </div>
+        </div></div>
+
+        <div className="row"><div className="col-12"><div className="card">
+          <div className="card-header">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <h4 className="card-title mb-0">Menu Item Records</h4>
+                <span style={{ background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", borderRadius:10, padding:"2px 9px", fontSize:11, fontWeight:700, boxShadow:"0 2px 6px rgba(217,30,24,0.3)" }}>{filtered.length}</span>
+              </div>
+              <Link to="/master-menu-item/add" className="btn btn-sm btn-primary"><i className="bx bx-plus me-1"/>Add Menu Item</Link>
+            </div>
+          </div>
+          <div className="card-body">
+            <div className="row mb-3 g-2 align-items-center">
+              <div className="col-auto d-flex align-items-center gap-2">
+                <span style={{ fontSize:13, color:"#6b7280", whiteSpace:"nowrap" }}>Show</span>
+                <select className="form-select form-select-sm" style={{ width:70 }} value={perPage} onChange={e=>{setPerPage(Number(e.target.value));setPage(1);}}>{[5,10,25,50].map(n=><option key={n} value={n}>{n}</option>)}</select>
+                <span style={{ fontSize:13, color:"#6b7280", whiteSpace:"nowrap" }}>entries</span>
+              </div>
+              <div className="col-sm-12 col-md-3">
+                <div className="position-relative">
+                  <input type="text" className="form-control" placeholder="Search by name, code or category..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/>
+                  <i className="bx bx-search position-absolute" style={{ top:"50%", right:12, transform:"translateY(-50%)", color:"#adb5bd" }}/>
                 </div>
+              </div>
+              <div className="col-sm-6 col-md-2">
+                <select className="form-select" value={categoryFilter} onChange={e=>{setCategoryFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Categories</option>
+                  {["FRIED_CHICKEN","NUGGETS","FRIES","SANDWICH","FRANKIES","BURGER","MOMOS","MOJITO","BUBBLE_TEA","DESSERT","COMBO"].map(c=><option key={c} value={c}>{formatLabel(c)}</option>)}
+                </select>
+              </div>
+              <div className="col-sm-6 col-md-2">
+                <select className="form-select" value={foodTypeFilter} onChange={e=>{setFoodTypeFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Food Types</option>
+                  <option value="VEG">Veg</option>
+                  <option value="NON_VEG">Non-Veg</option>
+                  <option value="BEVERAGE">Beverage</option>
+                  <option value="DESSERT">Dessert</option>
+                </select>
+              </div>
+              <div className="col-sm-6 col-md-2">
+                <select className="form-select" value={offerFilter} onChange={e=>{setOfferFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Offers</option>
+                  <option value="WITH_OFFER">With Offer</option>
+                  <option value="NO_OFFER">No Offer</option>
+                </select>
+              </div>
+              <div className="col-sm-6 col-md-1">
+                <select className="form-select" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+              <div className="col text-end"><span className="text-muted font-size-13">{filtered.length} result{filtered.length!==1?"s":""} found</span></div>
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div
-                    className="modal fade show d-block"
-                    tabIndex="-1"
-                    style={{ background: "rgba(0,0,0,0.5)" }}
-                    onClick={() => setShowDeleteModal(false)}
-                >
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header border-0 pb-0">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDeleteModal(false)}
-                                    className="d-flex align-items-center justify-content-center rounded-circle border-0 bg-light"
-                                    style={{
-                                        width: "36px",
-                                        height: "36px",
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    <i className="bx bx-x fs-4"></i>
-                                </button>
-                            </div>
+            <div className="table-responsive" style={{ overflowX:"auto" }}>
+              <table className="table table-hover table-centered align-middle mb-0 text-nowrap">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width:50 }}>S.No</th>
+                    <th style={{ width:50 }}>Image</th>
+                    <th>Menu Name</th>
+                    <th>Category</th>
+                    <th>Food Type</th>
+                    <th>Portion</th>
+                    <th>Price</th>
+                    <th>Offer</th>
+                    <th>Flags</th>
+                    <th>Status</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.length === 0
+                    ? <tr><td colSpan="11" className="text-center py-5 text-muted"><i className="bx bx-search-alt display-4 d-block mb-2"/>No menu items found.</td></tr>
+                    : paged.map((row, i) => (
+                      <tr key={row._id}>
+                        <td>{(page-1)*perPage+i+1}</td>
+                        <td>
+                          {row.image
+                            ? <img src={row.image} alt={row.menuName} style={{ width:40, height:40, borderRadius:8, objectFit:"cover", border:"1.5px solid #f1f1f1" }}/>
+                            : <div style={{ width:40, height:40, borderRadius:8, background:"linear-gradient(135deg,rgba(217,30,24,0.08) 0%,rgba(249,115,22,0.06) 100%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                                <i className="bx bx-image" style={{ color:"#D91E18", fontSize:18 }}/>
+                              </div>
+                          }
+                        </td>
+                        <td style={{ maxWidth:200 }}>
+                          <div style={{ fontWeight:700, fontSize:13.5, color:"#1A1A1A" }}>{row.menuName}</div>
+                          {row.description && <div style={{ fontSize:11.5, color:"#b0b5bf", marginTop:1, maxWidth:185, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{row.description}</div>}
+                        </td>
+                        <td>
+                          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#F97316", background:"rgba(249,115,22,0.09)", border:"1px solid rgba(249,115,22,0.2)", whiteSpace:"nowrap" }}>
+                            {formatLabel(row.category)}
+                          </span>
+                        </td>
+                        <td>{foodTypePill(row.foodType)}</td>
+                        <td>
+                          {row.portionQty && row.portionName
+                            ? <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#374151", background:"#f3f4f6", border:"1px solid #e5e7eb", whiteSpace:"nowrap" }}>
+                                <i className="bx bx-layer" style={{ fontSize:13, color:"#9ca3af" }}/>{row.portionQty} {row.portionName}
+                              </span>
+                            : <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>
+                          }
+                        </td>
+                        <td>
+                          <div style={{ fontWeight:700, color:"#1A1A1A" }}>₹{row.price?.toLocaleString()}</div>
+                          {row.isTaxApplicable && <div style={{ fontSize:10.5, color:"#9ca3af", marginTop:1 }}>+GST</div>}
+                        </td>
+                        <td>{offerCell(row)}</td>
+                        <td>
+                          <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                            {row.isCombo && (
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 8px", borderRadius:20, fontSize:11, fontWeight:700, color:"#7c3aed", background:"rgba(124,58,237,0.08)", border:"1px solid rgba(124,58,237,0.2)", whiteSpace:"nowrap" }}>
+                                <i className="bx bx-layer" style={{ fontSize:12 }}/>Combo
+                              </span>
+                            )}
+                            {row.isAddonAllowed && (
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 8px", borderRadius:20, fontSize:11, fontWeight:700, color:"#2563eb", background:"rgba(37,99,235,0.08)", border:"1px solid rgba(37,99,235,0.2)", whiteSpace:"nowrap" }}>
+                                <i className="bx bx-plus-circle" style={{ fontSize:12 }}/>Addons
+                              </span>
+                            )}
+                            {row.isVisibleInBilling === false && (
+                              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 8px", borderRadius:20, fontSize:11, fontWeight:700, color:"#9ca3af", background:"#f3f4f6", border:"1px solid #e5e7eb", whiteSpace:"nowrap" }}>
+                                <i className="bx bx-hide" style={{ fontSize:12 }}/>Hidden
+                              </span>
+                            )}
+                            {!row.isCombo && !row.isAddonAllowed && row.isVisibleInBilling !== false && (
+                              <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>{statusPill(row.status)}</td>
+                        <td><div className="d-flex justify-content-center gap-2">
+                          <Link to={`/master-menu-item/edit/${row._id}`} state={{ rowData:row }} className="ckz-action-btn ckz-action-edit" title="Edit"><i className="bx bx-edit-alt"/></Link>
+                          <button className="ckz-action-btn ckz-action-delete" title="Delete" onClick={()=>confirmDelete(row._id)}><i className="bx bx-trash-alt"/></button>
+                        </div></td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
+            </div>
 
-                            <div className="modal-body text-center pb-4">
-                                <div className="avatar-md mx-auto mb-4">
-                                    <div className="avatar-title bg-danger-subtle text-danger rounded-circle font-size-32">
-                                        <i className="bx bx-trash-alt"></i>
-                                    </div>
-                                </div>
-                                <h5>Delete Menu Item?</h5>
-                                <p className="text-muted mb-0">
-                                    Are you sure you want to delete this menu item? This action cannot
-                                    be undone.
-                                </p>
-                            </div>
-
-                            <div className="modal-footer border-0 pt-0 justify-content-center gap-2">
-                                <button
-                                    className="btn btn-secondary px-4"
-                                    onClick={() => setShowDeleteModal(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button className="btn btn-danger px-4" onClick={handleDelete}>
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {totalPages > 1 && (
+              <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                <div className="text-muted font-size-13">Showing {(page-1)*perPage+1}–{Math.min(page*perPage,filtered.length)} of {filtered.length} entries</div>
+                <ul className="pagination pagination-rounded mb-0">
+                  <li className={`page-item ${page===1?"disabled":""}`}><button className="page-link" onClick={()=>setPage(p=>p-1)}><i className="bx bx-chevron-left"/></button></li>
+                  {Array.from({length:totalPages},(_,i)=>i+1).map(p=><li key={p} className={`page-item ${page===p?"active":""}`}><button className="page-link" onClick={()=>setPage(p)}>{p}</button></li>)}
+                  <li className={`page-item ${page===totalPages?"disabled":""}`}><button className="page-link" onClick={()=>setPage(p=>p+1)}><i className="bx bx-chevron-right"/></button></li>
+                </ul>
+              </div>
             )}
-        </React.Fragment>
-    );
+          </div>
+        </div></div></div>
+      </div></div>
+      {showDeleteModal && <DeleteModal onClose={()=>{setShowDeleteModal(false);setDeleteId(null);}} onConfirm={handleDelete} deleting={deleting}/>}
+    </React.Fragment>
+  );
 };
 
 export default MenuItem;

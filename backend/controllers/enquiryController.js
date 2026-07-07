@@ -1,5 +1,6 @@
 const Enquiry = require("../models/enquiryModel");
 const Lead = require("../models/leadModel");
+const FollowupHistory = require("../models/followupHistoryModel");
 
 const generateReferenceId = async () => {
   const enquiries = await Enquiry.find({}).select("referenceId");
@@ -209,6 +210,54 @@ exports.convertToLead = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+// ✅ ADD FOLLOWUP HISTORY ENTRY
+exports.addFollowup = async (req, res) => {
+  try {
+    const { followUpDate, remarks, status, addedBy } = req.body;
+
+    const enquiry = await Enquiry.findOne({
+      _id: req.params.id,
+      isDeleted: false,
+    });
+
+    if (!enquiry) {
+      return res.status(404).json({ message: "Enquiry not found" });
+    }
+
+    const entry = await FollowupHistory.create({
+      enquiryId: req.params.id,
+      followUpDate: new Date(followUpDate),
+      remarks: remarks || "",
+      status: status || enquiry.status,
+      addedBy: addedBy || "Admin",
+    });
+
+    // Sync enquiry's latest followup fields
+    await Enquiry.findByIdAndUpdate(req.params.id, {
+      followUpDate: new Date(followUpDate),
+      remarks: remarks || enquiry.remarks,
+      ...(status && { status }),
+    });
+
+    res.status(201).json(entry);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// ✅ GET FOLLOWUP HISTORY
+exports.getFollowupHistory = async (req, res) => {
+  try {
+    const history = await FollowupHistory.find({
+      enquiryId: req.params.id,
+    }).sort({ createdAt: -1 });
+
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

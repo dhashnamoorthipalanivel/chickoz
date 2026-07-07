@@ -5,6 +5,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 
 // Dashboard
 import Dashboard from '../pages/Dashboard/Index';
+import FranchiseDashboard from '../pages/Dashboard/FranchiseDashboard';
 
 // Apps
 import BlogDetail from '../pages/Apps/BlogDetail';
@@ -92,8 +93,9 @@ import RawMaterial from '../pages/Master/RawMaterial';
 import Vendor from '../pages/Master/Vendor';
 import PaymentMode from '../pages/Master/PaymentMode/PaymentMode';
 import OrderType from '../pages/Master/OrderType/OrderType';
-import KitchenStation from '../pages/Master/kitchenStation';
+import KitchenStation from '../pages/Master/KitchenStation';
 import Franchise from '../pages/Master/Franchise/Franchise';
+import FranchiseForm from '../pages/Master/Franchise/FranchiseForm';
 import MenuItemForm from '../pages/Master/MenuItem/MenuItemForm';
 import FranchiseMenuVisibility from '../pages/Master/MenuItem/FranchiseMenuVisibility';
 import FranchiseMenuAvailability from '../pages/Master/MenuItem/FranchiseMenuAvailability';
@@ -105,14 +107,26 @@ import LeadSource from '../pages/Master/LeadSource/LeadSource';
 import Document from '../pages/Master/Document/Document';
 import LeadSourceForm from '../pages/Master/LeadSource/LeadSourceForm';
 import DocumentForm from '../pages/Master/Document/DocumentForm';
-import Enquiry from '../pages/CRM/Enquiry/Enquiry';
-import Lead from '../pages/CRM/Lead/Lead';
 import Package from '../pages/Master/Package/Package';
 import PackageForm from '../pages/Master/Package/PackageForm';
+import Material from '../pages/Master/Material/Material';
+import MaterialForm from '../pages/Master/Material/MaterialForm';
+import MasalaItems from '../pages/Master/MasalaItems/MasalaItems';
+import MasalaItemsForm from '../pages/Master/MasalaItems/MasalaItemsForm';
+
+// CRM
+import Enquiry from '../pages/CRM/Enquiry/Enquiry';
 import EnquiryForm from '../pages/CRM/Enquiry/EnquiryForm';
+import Lead from '../pages/CRM/Lead/Lead';
+import LeadWizardFrom from '../pages/CRM/Lead/LeadWizardForm';
+import LeadView from '../pages/CRM/Lead/LeadView';
+
+// Store
 import Billing from '../pages/StoreManagement/Billing';
 import Orders from '../pages/StoreManagement/Orders';
-import LeadWizardFrom from '../pages/CRM/Lead/LeadWizardForm';
+import OrdersView from '../pages/StoreManagement/OrdersView';
+
+// Manufacture
 import Kishok from '../pages/Manufacture/Kishok/Kishok';
 import KishokWizardForm from '../pages/Manufacture/Kishok/KishokWizardForm';
 import KishokView from '../pages/Manufacture/Kishok/KishokView';
@@ -120,13 +134,19 @@ import MasalaFranchiseRequest from '../pages/Manufacture/Masala/MasalaFranchiseR
 import MasalaAdminProcess from '../pages/Manufacture/Masala/MasalaAdminProcess';
 import MasalaFranchiseRequestForm from '../pages/Manufacture/Masala/MasalaFranchiseRequestForm';
 import MasalaAdminProcessView from '../pages/Manufacture/Masala/MasalaAdminProcessView';
-import OrdersView from '../pages/StoreManagement/OrdersView';
-import MasalaItems from '../pages/Master/MasalaItems/MasalaItems';
-import MasalaItemsForm from '../pages/Master/MasalaItems/MasalaItemsForm';
-import FranchiseForm from '../pages/Master/Franchise/FranchiseForm';
+import MasalaAdminProcessForm from '../pages/Manufacture/Masala/MasalaAdminProcessForm';
+import MasalaFranchiseRequestView from '../pages/Manufacture/Masala/MasalaFranchiseRequestView';
+
+// Subscription
+import Subscription from '../pages/Subscription/Subscription';
+
+// Reports
+import AdminReport     from '../pages/Reports/AdminReport';
+import FranchiseReport from '../pages/Reports/FranchiseReport';
+
+// Auth
 import SetUpPassword from '../pages/Auth/SetUpPassword';
 import ChangePassword from '../pages/Auth/ChangePassword';
-import MasalaFranchiseRequestView from '../pages/Manufacture/Masala/masalaFranchiseRequestView';
 
 
 // Full-page auth/error routes (no layout)
@@ -175,6 +195,9 @@ const AppRoutes = () => {
 
       {/* Dashboard */}
       <Route path="/dashboard" element={<W><Dashboard /></W>} />
+      <Route path="/franchise-dashboard"   element={<W><FranchiseDashboard /></W>} />
+      <Route path="/reports-admin"         element={<W><AdminReport /></W>} />
+      <Route path="/reports-franchise"     element={<W><FranchiseReport /></W>} />
       <Route path="/layouts-horizontal" element={<W><Dashboard /></W>} />
 
       {/* Auth (no layout) */}
@@ -319,7 +342,15 @@ const AppRoutes = () => {
       {/* CRM module form */}
       <Route path="/crm-enquiry/add" element={<W><EnquiryForm /></W>} />
       <Route path="/crm-enquiry/edit/:id" element={<W><EnquiryForm /></W>} />
+      <Route path="/crm-lead/view/:id" element={<W><LeadView /></W>} />
       <Route path="/crm-lead/:id" element={<W><LeadWizardFrom /></W>} />
+
+      {/* Subscription Management (admin only) */}
+      <Route path="/subscription-management" element={
+        <ProtectedRoute allowedRoles={["admin","super_admin"]}>
+          <W><Subscription /></W>
+        </ProtectedRoute>
+      } />
 
       {/* Manufacture */}
       <Route path="/manufacture-kishok" element={
@@ -339,7 +370,8 @@ const AppRoutes = () => {
       <Route path="/manufacture-masala-admin-process" element={<W><MasalaAdminProcess /></W>} />
       <Route path="/manufacture-masala-franchise-request/add" element={<W><MasalaFranchiseRequestForm /></W>} />
       <Route path="/manufacture-masala-franchise-request/edit/:id" element={<W><MasalaFranchiseRequestForm /></W>} />
-      <Route path="/manufacture-masala-franchise-request/view/:id" element={<W><MasalaFranchiseRequestView /></W>} />
+      <Route path="/manufacture-masala-franchise-request/view/:id" element={<W><MasalaFranchiseRequestView/></W>} />
+      <Route path="/manufacture-masala-admin-process/add" element={<W><MasalaAdminProcessForm /></W>} />
       <Route path="/manufacture-masala-admin-process/view/:id" element={<W><MasalaAdminProcessView /></W>} />
 
       {/* Store Management */}
@@ -376,57 +408,33 @@ const AppRoutes = () => {
       {/* Master Module */}
       <Route path='/master-franchise'
         element={
-          <ProtectedRoute
-            allowedRoles={[
-              "admin",
-              "super_admin"
-            ]}
-          >
+          <ProtectedRoute allowedRoles={["admin","super_admin"]}>
             <W><Franchise /></W>
           </ProtectedRoute>
         }
       />
-      <Route path='/master-package' element={<W> <Package /> </W>} />
-      {/* <Route path='/master-unit' element={<W> <Unit /></W>} /> */}
-      <Route path='/master-tax' element={<W> <Tax /></W>} />
-      {/* <Route path='/master-food-category' element={<W> <FoodCategory /></W>} /> */}
-      {/* <Route path='/master-kitchen-station' element={<W> <KitchenStation /></W>} /> */}
-      <Route path='/master-menu-item' element={<W> <MenuItem /></W>} />
-      <Route path='/master-franchise-menu-visibility' element={<W> <FranchiseMenuVisibility /></W>} />
+      <Route path='/master-franchise/add' element={<W><FranchiseForm /></W>} />
+      <Route path='/master-franchise/edit/:id' element={<W><FranchiseForm /></W>} />
+      <Route path='/master-package' element={<W><Package /></W>} />
+      <Route path='/master-tax' element={<W><Tax /></W>} />
+      <Route path='/master-menu-item' element={<W><MenuItem /></W>} />
+      <Route path='/master-franchise-menu-visibility' element={<W><FranchiseMenuVisibility /></W>} />
       <Route path='/master-franchise-menu-availability'
         element={
-          <ProtectedRoute allowedRoles={[
-            "admin",
-            "super_admin",
-            "user",
-            "franchise"
-          ]}
-          >
-
-            <W>
-              <FranchiseMenuAvailability />
-            </W>
-
+          <ProtectedRoute allowedRoles={["admin","super_admin","user","franchise"]}>
+            <W><FranchiseMenuAvailability /></W>
           </ProtectedRoute>
         }
       />
-      {/* <Route path='/master-raw-material' element={<W> <RawMaterial /></W>} /> */}
-      {/* <Route path='/master-vendor' element={<W> <Vendor /></W>} /> */}
-      <Route path='/master-masala-items' element={<W> <MasalaItems /></W>} />
-      <Route path='/master-payment-mode' element={<W> <PaymentMode /></W>} />
-      <Route path='/master-order-type' element={<W> <OrderType /> </W>} />
-      <Route path='/master-lead-source' element={<W> <LeadSource /> </W>} />
-      <Route path='/master-document' element={<W> <Document /> </W>} />
-
-      {/* Master Menu form */}
-      <Route path='/master-franchise/add' element={<W> <FranchiseForm /> </W>} />
-      <Route path='/master-franchise/edit/:id' element={<W> <FranchiseForm /> </W>} />
-      <Route path='/master-menu-item/add' element={<W> <MenuItemForm /> </W>} />
-      <Route path='/master-menu-item/edit/:id' element={<W> <MenuItemForm /> </W>} />
-      <Route
-        path="/master-franchise-menu-visibility/edit/:id"
-        element={<W><FranchiseMenuVisibilityForm /></W>}
-      />
+      <Route path='/master-masala-items' element={<W><MasalaItems /></W>} />
+      <Route path='/master-payment-mode' element={<W><PaymentMode /></W>} />
+      <Route path='/master-order-type' element={<W><OrderType /></W>} />
+      <Route path='/master-lead-source' element={<W><LeadSource /></W>} />
+      <Route path='/master-document' element={<W><Document /></W>} />
+      <Route path='/master-material' element={<W><Material /></W>} />
+      <Route path='/master-menu-item/add' element={<W><MenuItemForm /></W>} />
+      <Route path='/master-menu-item/edit/:id' element={<W><MenuItemForm /></W>} />
+      <Route path="/master-franchise-menu-visibility/edit/:id" element={<W><FranchiseMenuVisibilityForm /></W>} />
       <Route path="/master-tax/add" element={<W><TaxForm /></W>} />
       <Route path="/master-tax/edit/:id" element={<W><TaxForm /></W>} />
       <Route path="/master-order-type/add" element={<W><OrderTypeForm /></W>} />
@@ -437,9 +445,11 @@ const AppRoutes = () => {
       <Route path="/master-lead-source/edit/:id" element={<W><LeadSourceForm /></W>} />
       <Route path="/master-document/add" element={<W><DocumentForm /></W>} />
       <Route path="/master-document/edit/:id" element={<W><DocumentForm /></W>} />
-      <Route path="/master-package/add" element={<W>< PackageForm /></W>} />
+      <Route path="/master-material/add" element={<W><MaterialForm /></W>} />
+      <Route path="/master-material/edit/:id" element={<W><MaterialForm /></W>} />
+      <Route path="/master-package/add" element={<W><PackageForm /></W>} />
       <Route path="/master-package/edit/:id" element={<W><PackageForm /></W>} />
-      <Route path="/master-masala-items/add" element={<W>< MasalaItemsForm /></W>} />
+      <Route path="/master-masala-items/add" element={<W><MasalaItemsForm /></W>} />
       <Route path="/master-masala-items/edit/:id" element={<W><MasalaItemsForm /></W>} />
 
     </Routes>

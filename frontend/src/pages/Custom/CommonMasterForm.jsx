@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPackage } from "../../api/packageApi";
-import { useDocuments, useFranchiseStore, useLeadSources, useMasalaItems, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore } from "../../store/store";
+import { useDocuments, useFranchiseStore, useLeadSources, useMasalaItems, useMaterials, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore } from "../../store/store";
 import { toast } from "react-toastify";
 
 
@@ -109,7 +109,6 @@ const MODULE_CONFIG = {
         fields: {
 
             basic: [
-                { name: "menuCode", label: "Menu Code", type: "text", required: true },
                 { name: "menuName", label: "Menu Name", type: "text", required: true },
                 {
                     name: "category",
@@ -310,7 +309,6 @@ const MODULE_CONFIG = {
         },
 
         initialValues: {
-            menuCode: "",
             menuName: "",
             category: "",
             foodType: "",
@@ -344,7 +342,6 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                { name: "paymentCode", label: "Payment Code", type: "text", required: true, placeholder: "Enter payment code", maxLength: 50 },
                 { name: "paymentName", label: "Payment Name", type: "text", required: true, placeholder: "Enter payment mode name", maxLength: 100 },
                 {
                     name: "paymentType",
@@ -366,7 +363,6 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            paymentCode: "",
             paymentName: "",
             paymentType: "",
             description: "",
@@ -382,14 +378,6 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                {
-                    name: "orderTypeCode",
-                    label: "Order Type Code",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter order type code",
-                    maxLength: 50,
-                },
                 {
                     name: "orderTypeName",
                     label: "Order Type Name",
@@ -437,7 +425,6 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            orderTypeCode: "",
             orderTypeName: "",
             shortName: "",
             description: "",
@@ -454,7 +441,6 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                { name: "leadSourceCode", label: "Lead Source Code", type: "text", required: true, placeholder: "Enter lead source code", maxLength: 50 },
                 { name: "leadSourceName", label: "Lead Source Name", type: "text", required: true, placeholder: "Enter lead source name", maxLength: 100 },
                 {
                     name: "leadSourceType", label: "Lead Source Type", type: "select", required: true, options: ["OFFLINE",
@@ -471,7 +457,6 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            leadSourceCode: "",
             leadSourceName: "",
             leadSourceType: "",
             description: "",
@@ -481,6 +466,44 @@ const MODULE_CONFIG = {
     },
 
 
+    material: {
+        title: "Material",
+        listPath: "/master-material",
+        icon: "bx-box",
+        tabs: ["basic", "settings"],
+        fields: {
+            basic: [
+                { name: "materialName",  label: "Material Name",  type: "text",   required: true,  placeholder: "E.g. Sandwich Toaster", maxLength: 100 },
+                {
+                    name: "category", label: "Category", type: "select", required: true,
+                    options: ["EQUIPMENT", "UTENSIL", "UNIFORM", "ACCESSORY", "STATIONERY", "FURNITURE"],
+                },
+                {
+                    name: "powerType", label: "Power Type", type: "select", required: true,
+                    options: ["GAS", "ELECTRIC", "MANUAL", "NOT_APPLICABLE"],
+                },
+                { name: "quantity",      label: "Default Quantity", type: "number", required: true },
+                {
+                    name: "unit", label: "Unit", type: "select", required: true,
+                    options: ["PCS", "SET", "BOX", "PAIR", "KG", "LTR"],
+                },
+                { name: "description",   label: "Description",    type: "textarea", placeholder: "Optional notes about this material", col: 12, maxLength: 500 },
+            ],
+            settings: [
+                { name: "status", label: "Status", type: "select", options: ["ACTIVE", "INACTIVE"] },
+            ],
+        },
+        initialValues: {
+            materialName: "",
+            category: "",
+            powerType: "NOT_APPLICABLE",
+            quantity: 1,
+            unit: "PCS",
+            description: "",
+            status: "ACTIVE",
+        },
+    },
+
     document: {
         title: "Document",
         listPath: "/master-document",
@@ -488,7 +511,6 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                { name: "documentCode", label: "Document Code", type: "text", required: true, placeholder: "Enter document code", maxLength: 50 },
                 { name: "documentName", label: "Document Name", type: "text", required: true, placeholder: "Enter document name", maxLength: 100 },
                 {
                     name: "documentType", label: "Document Type", type: "select", required: true, options: ["LEGAL",
@@ -506,7 +528,6 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            documentCode: "",
             documentName: "",
             documentType: "",
             description: "",
@@ -522,7 +543,6 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                { name: "taxCode", label: "Tax Code", type: "text", required: true, maxLength: 50 },
                 { name: "taxName", label: "Tax Name", type: "text", required: true, maxLength: 100 },
                 { name: "taxPercentage", label: "Tax Percentage", type: "number", required: true },
                 {
@@ -543,7 +563,6 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            taxCode: "",
             taxName: "",
             taxPercentage: "",
             taxType: "",
@@ -555,17 +574,9 @@ const MODULE_CONFIG = {
         title: "Package",
         listPath: "/master-package",
         icon: "bx-box",
-        tabs: ["basic", "pricing", "settings"],
+        tabs: ["basic", "details", "menu_items", "pricing", "settings"],
         fields: {
             basic: [
-                {
-                    name: "packageCode",
-                    label: "Package Code",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter package code",
-                    maxLength: 50,
-                },
                 {
                     name: "packageName",
                     label: "Package Name",
@@ -576,9 +587,10 @@ const MODULE_CONFIG = {
                 },
                 {
                     name: "features",
-                    label: "Features",
+                    label: "Features / Includes",
                     type: "textarea",
-                    placeholder: "Enter package features",
+                    required: true,
+                    placeholder: "List what is included in this package...",
                     col: 12,
                     maxLength: 1000,
                 },
@@ -605,6 +617,53 @@ const MODULE_CONFIG = {
                     placeholder: "Enter cart amount"
                 },
             ],
+            details: [
+                {
+                    name: "description",
+                    label: "Package Description",
+                    type: "textarea",
+                    required: true,
+                    col: 12,
+                    placeholder: "Describe the package — what it offers, who it is for...",
+                    maxLength: 2000,
+                },
+                {
+                    name: "packageType",
+                    label: "Package Type",
+                    type: "select",
+                    required: true,
+                    options: ["GAS", "ELECTRICAL", "BOTH"],
+                },
+                {
+                    name: "photos",
+                    label: "Package Photos",
+                    type: "multi-photo",
+                    required: true,
+                    col: 12,
+                },
+                {
+                    name: "kitchenEquipmentIncluded",
+                    label: "Kitchen Equipment Included",
+                    type: "switch",
+                    desc: "Enable to specify which materials / kitchen equipment come with this package",
+                },
+                {
+                    name: "packageMaterials",
+                    label: "Kitchen Equipment Checklist",
+                    type: "material-checklist",
+                    col: 12,
+                    showIf: (f) => !!f.kitchenEquipmentIncluded,
+                },
+            ],
+            menu_items: [
+                {
+                    name: "packageMenuItems",
+                    label: "Menu Items",
+                    type: "menu-checklist",
+                    required: true,
+                    col: 12,
+                },
+            ],
             pricing: [
                 {
                     name: "price",
@@ -625,16 +684,15 @@ const MODULE_CONFIG = {
                     label: "Royalty Type",
                     type: "select",
                     required: true,
-                    options: ["PERCENTAGE", "FIXED"]
+                    options: ["PERCENTAGE", "FIXED", "NO_ROYALTY"]
                 },
                 {
                     name: "royaltyValue",
                     label: "Royalty Value",
                     type: "number",
-                    placeholder: "Enter royalty value"
+                    placeholder: "Enter royalty value",
+                    showIf: (f) => f.royaltyType && f.royaltyType !== "NO_ROYALTY",
                 },
-
-                // ✅ ADD THIS (TAX SECTION)
                 {
                     name: "isTaxApplicable",
                     label: "Apply GST",
@@ -660,8 +718,6 @@ const MODULE_CONFIG = {
                     placeholder: "e.g. 998314",
                     showIf: (formData) => formData.isTaxApplicable
                 },
-
-                // ✅ AUTO FIELDS
                 {
                     name: "taxAmount",
                     label: "Tax Amount",
@@ -685,12 +741,17 @@ const MODULE_CONFIG = {
             ],
         },
         initialValues: {
-            packageCode: "",
             packageName: "",
             features: "",
             agreementDuration: "",
             cartSize: "",
             cartAmount: "",
+            description: "",
+            packageType: "GAS",
+            photos: [],
+            kitchenEquipmentIncluded: false,
+            packageMaterials: [],
+            packageMenuItems: [],
             price: "",
             advanceAmount: "",
             royaltyType: "",
@@ -708,18 +769,10 @@ const MODULE_CONFIG = {
         title: "Masala Items",
         listPath: "/master-masala-items",
         icon: "bx-bowl-hot",
-        tabs: ["basic", "settings"],
+        tabs: ["basic", "details", "settings"],
 
         fields: {
             basic: [
-                {
-                    name: "itemCode",
-                    label: "Item Code",
-                    type: "text",
-                    required: true,
-                    placeholder: "Enter item code",
-                    maxLength: 50,
-                },
                 {
                     name: "itemName",
                     label: "Item Name",
@@ -742,11 +795,18 @@ const MODULE_CONFIG = {
                     ],
                 },
                 {
+                    name: "vegType",
+                    label: "Veg / Non-Veg",
+                    type: "radio",
+                    required: true,
+                    options: ["VEG", "NON_VEG"],
+                },
+                {
                     name: "packSize",
-                    label: "Pack Size",
+                    label: "Net Weight",
                     type: "number",
                     required: true,
-                    placeholder: "Enter packet size"
+                    placeholder: "Enter net weight"
                 },
                 {
                     name: "unit",
@@ -801,7 +861,97 @@ const MODULE_CONFIG = {
                 },
             ],
 
+            details: [
+                {
+                    name: "mfd",
+                    label: "Manufacturing Date (MFD)",
+                    type: "date",
+                    required: true,
+                },
+                {
+                    name: "expiryDate",
+                    label: "Expiry Date",
+                    type: "date",
+                    required: true,
+                },
+                {
+                    name: "batchNo",
+                    label: "Batch No.",
+                    type: "text",
+                    required: true,
+                    placeholder: "e.g. 79/BZK/25",
+                    maxLength: 50,
+                },
+                {
+                    name: "ingredients",
+                    label: "Ingredients",
+                    type: "textarea",
+                    required: true,
+                    placeholder: "List all ingredients (e.g. Spices, Salt, Hydrolyzed Vegetable Protein...)",
+                    col: 12,
+                    maxLength: 2000,
+                    rows: 4,
+                },
+                {
+                    name: "allergens",
+                    label: "Contains / Allergen Info",
+                    type: "textarea",
+                    required: true,
+                    placeholder: "e.g. Contains: Soy. May contain: Nuts, Celery, Wheat & Milk.",
+                    col: 12,
+                    maxLength: 500,
+                },
+                {
+                    name: "usageInstructions",
+                    label: "Usage Instructions",
+                    type: "richtext",
+                    required: true,
+                    placeholder: "Describe usage instructions, cooking steps, serving suggestions...",
+                    col: 12,
+                    maxLength: 2000,
+                    rows: 5,
+                },
+                {
+                    name: "storageInstructions",
+                    label: "Storage Instructions",
+                    type: "text",
+                    required: true,
+                    placeholder: "e.g. Store in an airtight container after opening",
+                    col: 12,
+                    maxLength: 300,
+                },
+            ],
+
             settings: [
+                {
+                    name: "isHalal",
+                    label: "Halal Certified",
+                    type: "switch",
+                    desc: "This product is Halal certified",
+                },
+                {
+                    name: "isInstitutional",
+                    label: "Institutional Pack",
+                    type: "switch",
+                    desc: "Institutional pack — not for retail sale",
+                },
+                {
+                    name: "fssaiNo",
+                    label: "FSSAI License No.",
+                    type: "text",
+                    required: true,
+                    placeholder: "Enter FSSAI license number",
+                    maxLength: 50,
+                },
+                {
+                    name: "manufacturer",
+                    label: "Manufactured By",
+                    type: "text",
+                    required: true,
+                    placeholder: "Enter manufacturer name and address",
+                    col: 12,
+                    maxLength: 300,
+                },
                 {
                     name: "lowStockAlert",
                     label: "Low Stock Alert",
@@ -824,9 +974,9 @@ const MODULE_CONFIG = {
         },
 
         initialValues: {
-            itemCode: "",
             itemName: "",
             category: "",
+            vegType: "VEG",
             packSize: "",
             unit: "",
             price: "",
@@ -834,11 +984,250 @@ const MODULE_CONFIG = {
             taxId: "",
             stock: "",
             description: "",
+            mfd: "",
+            expiryDate: "",
+            batchNo: "",
+            ingredients: "",
+            allergens: "",
+            usageInstructions: "",
+            storageInstructions: "",
+            isHalal: false,
+            isInstitutional: false,
+            fssaiNo: "",
+            manufacturer: "",
             lowStockAlert: false,
             status: "ACTIVE",
             isDefault: false,
         },
     },
+};
+
+/* ─── Rich Text Editor ───────────────────────────────────────── */
+const RichTextEditor = ({ name, value, onChange, placeholder }) => {
+    const editorRef = React.useRef(null);
+    const wrapRef = React.useRef(null);
+    const isFirstRender = React.useRef(true);
+    const [wordCount, setWordCount] = React.useState(0);
+    const [charCount, setCharCount] = React.useState(0);
+    const [activeFormats, setActiveFormats] = React.useState({});
+    const [isFocused, setIsFocused] = React.useState(false);
+
+    React.useEffect(() => {
+        if (isFirstRender.current && editorRef.current) {
+            editorRef.current.innerHTML = value || "";
+            isFirstRender.current = false;
+            updateCounts();
+        }
+    }, []);
+
+    const updateCounts = () => {
+        if (!editorRef.current) return;
+        const text = editorRef.current.innerText || "";
+        setCharCount(text.length);
+        setWordCount(text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0);
+    };
+
+    const updateActiveFormats = () => {
+        const cmds = ["bold", "italic", "underline", "strikeThrough", "insertOrderedList", "insertUnorderedList", "justifyLeft", "justifyCenter", "justifyRight"];
+        const active = {};
+        cmds.forEach(cmd => { try { active[cmd] = document.queryCommandState(cmd); } catch (_) {} });
+        setActiveFormats(active);
+    };
+
+    const exec = (cmd, val = null) => {
+        document.execCommand(cmd, false, val);
+        editorRef.current?.focus();
+        sync();
+        updateActiveFormats();
+    };
+
+    const sync = () => {
+        onChange({ target: { name, value: editorRef.current?.innerHTML || "" } });
+        updateCounts();
+    };
+
+    const GROUPS = [
+        {
+            tools: [
+                { cmd: "bold",        label: "B", labelStyle: { fontWeight:900, fontFamily:"Georgia,serif", fontSize:14 }, title: "Bold (Ctrl+B)" },
+                { cmd: "italic",      label: "I", labelStyle: { fontStyle:"italic", fontFamily:"Georgia,serif", fontSize:14 }, title: "Italic (Ctrl+I)" },
+                { cmd: "underline",   label: "U", labelStyle: { textDecoration:"underline" }, title: "Underline (Ctrl+U)" },
+                { cmd: "strikeThrough", label: "S", labelStyle: { textDecoration:"line-through" }, title: "Strikethrough" },
+            ]
+        },
+        {
+            tools: [
+                { cmd: "insertOrderedList",   icon: "bx-list-ol",      title: "Ordered List" },
+                { cmd: "insertUnorderedList", icon: "bx-list-ul",      title: "Bullet List" },
+                { cmd: "indent",              icon: "bx-right-indent",  title: "Indent" },
+                { cmd: "outdent",             icon: "bx-left-indent",   title: "Outdent" },
+            ]
+        },
+        {
+            tools: [
+                { cmd: "justifyLeft",   icon: "bx-align-left",   title: "Align Left" },
+                { cmd: "justifyCenter", icon: "bx-align-middle", title: "Align Center" },
+                { cmd: "justifyRight",  icon: "bx-align-right",  title: "Align Right" },
+            ]
+        },
+        {
+            tools: [
+                { cmd: "removeFormat", icon: "bx-eraser", title: "Clear Formatting", danger: true },
+            ]
+        },
+    ];
+
+    const ToolBtn = ({ tool }) => {
+        const isActive = !!activeFormats[tool.cmd];
+        return (
+            <button
+                type="button"
+                title={tool.title}
+                onMouseDown={e => { e.preventDefault(); exec(tool.cmd); }}
+                style={{
+                    width: 30, height: 28, borderRadius: 6, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, transition: "all 0.14s", fontSize: 12,
+                    border: isActive ? "1.5px solid rgba(217,30,24,0.4)" : "1px solid transparent",
+                    background: isActive ? "rgba(217,30,24,0.08)" : "transparent",
+                    color: isActive ? "#D91E18" : tool.danger ? "#ef4444" : "#475569",
+                    boxShadow: isActive ? "0 1px 4px rgba(217,30,24,0.14)" : "none",
+                }}
+                onMouseEnter={e => {
+                    if (!isActive) {
+                        e.currentTarget.style.background = "#fff";
+                        e.currentTarget.style.borderColor = "#e2e8f0";
+                        e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.1)";
+                    }
+                }}
+                onMouseLeave={e => {
+                    if (!isActive) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.borderColor = "transparent";
+                        e.currentTarget.style.boxShadow = "none";
+                    }
+                }}
+            >
+                {tool.icon
+                    ? <i className={`bx ${tool.icon}`} style={{ fontSize: 15 }} />
+                    : <span style={{ lineHeight: 1, ...tool.labelStyle }}>{tool.label}</span>}
+            </button>
+        );
+    };
+
+    return (
+        <div ref={wrapRef} style={{
+            border: isFocused ? "1.5px solid #F97316" : "1.5px solid #e9ecef",
+            borderRadius: 12,
+            background: "#fff",
+            transition: "border-color 0.18s, box-shadow 0.18s",
+            boxShadow: isFocused ? "0 0 0 3.5px rgba(249,115,22,0.14)" : "none",
+            overflow: "hidden",
+        }}>
+            {/* Toolbar Header */}
+            <div style={{
+                background: isFocused ? "linear-gradient(135deg,rgba(217,30,24,0.03) 0%,rgba(249,115,22,0.04) 100%)" : "#f8fafc",
+                borderBottom: "1px solid #f1f5f9",
+                padding: "8px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                flexWrap: "wrap",
+                transition: "background 0.18s",
+            }}>
+                {/* Block format selector */}
+                <div style={{ position: "relative", marginRight: 2 }}>
+                    <select
+                        onChange={e => exec("formatBlock", e.target.value)}
+                        defaultValue="p"
+                        style={{
+                            fontSize: 12, padding: "4px 22px 4px 8px", borderRadius: 7,
+                            border: "1px solid #e2e8f0", background: "#fff", color: "#374151",
+                            cursor: "pointer", height: 28, appearance: "none", fontWeight: 600,
+                            minWidth: 88,
+                        }}
+                    >
+                        <option value="p">Normal</option>
+                        <option value="h1">Heading 1</option>
+                        <option value="h2">Heading 2</option>
+                        <option value="h3">Heading 3</option>
+                    </select>
+                    <i className="bx bx-chevron-down" style={{ position:"absolute", right:5, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#94a3b8", pointerEvents:"none" }} />
+                </div>
+
+                {/* Tool groups with separators */}
+                {GROUPS.map((group, gi) => (
+                    <React.Fragment key={gi}>
+                        <div style={{ width:1, height:20, background:"#e2e8f0", margin:"0 3px", flexShrink:0 }} />
+                        {group.tools.map(tool => <ToolBtn key={tool.cmd} tool={tool} />)}
+                    </React.Fragment>
+                ))}
+
+                {/* Spacer + label */}
+                <div style={{ flex:1 }}/>
+                <span style={{ fontSize:10.5, fontWeight:600, color:"#cbd5e1", letterSpacing:0.4, textTransform:"uppercase", whiteSpace:"nowrap" }}>Rich Text</span>
+            </div>
+
+            {/* Editable area */}
+            <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                className="ckz-rte-editor"
+                data-placeholder={placeholder || "Start writing here..."}
+                onInput={sync}
+                onKeyUp={updateActiveFormats}
+                onMouseUp={updateActiveFormats}
+                onFocus={() => { setIsFocused(true); updateActiveFormats(); }}
+                onBlur={() => { setIsFocused(false); sync(); }}
+                style={{
+                    minHeight: 160,
+                    padding: "16px 18px",
+                    fontSize: 13.5,
+                    color: "#1A1A1A",
+                    outline: "none",
+                    lineHeight: 1.8,
+                    background: "#fff",
+                    fontFamily: "inherit",
+                }}
+            />
+
+            {/* Footer — word/char count */}
+            <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "6px 14px",
+                borderTop: "1px solid #f1f5f9",
+                background: "#fafafa",
+            }}>
+                <div style={{ display:"flex", gap:12 }}>
+                    <span style={{ fontSize:11, color:"#94a3b8", fontWeight:500 }}>
+                        <span style={{ fontWeight:700, color:"#64748b" }}>{wordCount}</span> words
+                    </span>
+                    <span style={{ fontSize:11, color:"#94a3b8", fontWeight:500 }}>
+                        <span style={{ fontWeight:700, color:"#64748b" }}>{charCount}</span> characters
+                    </span>
+                </div>
+                {charCount > 0 && (
+                    <button
+                        type="button"
+                        title="Clear all content"
+                        onMouseDown={e => {
+                            e.preventDefault();
+                            if (editorRef.current) { editorRef.current.innerHTML = ""; }
+                            sync();
+                        }}
+                        style={{ fontSize:11, color:"#cbd5e1", background:"none", border:"none", cursor:"pointer", padding:"2px 6px", borderRadius:5, fontWeight:600, transition:"color 0.13s" }}
+                        onMouseEnter={e=>{ e.currentTarget.style.color="#ef4444"; }}
+                        onMouseLeave={e=>{ e.currentTarget.style.color="#cbd5e1"; }}
+                    >
+                        Clear
+                    </button>
+                )}
+            </div>
+        </div>
+    );
 };
 
 const formatLabel = (value) => {
@@ -848,6 +1237,23 @@ const formatLabel = (value) => {
         .replace(/_/g, " ")
         .replace(/\b\w/g, (char) => char.toUpperCase());
 };
+
+const CMF_CSS = `
+  .cmf-input { border:1.5px solid #e9ecef; border-radius:9px; padding:10px 14px; font-size:13.5px; width:100%; outline:none; color:#1A1A1A; background:#fff; transition:border-color 0.18s,box-shadow 0.18s; font-family:inherit; }
+  .cmf-input:focus { border-color:#F97316; box-shadow:0 0 0 3.5px rgba(249,115,22,0.14); outline:none; }
+  .cmf-input.is-invalid { border-color:#dc3545 !important; }
+  .cmf-input:disabled, .cmf-input[readonly] { background:#f8f9fa; color:#9ca3af; cursor:not-allowed; }
+  select.cmf-input { appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 13px center; padding-right:36px; }
+  .cmf-label { display:block; font-size:11.5px; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:0.7px; margin-bottom:7px; }
+  .cmf-err { color:#dc3545; font-size:11.5px; margin-top:5px; display:flex; align-items:center; gap:4px; }
+  .cmf-card { background:#fff; border-radius:14px; border:1px solid #f0f0f0; box-shadow:0 1px 4px rgba(0,0,0,0.05); }
+  .cmf-switch { width:44px; height:24px; border-radius:12px; border:none; cursor:pointer; padding:2px; display:inline-flex; align-items:center; transition:background 0.2s; flex-shrink:0; }
+  .cmf-thumb { width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.2); transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1); }
+  .cmf-tab-btn { display:flex; align-items:center; gap:7px; padding:9px 16px; border-radius:10px; border:none; font-weight:600; font-size:13px; cursor:pointer; white-space:nowrap; flex-shrink:0; font-family:inherit; transition:all 0.22s; }
+  .cmf-tab-btn:hover { opacity:0.85; }
+  @keyframes cmfIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+  .cmf-animate { animation:cmfIn 0.22s ease; }
+`;
 
 const CommonMasterForm = ({
     module = "menu",
@@ -873,7 +1279,8 @@ const CommonMasterForm = ({
     const { addOrderType, updateOrderType } = useOrderTypes();
     const { addLeadSource, updateLeadSource } = useLeadSources();
     const { addDocument, updateDocument } = useDocuments();
-    const { addMenuItem, updateMenuItem, nonComboMenuItems, fetchNonComboMenuItems } = useMenuItems();
+    const { addMaterial, updateMaterial, materials: materialMasterList, fetchMaterials, loading: materialsLoading } = useMaterials();
+    const { addMenuItem, updateMenuItem, menuItems, fetchMenuItems, nonComboMenuItems, fetchNonComboMenuItems, loading: menuItemsLoading } = useMenuItems();
     const { saveFranchise, sendInvitation } = useFranchiseStore();
 
     // create
@@ -885,6 +1292,7 @@ const CommonMasterForm = ({
         order_type: addOrderType,
         lead_source: addLeadSource,
         document: addDocument,
+        material: addMaterial,
         menu: addMenuItem,
     }
     // update
@@ -896,16 +1304,19 @@ const CommonMasterForm = ({
         order_type: updateOrderType,
         lead_source: updateLeadSource,
         document: updateDocument,
+        material: updateMaterial,
         menu: updateMenuItem,
         franchise: saveFranchise
     }
 
     useEffect(() => {
-
         if (module === "menu" || module === "masala_items") {
             fetchTaxes();
         }
-
+        if (module === "package") {
+            fetchMaterials();
+            fetchMenuItems();
+        }
     }, [module]);
 
     // Email send request
@@ -966,6 +1377,14 @@ const CommonMasterForm = ({
             ...config.initialValues,
             ...initialData,
 
+            photos: Array.isArray(initialData?.photos) ? initialData.photos : [],
+            packageMaterials: Array.isArray(initialData?.packageMaterials)
+                ? initialData.packageMaterials.map(m => (typeof m === "object" && m !== null) ? (m._id || m.toString()) : m)
+                : [],
+            packageMenuItems: Array.isArray(initialData?.packageMenuItems)
+                ? initialData.packageMenuItems.map(m => (typeof m === "object" && m !== null) ? (m._id || m.toString()) : m)
+                : [],
+
             taxId: initialData?.taxId?._id || initialData?.taxId || "",
 
             openingDate: initialData?.openingDate
@@ -1022,6 +1441,91 @@ const CommonMasterForm = ({
 
     const [comboSearch, setComboSearch] = useState("");
     const [comboDropdownOpen, setComboDropdownOpen] = useState(false);
+    const [tabVisible, setTabVisible] = useState(true);
+
+    const switchTab = (key) => {
+        if (key === activeTab) return;
+        setTabVisible(false);
+        setTimeout(() => { setActiveTab(key); setTabVisible(true); }, 160);
+    };
+
+    const getTabDone = (tab) => {
+        const fields = config.fields[tab] || [];
+        const req = fields.filter(f => f.required && (!f.showIf || f.showIf(form)));
+        if (req.length === 0) return fields.length > 0;
+        return req.every(f => {
+            const v = form[f.name];
+            return v !== undefined && v !== null && String(v).trim() !== "";
+        });
+    };
+
+    const getSidebarStats = () => {
+        if (module === "menu") return [
+            { icon:"bx-category",   val: formatLabel(form.category) || "No category yet" },
+            { icon:"bx-rupee",      val: form.price ? `₹ ${form.price}` : "No price yet" },
+            { icon:"bx-layer",      val: form.isCombo ? "Combo Item" : "Single Item" },
+            { icon:"bx-package",    val: form.portionQty && form.portionName ? `${form.portionQty} ${form.portionName}` : "No portion yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "franchise") return [
+            { icon:"bx-barcode",  val: form.franchiseId  || "No code yet"     },
+            { icon:"bx-user",     val: form.ownerName    || "No owner yet"    },
+            { icon:"bx-phone",    val: form.contact      || "No contact yet"  },
+            { icon:"bx-map",      val: form.location     || "No location yet" },
+        ];
+        if (module === "payment_mode") return [
+            { icon:"bx-tag",        val: form.paymentName   || "No name yet"  },
+            { icon:"bx-credit-card", val: formatLabel(form.paymentType) || "No type yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "order_type") return [
+            { icon:"bx-package",   val: form.orderTypeName || "No name yet" },
+            { icon:"bx-check-circle", val: form.serviceChargeApplicable ? "Service Charge On" : "No Service Charge" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "tax") return [
+            { icon:"bx-receipt",  val: form.taxName        || "No name yet"  },
+            { icon:"bx-percent",  val: form.taxPercentage  ? `${form.taxPercentage}%` : "No % yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "lead_source") return [
+            { icon:"bx-share-alt", val: form.leadSourceName || "No lead source yet"  },
+            { icon:"bx-category",  val: formatLabel(form.leadSourceType) || "No type yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "document") return [
+            { icon:"bx-file",     val: form.documentName || "No document yet" },
+            { icon:"bx-category", val: formatLabel(form.documentType) || "No type yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "package") return [
+            { icon:"bx-package",      val: form.packageName  || "No package yet" },
+            { icon:"bx-rupee",        val: form.price        ? `₹ ${form.price}` : "No price yet" },
+            { icon:"bx-pie-chart-alt-2", val: formatLabel(form.royaltyType) || "No royalty yet" },
+            { icon:"bx-wallet",       val: form.totalAmount  ? `Total: ₹ ${form.totalAmount}` : "No total" },
+            { icon:"bx-food-menu",    val: (form.packageMenuItems || []).length > 0 ? `${form.packageMenuItems.length} menu item${form.packageMenuItems.length > 1 ? "s" : ""} selected` : "No menu items" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "masala_items") return [
+            { icon:"bx-bowl-hot",  val: form.itemName  || "No item yet"   },
+            { icon:"bx-category",  val: formatLabel(form.category) || "No category yet" },
+            { icon:"bx-package",   val: form.packSize && form.unit ? `${form.packSize} ${formatLabel(form.unit)}` : "No pack size yet" },
+            { icon:"bx-rupee",     val: form.price     ? `₹ ${form.price}` : "No price yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "material") return [
+            { icon:"bx-box",      val: form.materialName || "No material yet" },
+            { icon:"bx-category", val: formatLabel(form.category)  || "No category yet"  },
+            { icon:"bx-plug",     val: formatLabel(form.powerType) || "No power type yet" },
+            { icon:"bx-hash",     val: form.quantity ? `${form.quantity} ${formatLabel(form.unit) || ""}` : "No qty yet" },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        return [
+            { icon:"bx-barcode", val: form.code || "No code yet"  },
+            { icon:"bx-tag",     val: form.name || "No name yet"  },
+            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+    };
 
     // Fetch non combo menus for menu item 
     const menuOptions = nonComboMenuItems;
@@ -1320,6 +1824,41 @@ const CommonMasterForm = ({
         }));
     };
 
+    const handleMaterialToggle = (materialId) => {
+        setForm((prev) => {
+            const current = prev.packageMaterials || [];
+            const isSelected = current.includes(materialId);
+            return {
+                ...prev,
+                packageMaterials: isSelected
+                    ? current.filter((id) => id !== materialId)
+                    : [...current, materialId],
+            };
+        });
+    };
+
+    const handlePhotoAdd = (e) => {
+        const files = Array.from(e.target.files);
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setForm((prev) => {
+                    if ((prev.photos || []).length >= 6) return prev;
+                    return { ...prev, photos: [...(prev.photos || []), reader.result] };
+                });
+                if (errors.photos) setErrors((prev) => ({ ...prev, photos: "" }));
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handlePhotoRemove = (idx) => {
+        setForm((prev) => ({
+            ...prev,
+            photos: (prev.photos || []).filter((_, i) => i !== idx),
+        }));
+    };
+
     const handleSubmit = async (e) => {
         if (e) e.preventDefault();
         const errs = validate();
@@ -1332,10 +1871,13 @@ const CommonMasterForm = ({
                 price: Number(form.price),
                 cartAmount: Number(form.cartAmount),
                 advanceAmount: Number(form.advanceAmount),
-                royaltyValue: Number(form.royaltyValue),
+                royaltyValue: form.royaltyType === "NO_ROYALTY" ? 0 : Number(form.royaltyValue),
                 taxPercentage: Number(form.taxPercentage),
                 taxAmount: Number(form.taxAmount),
                 totalAmount: Number(form.totalAmount),
+                photos: form.photos || [],
+                packageMaterials: form.packageMaterials || [],
+                packageMenuItems: form.packageMenuItems || [],
             };
         }
 
@@ -1653,7 +2195,7 @@ const CommonMasterForm = ({
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <button
                         type="button"
-                        className="btn btn-sm btn-primary"
+                        style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"linear-gradient(135deg,#D91E18,#F97316)", color:"#fff", fontWeight:600, fontSize:12.5, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
                         onClick={addAddon}
                     >
                         <i className="bx bx-plus"></i> Add Addon
@@ -1768,7 +2310,7 @@ const CommonMasterForm = ({
 
                     <button
                         type="button"
-                        className="btn btn-sm btn-primary"
+                        style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"linear-gradient(135deg,#D91E18,#F97316)", color:"#fff", fontWeight:600, fontSize:12.5, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
                         onClick={addCustomization}
                     >
                         <i className="bx bx-plus"></i> Add Option
@@ -1823,6 +2365,315 @@ const CommonMasterForm = ({
         );
     };
 
+    const renderMultiPhoto = () => {
+        const photos = form.photos || [];
+        const maxPhotos = 6;
+        const slots = Array.from({ length: maxPhotos });
+
+        return (
+            <div>
+                <div className="row g-3">
+                    {slots.map((_, idx) => {
+                        const src = photos[idx];
+                        return (
+                            <div key={idx} className="col-6 col-md-4 col-lg-2">
+                                {src ? (
+                                    <div style={{ position: "relative", paddingBottom: "100%", borderRadius: 10, overflow: "hidden", border: "1.5px solid #e9ecef" }}>
+                                        <img src={src} alt={`pkg-${idx}`} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePhotoRemove(idx)}
+                                            style={{
+                                                position: "absolute", top: 5, right: 5,
+                                                width: 22, height: 22, borderRadius: "50%",
+                                                border: "none", background: "rgba(217,30,24,0.88)",
+                                                color: "#fff", display: "flex", alignItems: "center",
+                                                justifyContent: "center", cursor: "pointer",
+                                                fontSize: 13, padding: 0, lineHeight: 1,
+                                                transition: "transform 0.15s",
+                                            }}
+                                        ><i className="bx bx-x" /></button>
+                                    </div>
+                                ) : (
+                                    <label style={{ display: "block", paddingBottom: "100%", position: "relative", cursor: idx === photos.length ? "pointer" : "default", opacity: idx === photos.length ? 1 : 0.35 }}>
+                                        <div style={{
+                                            position: "absolute", inset: 0, borderRadius: 10,
+                                            border: idx === photos.length ? "2px dashed #D91E18" : "2px dashed #dee2e6",
+                                            background: idx === photos.length ? "rgba(217,30,24,0.03)" : "#fafafa",
+                                            display: "flex", flexDirection: "column",
+                                            alignItems: "center", justifyContent: "center",
+                                            color: idx === photos.length ? "#D91E18" : "#adb5bd",
+                                            transition: "all 0.18s",
+                                        }}>
+                                            <i className="bx bx-image-add" style={{ fontSize: 22 }} />
+                                            {idx === photos.length && <span style={{ fontSize: 10, marginTop: 4, fontWeight: 500 }}>Add Photo</span>}
+                                        </div>
+                                        {idx === photos.length && <input type="file" accept="image/*" multiple className="d-none" onChange={handlePhotoAdd} />}
+                                    </label>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+                <p className="mt-2 mb-0" style={{ fontSize: 11, color: "#98a2b3" }}>
+                    {photos.length} / {maxPhotos} photos added · Recommended 800×600 px or higher
+                </p>
+                {errors.photos && (
+                    <div style={{ color: "#dc3545", fontSize: 12, marginTop: 6, fontWeight: 500 }}>
+                        <i className="bx bx-error-circle me-1" />{errors.photos}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderMaterialChecklist = () => {
+        if (materialsLoading) {
+            return (
+                <div className="text-center py-4">
+                    <div className="spinner-border" style={{ color: "#D91E18", width: 28, height: 28, borderWidth: 3 }} role="status" />
+                    <div style={{ fontSize: 13, color: "#98a2b3", marginTop: 10 }}>Loading materials...</div>
+                </div>
+            );
+        }
+        const list = materialMasterList?.filter(m => m.status === "ACTIVE") || [];
+        const selectedIds = form.packageMaterials || [];
+
+        if (list.length === 0) {
+            return (
+                <div className="text-center py-4" style={{ color: "#98a2b3" }}>
+                    <i className="bx bx-box" style={{ fontSize: 32, display: "block", marginBottom: 8 }} />
+                    No active materials found. Add materials in the Material master first.
+                </div>
+            );
+        }
+
+        const categories = [...new Set(list.map(m => m.category))];
+        const totalSelected = selectedIds.length;
+
+        return (
+            <div>
+                {totalSelected > 0 && (
+                    <div className="mb-3 px-3 py-2 rounded-2" style={{ background: "rgba(217,30,24,0.06)", border: "1px solid rgba(217,30,24,0.18)" }}>
+                        <span style={{ color: "#D91E18", fontWeight: 600, fontSize: 13 }}>
+                            <i className="bx bx-check-circle me-1" />
+                            {totalSelected} item{totalSelected > 1 ? "s" : ""} selected for this package
+                        </span>
+                    </div>
+                )}
+                {categories.map((cat) => {
+                    const catItems = list.filter(m => m.category === cat);
+                    const catSelected = catItems.filter(m => selectedIds.includes(m._id)).length;
+                    return (
+                        <div key={cat} className="mb-4">
+                            <div className="d-flex align-items-center justify-content-between mb-2 pb-2" style={{ borderBottom: "2px solid #f1f3f5" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#6c757d" }}>
+                                    {formatLabel(cat)}
+                                </span>
+                                <span style={{
+                                    fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20,
+                                    background: catSelected > 0 ? "rgba(217,30,24,0.10)" : "#f1f3f5",
+                                    color: catSelected > 0 ? "#D91E18" : "#6c757d",
+                                }}>
+                                    {catSelected}/{catItems.length}
+                                </span>
+                            </div>
+                            <div className="row g-2">
+                                {catItems.map((mat) => {
+                                    const checked = selectedIds.includes(mat._id);
+                                    return (
+                                        <div key={mat._id} className="col-md-6 col-lg-4">
+                                            <div
+                                                onClick={() => handleMaterialToggle(mat._id)}
+                                                style={{
+                                                    padding: "10px 13px", borderRadius: 8, cursor: "pointer",
+                                                    border: checked ? "1.5px solid #D91E18" : "1.5px solid #e9ecef",
+                                                    background: checked ? "rgba(217,30,24,0.04)" : "#fff",
+                                                    display: "flex", alignItems: "flex-start", gap: 10,
+                                                    transition: "all 0.16s ease",
+                                                    userSelect: "none",
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: 17, height: 17, borderRadius: 4, flexShrink: 0, marginTop: 2,
+                                                    border: checked ? "2px solid #D91E18" : "2px solid #ced4da",
+                                                    background: checked ? "#D91E18" : "#fff",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                    transition: "all 0.14s",
+                                                }}>
+                                                    {checked && <i className="bx bx-check" style={{ color: "#fff", fontSize: 11 }} />}
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 500, fontSize: 13, color: checked ? "#D91E18" : "#344054", lineHeight: 1.3 }}>
+                                                        {mat.materialName}
+                                                    </div>
+                                                    <div style={{ fontSize: 11, color: "#98a2b3", marginTop: 2 }}>
+                                                        {mat.quantity} {mat.unit}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const FOOD_TYPE_COLOR = {
+        VEG:      "#10B981",
+        NON_VEG:  "#D91E18",
+        BEVERAGE: "#3B82F6",
+        DESSERT:  "#F97316",
+    };
+
+    const renderMenuChecklist = () => {
+        if (menuItemsLoading) {
+            return (
+                <div className="text-center py-4">
+                    <div className="spinner-border" style={{ color: "#F97316", width: 28, height: 28, borderWidth: 3 }} role="status" />
+                    <div style={{ fontSize: 13, color: "#98a2b3", marginTop: 10 }}>Loading menu items...</div>
+                </div>
+            );
+        }
+        const allItems   = (menuItems || []).filter(m => m.status === "ACTIVE" || !m.status);
+        const selectedIds = form.packageMenuItems || [];
+
+        if (allItems.length === 0) {
+            return (
+                <div style={{ textAlign:"center", padding:"48px 0", color:"#9ca3af" }}>
+                    <i className="bx bx-food-menu" style={{ fontSize:40, display:"block", marginBottom:10 }} />
+                    No active menu items found. Add menu items in the Menu master first.
+                </div>
+            );
+        }
+
+        const categories = [...new Set(allItems.map(m => m.category).filter(Boolean))];
+
+        const toggleItem = (id) => {
+            setForm(prev => {
+                const cur = prev.packageMenuItems || [];
+                return { ...prev, packageMenuItems: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
+            });
+            if (errors.packageMenuItems) setErrors(prev => ({ ...prev, packageMenuItems: "" }));
+        };
+
+        return (
+            <div>
+                {/* Selected banner */}
+                {selectedIds.length > 0 && (
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 16px", borderRadius:9, background:"rgba(217,30,24,0.05)", border:"1px solid rgba(217,30,24,0.14)", marginBottom:18 }}>
+                        <span style={{ fontSize:13, fontWeight:600, color:"#D91E18" }}>
+                            <i className="bx bx-check-circle me-1" />{selectedIds.length} item{selectedIds.length > 1 ? "s" : ""} selected for this package
+                        </span>
+                        <button type="button" onClick={() => setForm(p => ({ ...p, packageMenuItems: [] }))}
+                            style={{ border:"none", background:"none", color:"#9ca3af", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", padding:0 }}>
+                            Clear all
+                        </button>
+                    </div>
+                )}
+
+                {/* Legend */}
+                <div style={{ display:"flex", gap:16, flexWrap:"wrap", marginBottom:18 }}>
+                    {Object.entries(FOOD_TYPE_COLOR).map(([type, color]) => (
+                        <span key={type} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11.5, fontWeight:600, color:"#6b7280" }}>
+                            <span style={{ width:9, height:9, borderRadius:"50%", background:color, flexShrink:0 }} />
+                            {formatLabel(type)}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Cards grouped by category */}
+                {categories.map(cat => {
+                    const catItems = allItems.filter(m => m.category === cat);
+                    const selCount = catItems.filter(m => selectedIds.includes(m._id)).length;
+                    return (
+                        <div key={cat} style={{ marginBottom:30 }}>
+                            {/* Category header */}
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, paddingBottom:9, borderBottom:"2px solid #f5f5f5" }}>
+                                <span style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.2, color:"#6b7280" }}>
+                                    {formatLabel(cat)}
+                                </span>
+                                <span style={{ fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, background: selCount > 0 ? "rgba(217,30,24,0.08)" : "#f5f5f5", color: selCount > 0 ? "#D91E18" : "#9ca3af" }}>
+                                    {selCount}/{catItems.length}
+                                </span>
+                            </div>
+
+                            {/* Item cards */}
+                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))", gap:10 }}>
+                                {catItems.map(item => {
+                                    const checked   = selectedIds.includes(item._id);
+                                    const dotColor  = FOOD_TYPE_COLOR[item.foodType] || "#6b7280";
+                                    return (
+                                        <div
+                                            key={item._id}
+                                            onClick={() => toggleItem(item._id)}
+                                            style={{ borderRadius:11, border:`1.5px solid ${checked ? "#D91E18" : "#e9ecef"}`, background: checked ? "rgba(217,30,24,0.03)" : "#fff", cursor:"pointer", overflow:"hidden", transition:"all 0.15s", userSelect:"none", position:"relative", boxShadow: checked ? "0 2px 10px rgba(217,30,24,0.12)" : "0 1px 3px rgba(0,0,0,0.04)" }}
+                                        >
+                                            {/* Image area */}
+                                            <div style={{ width:"100%", paddingBottom:"68%", position:"relative", background:"#f8f9fa", overflow:"hidden" }}>
+                                                {item.image ? (
+                                                    <img src={item.image} alt={item.menuName}
+                                                        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.2s" }} />
+                                                ) : (
+                                                    <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#f8f9fa 0%,#f0f0f0 100%)" }}>
+                                                        <i className="bx bx-dish" style={{ fontSize:30, color:"#d1d5db" }} />
+                                                    </div>
+                                                )}
+                                                {/* Food type dot — top-left */}
+                                                <div style={{ position:"absolute", top:7, left:7, width:10, height:10, borderRadius:"50%", background:dotColor, border:"2.5px solid #fff", boxShadow:"0 1px 4px rgba(0,0,0,0.18)" }} />
+                                                {/* Checkbox — top-right */}
+                                                <div style={{ position:"absolute", top:6, right:6, width:21, height:21, borderRadius:6, border:`2px solid ${checked ? "#D91E18" : "rgba(255,255,255,0.9)"}`, background: checked ? "#D91E18" : "rgba(255,255,255,0.85)", backdropFilter:"blur(2px)", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.14s", boxShadow:"0 1px 4px rgba(0,0,0,0.15)" }}>
+                                                    {checked && <i className="bx bx-check" style={{ color:"#fff", fontSize:13 }} />}
+                                                </div>
+                                                {/* Price badge — bottom */}
+                                                {item.price && (
+                                                    <div style={{ position:"absolute", bottom:6, left:6, padding:"2px 7px", borderRadius:6, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(3px)", color:"#fff", fontSize:11, fontWeight:700, letterSpacing:0.2 }}>
+                                                        ₹ {item.price}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Info below image */}
+                                            <div style={{ padding:"9px 10px 11px" }}>
+                                                <div style={{ fontWeight:700, fontSize:12.5, color: checked ? "#D91E18" : "#1A1A1A", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", marginBottom:4 }}>
+                                                    {item.menuName}
+                                                </div>
+                                                <div style={{ display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+                                                    {item.portionQty && item.portionName && (
+                                                        <span style={{ fontSize:10, color:"#9ca3af", fontWeight:500 }}>
+                                                            {item.portionQty} {item.portionName}
+                                                        </span>
+                                                    )}
+                                                    {item.portionQty && item.portionName && item.foodType && (
+                                                        <span style={{ color:"#e5e7eb", fontSize:9 }}>·</span>
+                                                    )}
+                                                    {item.foodType && (
+                                                        <span style={{ fontSize:10, fontWeight:600, color:dotColor }}>
+                                                            {formatLabel(item.foodType)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })}
+                {errors.packageMenuItems && (
+                    <div style={{ color: "#dc3545", fontSize: 12, marginTop: 10, fontWeight: 500 }}>
+                        <i className="bx bx-error-circle me-1" />{errors.packageMenuItems}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     const formatTime = (seconds) => {
         const mins = String(Math.floor(seconds / 60)).padStart(2, "0");
 
@@ -1855,14 +2706,7 @@ const CommonMasterForm = ({
             value: form[field.name] ?? "",
             onChange: handleChange,
 
-            className:
-                `form-control ${errors[field.name]
-                    ? "is-invalid"
-                    : ""
-                } ${field.readOnly
-                    ? "bg-light"
-                    : ""
-                }`,
+            className: `form-control${errors[field.name] ? " is-invalid" : ""}`,
 
             placeholder:
                 dynamicPlaceholder ||
@@ -1911,10 +2755,22 @@ const CommonMasterForm = ({
             return renderCustomizationBuilder();
         }
 
+        if (field.type === "multi-photo") {
+            return renderMultiPhoto();
+        }
+
+        if (field.type === "material-checklist") {
+            return renderMaterialChecklist();
+        }
+
+        if (field.type === "menu-checklist") {
+            return renderMenuChecklist();
+        }
+
         if (field.type === "textarea") {
             return (
                 <>
-                    <textarea {...commonProps} rows="3" />
+                    <textarea {...commonProps} rows={field.rows || 3} style={{ resize:"vertical" }} />
                     {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
                 </>
             );
@@ -1934,33 +2790,16 @@ const CommonMasterForm = ({
                         name={field.name}
                         value={form[field.name] ?? ""}
                         onChange={handleChange}
-                        className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                        className={`form-select${errors[field.name] ? " is-invalid" : ""}`}
                     >
-                        <option value="">
-                            Select {field.label}
-                        </option>
-
-                        {
-                            options.map((option) => (
-                                <option
-                                    key={option[field.optionValue]}
-                                    value={option[field.optionValue]}
-                                >
-                                    {option[field.optionLabel]}
-                                    {" "}
-                                    ({option.taxPercentage}%)
-                                </option>
-                            ))
-                        }
-
+                        <option value="">Select {field.label}</option>
+                        {options.map((option) => (
+                            <option key={option[field.optionValue]} value={option[field.optionValue]}>
+                                {option[field.optionLabel]} ({option.taxPercentage}%)
+                            </option>
+                        ))}
                     </select>
-
-                    {
-                        errors[field.name] &&
-                        <div className="invalid-feedback">
-                            {errors[field.name]}
-                        </div>
-                    }
+                    {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
                 </>
             );
         }
@@ -1972,13 +2811,11 @@ const CommonMasterForm = ({
                         name={field.name}
                         value={form[field.name] ?? ""}
                         onChange={handleChange}
-                        className={`form-select ${errors[field.name] ? "is-invalid" : ""}`}
+                        className={`form-select${errors[field.name] ? " is-invalid" : ""}`}
                     >
                         <option value="">Select {field.label}</option>
                         {field.options?.map((option) => (
-                            <option key={option} value={option}>
-                                {formatLabel(option)}
-                            </option>
+                            <option key={option} value={option}>{formatLabel(option)}</option>
                         ))}
                     </select>
                     {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
@@ -1987,49 +2824,79 @@ const CommonMasterForm = ({
         }
 
         if (field.type === "switch") {
+            const isOn = !!form[field.name];
             return (
-                <div className={`p-3 rounded border ${form[field.name] ? "border-primary bg-primary-subtle" : ""}`}>
-                    <div className="d-flex align-items-center">
-                        <div className="flex-grow-1">
-                            <h6 className="mb-1">{field.label}</h6>
-                            {field.desc && <p className="text-muted mb-0 font-size-13">{field.desc}</p>}
+                <div style={{ padding:"16px 20px", borderRadius:12, border:`1.5px solid ${isOn ? "rgba(217,30,24,0.25)" : "#e9ecef"}`, background: isOn ? "rgba(217,30,24,0.03)" : "#fafafa", transition:"all 0.2s" }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
+                        <div style={{ flex:1 }}>
+                            <div style={{ fontWeight:700, fontSize:13.5, color:"#1A1A1A" }}>{field.label}</div>
+                            {field.desc && <div style={{ fontSize:12, color:"#9ca3af", marginTop:2 }}>{field.desc}</div>}
                         </div>
-                        <div className="form-check form-switch ms-3">
-                            <input
-                                className="form-check-input"
-                                type="checkbox"
-                                role="switch"
-                                name={field.name}
-                                checked={!!form[field.name]}
-                                onChange={handleChange}
-                                id={`switch-${field.name}`}
-                                style={{ width: "2.5rem", height: "1.3rem" }}
-                            />
-                        </div>
+                        <button type="button" className="cmf-switch"
+                            style={{ background: isOn ? "linear-gradient(135deg,#D91E18,#F97316)" : "#e9ecef" }}
+                            onClick={() => handleChange({ target: { name: field.name, type: "checkbox", checked: !isOn } })}>
+                            <div className="cmf-thumb" style={{ transform: isOn ? "translateX(20px)" : "translateX(0)" }} />
+                        </button>
                     </div>
                 </div>
             );
         }
 
         if (field.type === "checkbox") {
+            const isChecked = !!form[field.name];
             return (
-                <div className="form-check mt-2">
-                    <input
-                        type="checkbox"
-                        className="form-check-input"
-                        name={field.name}
-                        checked={!!form[field.name]}
-                        onChange={handleChange}
-                        id={`checkbox-${field.name}`}
-                    />
-                    <label className="form-check-label ms-2">
-                        {field.label}
-                    </label>
+                <div
+                    style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", padding:"10px 14px", borderRadius:9, border:`1.5px solid ${isChecked ? "rgba(217,30,24,0.3)" : "#e9ecef"}`, background: isChecked ? "rgba(217,30,24,0.04)" : "#fff", transition:"all 0.15s", userSelect:"none" }}
+                    onClick={() => handleChange({ target: { name: field.name, type: "checkbox", checked: !isChecked } })}
+                >
+                    <div style={{ width:17, height:17, borderRadius:4, border:`2px solid ${isChecked ? "#D91E18" : "#ced4da"}`, background: isChecked ? "#D91E18" : "#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.14s" }}>
+                        {isChecked && <i className="bx bx-check" style={{ color:"#fff", fontSize:11 }} />}
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:600, color: isChecked ? "#D91E18" : "#374151" }}>{field.label}</span>
                 </div>
             );
         }
 
+        if (field.type === "radio") {
+            const val = form[field.name] || "";
+            const RADIO_META = {
+                VEG:     { label: "Veg",     color: "#065F46", bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.35)",  dot: "#10B981", icon: "bx-leaf" },
+                NON_VEG: { label: "Non-Veg", color: "#991B1B", bg: "rgba(153,27,27,0.08)",  border: "rgba(153,27,27,0.3)",    dot: "#D91E18", icon: "bx-bowl-hot" },
+            };
+            return (
+                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                    {(field.options || []).map((opt) => {
+                        const m = RADIO_META[opt] || { label: opt, color: "#374151", bg: "#f3f4f6", border: "#d1d5db", dot: "#6b7280", icon: "bx-circle" };
+                        const selected = val === opt;
+                        return (
+                            <label key={opt} onClick={() => handleChange({ target: { name: field.name, value: opt } })}
+                                style={{ display:"inline-flex", alignItems:"center", gap:9, padding:"10px 18px", borderRadius:10, cursor:"pointer", userSelect:"none", transition:"all 0.18s",
+                                    border: selected ? `2px solid ${m.border}` : "2px solid #e9ecef",
+                                    background: selected ? m.bg : "#fafafa",
+                                    boxShadow: selected ? `0 2px 8px ${m.dot}28` : "none",
+                                }}>
+                                <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${selected ? m.dot : "#ced4da"}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.15s" }}>
+                                    {selected && <div style={{ width:8, height:8, borderRadius:"50%", background:m.dot }} />}
+                                </div>
+                                <i className={`bx ${m.icon}`} style={{ fontSize:14, color: selected ? m.color : "#9ca3af" }} />
+                                <span style={{ fontWeight:700, fontSize:13.5, color: selected ? m.color : "#6b7280" }}>{m.label}</span>
+                            </label>
+                        );
+                    })}
+                </div>
+            );
+        }
 
+        if (field.type === "richtext") {
+            return (
+                <RichTextEditor
+                    name={field.name}
+                    value={form[field.name] || ""}
+                    onChange={handleChange}
+                    placeholder={field.placeholder || `Enter ${field.label}...`}
+                />
+            );
+        }
 
         if (field.type === "menu-price-preview") {
 
@@ -2085,44 +2952,21 @@ const CommonMasterForm = ({
                 );
 
             return (
-                <div className="border rounded p-3 bg-light mb-0">
-
-                    <div className="fs-5 text-primary fw-bold">
-                        Final Price Preview
+                <div style={{ borderRadius:14, background:"linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 100%)", padding:"22px 26px" }}>
+                    <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1.2, color:"rgba(255,255,255,0.38)", marginBottom:16 }}>Final Price Preview</div>
+                    {[
+                        { label:"Base Price",        val:`₹ ${basePrice.toFixed(2)}`,       color:"rgba(255,255,255,0.55)" },
+                        { label:"Discount",          val:`- ₹ ${discountAmount.toFixed(2)}`, color:"#F97316" },
+                        { label:`Tax (${taxPercentage}%)`, val:`+ ₹ ${taxAmount.toFixed(2)}`,color:"rgba(255,255,255,0.55)" },
+                    ].map(({ label, val, color }) => (
+                        <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:10, fontSize:13, color }}>
+                            <span>{label}</span><span>{val}</span>
+                        </div>
+                    ))}
+                    <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>Final Selling Price</span>
+                        <span style={{ fontSize:22, fontWeight:800, color:"#F97316", letterSpacing:-0.5 }}>₹ {finalPrice.toFixed(2)}</span>
                     </div>
-
-                    <div className="d-flex justify-content-between mb-2">
-                        <span>Base Price</span>
-                        <span>₹{basePrice.toFixed(2)}</span>
-                    </div>
-
-                    <div className="d-flex justify-content-between mb-2">
-                        <span>Discount</span>
-                        <span className="text-danger">
-                            - ₹{discountAmount.toFixed(2)}
-                        </span>
-                    </div>
-
-                    <div className="d-flex justify-content-between mb-2">
-                        <span>
-                            Tax ({taxPercentage}%)
-                        </span>
-
-                        <span className="text-success">
-                            + ₹{taxAmount.toFixed(2)}
-                        </span>
-                    </div>
-
-                    <hr />
-
-                    <div className="d-flex justify-content-between fw-bold">
-                        <span>Final Selling Price</span>
-
-                        <span>
-                            ₹{finalPrice.toFixed(2)}
-                        </span>
-                    </div>
-
                 </div>
             );
         }
@@ -2142,9 +2986,7 @@ const CommonMasterForm = ({
                 />
 
                 {errors[field.name] && (
-                    <div className="invalid-feedback">
-                        {errors[field.name]}
-                    </div>
+                    <div className="invalid-feedback">{errors[field.name]}</div>
                 )}
             </>
         );
@@ -2152,28 +2994,39 @@ const CommonMasterForm = ({
 
     const visibleTabs = getVisibleTabs();
     const currentTabIndex = visibleTabs.indexOf(activeTab);
+    const displayName = form.menuName || form.franchiseName || form.paymentName || form.orderTypeName || form.taxName || form.leadSourceName || form.documentName || form.materialName || form.packageName || form.itemName || `New ${config.title}`;
 
     return (
-        <React.Fragment>
+        <>
+            <style>{CMF_CSS}</style>
             <div className="page-content">
                 <div className="container-fluid">
-                    <div className="row">
+
+                    {/* ── Page header ── */}
+                    <div className="row mb-4">
                         <div className="col-12">
-                            <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                                <h4 className="mb-sm-0 font-size-18">
-                                    {mode === "edit" ? `Edit ${config.title}` : `Create ${config.title}`}
-                                </h4>
-                                <div className="page-title-right">
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                                    <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                                        <i className={`bx ${config.icon}`} style={{ color:"#fff", fontSize:22 }} />
+                                    </div>
+                                    <div>
+                                        <h4 className="mb-0" style={{ fontWeight:800, fontSize:18, color:"#1A1A1A" }}>
+                                            {mode === "edit" ? `Edit ${config.title}` : `Create ${config.title}`}
+                                        </h4>
+                                        <div style={{ fontSize:12, color:"#F97316", fontWeight:600, marginTop:1 }}>
+                                            Masters · {config.title}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                                    <button type="button" onClick={() => navigate(-1)} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8, border:"1.5px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                                        <i className="bx bx-arrow-back" style={{ fontSize:15 }} /> Back
+                                    </button>
                                     <ol className="breadcrumb m-0">
-                                        <li className="breadcrumb-item">
-                                            <Link to="/dashboard">Dashboard</Link>
-                                        </li>
-                                        <li className="breadcrumb-item">
-                                            <Link to={config.listPath}>{config.title} List</Link>
-                                        </li>
-                                        <li className="breadcrumb-item active">
-                                            {mode === "edit" ? "Edit" : "Create"}
-                                        </li>
+                                        <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
+                                        <li className="breadcrumb-item"><Link to={config.listPath}>{config.title}</Link></li>
+                                        <li className="breadcrumb-item active">{mode === "edit" ? "Edit" : "Create"}</li>
                                     </ol>
                                 </div>
                             </div>
@@ -2181,282 +3034,135 @@ const CommonMasterForm = ({
                     </div>
 
                     {success && (
-                        <div className="alert alert-success d-flex align-items-center gap-2">
-                            <i className="bx bx-check-circle font-size-18"></i>
-                            <div>
-                                <strong>Success!</strong>{" "}
-                                {config.title} {mode === "edit" ? "updated" : "created"} successfully.
-                            </div>
+                        <div style={{ padding:"14px 18px", borderRadius:10, background:"rgba(5,150,105,0.08)", border:"1px solid rgba(5,150,105,0.2)", color:"#065F46", marginBottom:20, display:"flex", alignItems:"center", gap:10, fontSize:13.5, fontWeight:600 }}>
+                            <i className="bx bx-check-circle" style={{ fontSize:20, color:"#10B981" }} />
+                            {config.title} {mode === "edit" ? "updated" : "created"} successfully!
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit}>
-                        <div className="row">
-                            <div className="col-xl-3">
-                                <div className="card">
-                                    <div className="card-body text-center">
-                                        <div className="mb-3">
-                                            <div className="position-relative d-inline-block">
-                                                {config.imageField ? (
-                                                    imagePreview ? (
-                                                        <img
-                                                            src={imagePreview}
-                                                            alt="preview"
-                                                            className="rounded-circle"
-                                                            style={{
-                                                                width: "100px",
-                                                                height: "100px",
-                                                                objectFit: "cover",
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <div
-                                                            className="avatar-title rounded-circle bg-primary-subtle text-primary"
-                                                            style={{
-                                                                width: "100px",
-                                                                height: "100px",
-                                                                fontSize: "2.5rem",
-                                                                display: "flex",
-                                                                alignItems: "center",
-                                                                justifyContent: "center",
-                                                            }}
-                                                        >
-                                                            <i className={`bx ${config.icon}`}></i>
-                                                        </div>
-                                                    )
-                                                ) : (
-                                                    <div
-                                                        className="avatar-title rounded-circle bg-primary-subtle text-primary"
-                                                        style={{
-                                                            width: "100px",
-                                                            height: "100px",
-                                                            fontSize: "2.5rem",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                        }}
-                                                    >
-                                                        <i className={`bx ${config.icon}`}></i>
-                                                    </div>
-                                                )}
+                        <div className="row g-4 align-items-start">
 
-                                                {config.imageField && (
-                                                    <label
-                                                        className="position-absolute bottom-0 end-0 avatar-xs"
-                                                        style={{ cursor: "pointer" }}
-                                                    >
-                                                        <span className="avatar-title rounded-circle bg-light border">
-                                                            <i className="bx bxs-camera text-muted font-size-14"></i>
-                                                        </span>
-                                                        <input
-                                                            type="file"
-                                                            accept="image/*"
-                                                            className="d-none"
-                                                            onChange={handleImageChange}
-                                                        />
-                                                    </label>
-                                                )}
-                                            </div>
+                            {/* ── Left sidebar ── */}
+                            <div className="col-xl-3 col-lg-4 col-12">
+                                <div className="cmf-card" style={{ padding:24, position:"sticky", top:80 }}>
 
-                                            <h5 className="mt-3 mb-1 font-size-16">
-                                                {form.menuName ||
-                                                    form.franchiseName ||
-                                                    form.paymentName ||
-                                                    form.orderTypeName ||
-                                                    form.taxName ||
-                                                    form.leadSourceName ||
-                                                    form.documentName ||
-                                                    form.packageName ||
-                                                    form.name ||
-                                                    `New ${config.title}`}
-                                            </h5>
-
-                                            <span className="badge bg-primary">
-                                                {config.title}
-                                            </span>
-                                        </div>
-
-                                        <hr />
-
-                                        <div className="text-start">
-                                            {(module === "menu"
-                                                ? [
-                                                    { icon: "bx-barcode", val: form.menuCode || "No code yet" },
-                                                    { icon: "bx-category", val: formatLabel(form.category) || "No category yet" },
-                                                    { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
-                                                    { icon: "bx-layer", val: form.isCombo ? "Combo Item" : "Single Item" },
-                                                    { icon: "bx-package", val: form.portionQty && form.portionName ? `${form.portionQty} ${form.portionName}` : "No portion yet" },
-                                                    { icon: "bx-list-ul", val: form.isCombo && form.comboItems?.length ? `${form.comboItems.length} combo items selected` : "No combo items" },
-                                                    { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                ]
-                                                : module === "franchise"
-                                                    ? [
-                                                        { icon: "bx-barcode", val: form.franchiseId || "No code yet" },
-                                                        { icon: "bx-user", val: form.ownerName || "No owner yet" },
-                                                        { icon: "bx-phone", val: form.contact || "No contact yet" },
-                                                        { icon: "bx-map", val: form.location || "No location yet" },
-                                                    ]
-                                                    : module === "payment_mode"
-                                                        ? [
-                                                            { icon: "bx-barcode", val: form.paymentCode || "No code yet" },
-                                                            { icon: "bx-tag", val: form.paymentName || "No name yet" },
-                                                            { icon: "bx-credit-card", val: formatLabel(form.paymentType) || "No type yet" },
-                                                            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                        ]
-                                                        : module === "order_type"
-                                                            ? [
-                                                                { icon: "bx-barcode", val: form.orderTypeCode || "No code yet" },
-                                                                { icon: "bx-package", val: form.orderTypeName || "No name yet" },
-                                                                { icon: "bx-check-circle", val: form.serviceChargeApplicable ? "Service Charge Enabled" : "No Service Charge" },
-                                                                { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                            ]
-                                                            : module === "tax"
-                                                                ? [
-                                                                    { icon: "bx-barcode", val: form.taxCode || "No code yet" },
-                                                                    { icon: "bx-receipt", val: form.taxName || "No name yet" },
-                                                                    { icon: "bx-percent", val: form.taxPercentage ? `${form.taxPercentage}%` : "No % yet" },
-                                                                    { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                ] : module === "lead_source"
-                                                                    ? [
-                                                                        { icon: "bx-barcode", val: form.leadSourceCode || "No code yet" },
-                                                                        { icon: "bx-share-alt", val: form.leadSourceName || "No lead source yet" },
-                                                                        { icon: "bx-category", val: formatLabel(form.leadSourceType) || "No type yet" },
-                                                                        { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                    ] : module === "document"
-                                                                        ? [
-                                                                            { icon: "bx-barcode", val: form.documentCode || "No code yet" },
-                                                                            { icon: "bx-file", val: form.documentName || "No document yet" },
-                                                                            { icon: "bx-category", val: formatLabel(form.documentType) || "No type yet" },
-                                                                            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                        ] : module === "package"
-                                                                            ? [
-                                                                                { icon: "bx-box", val: form.packageCode || "No code yet" },
-                                                                                { icon: "bx-package", val: form.packageName || "No package yet" },
-                                                                                { icon: "bx-wallet", val: form.price ? `₹ ${form.price}` : "No price yet" },
-                                                                                { icon: "bx-pie-chart-alt-2", val: formatLabel(form.royaltyType) || "No royalty type yet" },
-                                                                                { icon: "bx-receipt", val: form.taxAmount ? `GST: ₹ ${form.taxAmount}` : "No tax" },
-                                                                                { icon: "bx-wallet", val: form.totalAmount ? `Total: ₹ ${form.totalAmount}` : "No total" },
-                                                                                { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                            ]
-                                                                            : module === "masala_items"
-                                                                                ? [
-                                                                                    { icon: "bx-barcode", val: form.itemCode || "No code yet" },
-                                                                                    { icon: "bx-bowl-hot", val: form.itemName || "No item yet" },
-                                                                                    { icon: "bx-category", val: formatLabel(form.category) || "No category yet" },
-                                                                                    {
-                                                                                        icon: "bx-package",
-                                                                                        val: form.packSize && form.unit
-                                                                                            ? `${form.packSize} ${formatLabel(form.unit)}`
-                                                                                            : "No pack size yet"
-                                                                                    },
-                                                                                    { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
-                                                                                    { icon: "bx-receipt", val: form.gst ? `${form.gst}% GST` : "No GST yet" },
-                                                                                    { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                                ] : [
-                                                                                    { icon: "bx-barcode", val: form.code || "No code yet" },
-                                                                                    { icon: "bx-tag", val: form.name || "No name yet" },
-                                                                                    { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
-                                                                                ]
-                                            ).map((item, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="d-flex align-items-center gap-2 mb-2 text-muted font-size-13"
-                                                >
-                                                    <i className={`bx ${item.icon} font-size-16 text-primary`}></i>
-                                                    <span className="text-truncate">{item.val}</span>
+                                    {/* Avatar / icon */}
+                                    <div style={{ textAlign:"center", marginBottom:20 }}>
+                                        <div style={{ position:"relative", display:"inline-block" }}>
+                                            {config.imageField && imagePreview ? (
+                                                <img src={imagePreview} alt="preview" style={{ width:72, height:72, borderRadius:18, objectFit:"cover", border:"3px solid #fff", boxShadow:"0 4px 14px rgba(0,0,0,0.12)" }} />
+                                            ) : (
+                                                <div style={{ width:72, height:72, borderRadius:18, margin:"0 auto", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 8px 24px rgba(217,30,24,0.28)" }}>
+                                                    <i className={`bx ${config.icon}`} style={{ fontSize:32, color:"#fff" }} />
                                                 </div>
-                                            ))}
+                                            )}
+                                            {config.imageField && (
+                                                <label style={{ position:"absolute", bottom:-4, right:-4, width:26, height:26, borderRadius:"50%", background:"#fff", border:"1.5px solid #e9ecef", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.1)" }}>
+                                                    <i className="bx bxs-camera" style={{ fontSize:13, color:"#6b7280" }} />
+                                                    <input type="file" accept="image/*" className="d-none" onChange={handleImageChange} />
+                                                </label>
+                                            )}
                                         </div>
-
-                                        <hr />
-
-                                        <div className="d-grid gap-2">
-                                            {
-                                                module === "franchise" &&
-                                                mode === "edit" &&
-                                                isFranchiseCompleted && (
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-warning me-2"
-                                                        onClick={handleSendInvitation}
-                                                        disabled={
-                                                            resendTimer > 0 ||
-                                                            form.inviteStatus === "ACTIVE"
-                                                        }
-                                                    >
-                                                        {
-                                                            form.inviteStatus === "ACTIVE"
-                                                                ? "ERP Activated"
-                                                                : resendTimer > 0
-                                                                    ? `Resend in ${formatTime(resendTimer)}`
-                                                                    : form.inviteStatus === "INVITE_SENT"
-                                                                        ? "Resend Invitation"
-                                                                        : "Send Invitation"
-                                                        }
-                                                    </button>
-                                                )
-                                            }
-
-                                            <button type="submit" className="btn btn-primary" disabled={submitting}>
-                                                {submitting ? (
-                                                    <>
-                                                        <span className="spinner-border spinner-border-sm me-2"></span>
-                                                        {mode === "edit" ? "Updating..." : "Saving..."}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <i className="bx bx-save me-1"></i>
-                                                        {mode === "edit" ? "Update Record" : "Save Record"}
-                                                    </>
-                                                )}
-                                            </button>
-
-                                            <Link to={config.listPath} className="btn btn-outline-secondary">
-                                                <i className="bx bx-arrow-back me-1"></i> Cancel
-                                            </Link>
-                                        </div>
+                                        <div style={{ fontWeight:800, fontSize:15.5, color:"#1A1A1A", lineHeight:1.3, marginTop:12 }}>{displayName}</div>
+                                        <div style={{ display:"inline-block", marginTop:6, background:"rgba(217,30,24,0.07)", color:"#D91E18", borderRadius:7, padding:"2px 10px", fontSize:11, fontWeight:700, letterSpacing:1 }}>{config.title}</div>
                                     </div>
+
+                                    <hr style={{ borderColor:"#f0f0f0", margin:"0 0 16px" }} />
+
+                                    {/* Live preview stats */}
+                                    {getSidebarStats().map(({ icon, val }, i) => (
+                                        <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:11 }}>
+                                            <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background:"#f8f9fa", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                                                <i className={`bx ${icon}`} style={{ fontSize:14, color:"#6b7280" }} />
+                                            </div>
+                                            <div style={{ fontSize:13, fontWeight:600, color:"#374151", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{val}</div>
+                                        </div>
+                                    ))}
+
+                                    {/* Tab completion */}
+                                    <hr style={{ borderColor:"#f0f0f0", margin:"14px 0 12px" }} />
+                                    <div style={{ fontSize:10, color:"#9ca3af", fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, marginBottom:10 }}>Completion</div>
+                                    {visibleTabs.map((tab) => {
+                                        const isDone = getTabDone(tab);
+                                        return (
+                                            <div key={tab} onClick={() => switchTab(tab)} style={{ display:"flex", alignItems:"center", gap:9, marginBottom:9, cursor:"pointer", borderRadius:8, padding:"4px 6px", background: activeTab === tab ? "rgba(217,30,24,0.05)" : "transparent", transition:"background 0.15s" }}>
+                                                <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background: isDone ? "linear-gradient(135deg,#D91E18,#F97316)" : "#f0f0f0", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", boxShadow: isDone ? "0 2px 6px rgba(217,30,24,0.28)" : "none" }}>
+                                                    {isDone ? <i className="bx bx-check" style={{ fontSize:11, color:"#fff" }} /> : <span style={{ width:6, height:6, borderRadius:"50%", background:"#d1d5db" }} />}
+                                                </div>
+                                                <span style={{ fontSize:12.5, fontWeight:600, color: activeTab === tab ? "#D91E18" : isDone ? "#374151" : "#9ca3af" }}>{formatLabel(tab)}</span>
+                                            </div>
+                                        );
+                                    })}
+
+                                    <hr style={{ borderColor:"#f0f0f0", margin:"14px 0" }} />
+
+                                    {/* Franchise invite */}
+                                    {module === "franchise" && mode === "edit" && isFranchiseCompleted && (
+                                        <button type="button"
+                                            style={{ width:"100%", padding:"11px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#F97316 0%,#ea580c 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor: resendTimer > 0 || form.inviteStatus === "ACTIVE" ? "not-allowed" : "pointer", opacity: resendTimer > 0 || form.inviteStatus === "ACTIVE" ? 0.7 : 1, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:"inherit" }}
+                                            onClick={handleSendInvitation}
+                                            disabled={resendTimer > 0 || form.inviteStatus === "ACTIVE"}>
+                                            <i className="bx bx-mail-send" style={{ fontSize:16 }} />
+                                            {form.inviteStatus === "ACTIVE" ? "ERP Activated" : resendTimer > 0 ? `Resend in ${formatTime(resendTimer)}` : form.inviteStatus === "INVITE_SENT" ? "Resend Invitation" : "Send Invitation"}
+                                        </button>
+                                    )}
+
+                                    {/* Save */}
+                                    <button type="submit" disabled={submitting}
+                                        style={{ width:"100%", padding:"12px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13.5, cursor: submitting ? "not-allowed" : "pointer", boxShadow:"0 4px 16px rgba(217,30,24,0.3)", display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:8, opacity: submitting ? 0.8 : 1, transition:"all 0.18s", fontFamily:"inherit" }}>
+                                        {submitting
+                                            ? <><span className="spinner-border spinner-border-sm" style={{ width:14, height:14, borderWidth:2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
+                                            : <><i className="bx bx-save" style={{ fontSize:16 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
+                                    </button>
+
+                                    {/* Cancel */}
+                                    <Link to={config.listPath}
+                                        style={{ display:"block", padding:"11px", borderRadius:10, border:"1.5px solid #e9ecef", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:13, textDecoration:"none", textAlign:"center", transition:"all 0.15s" }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor="#d1d5db"; e.currentTarget.style.background="#f3f4f6"; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor="#e9ecef"; e.currentTarget.style.background="#f9fafb"; }}>
+                                        <i className="bx bx-arrow-back me-1" />Cancel
+                                    </Link>
                                 </div>
                             </div>
 
-                            <div className="col-xl-9">
-                                <div className="card">
-                                    <div className="card-header p-0 border-bottom-0">
-                                        <ul className="nav nav-tabs nav-tabs-custom nav-justified" role="tablist">
-                                            {visibleTabs.map((tab) => (
-                                                <li key={tab} className="nav-item">
-                                                    <button
-                                                        className={`nav-link py-3 ${activeTab === tab ? "active" : ""}`}
-                                                        type="button"
-                                                        onClick={() => setActiveTab(tab)}
-                                                    >
-                                                        <span>{formatLabel(tab)}</span>
-                                                    </button>
-                                                </li>
-                                            ))}
-                                        </ul>
+                            {/* ── Right: tabs + form ── */}
+                            <div className="col-xl-9 col-lg-8 col-12">
+                                <div className="cmf-card" style={{ overflow:"hidden", padding:0 }}>
+
+                                    {/* Tab navigation */}
+                                    <div style={{ display:"flex", gap:4, padding:"14px 20px", background:"#fafafa", borderBottom:"1px solid #f0f0f0", overflowX:"auto" }}>
+                                        {visibleTabs.map((tab) => {
+                                            const active = activeTab === tab;
+                                            const isDone = getTabDone(tab);
+                                            return (
+                                                <button key={tab} type="button" className="cmf-tab-btn"
+                                                    onClick={() => switchTab(tab)}
+                                                    style={{ background: active ? "linear-gradient(135deg,#D91E18 0%,#F97316 100%)" : isDone ? "rgba(217,30,24,0.06)" : "transparent", color: active ? "#fff" : isDone ? "#D91E18" : "#6b7280", boxShadow: active ? "0 4px 14px rgba(217,30,24,0.28)" : "none", transform: active ? "scale(1.02)" : "scale(1)" }}>
+                                                    {formatLabel(tab)}
+                                                    {isDone && !active && (
+                                                        <span style={{ width:15, height:15, borderRadius:"50%", background:"linear-gradient(135deg,#D91E18,#F97316)", display:"inline-flex", alignItems:"center", justifyContent:"center", marginLeft:2 }}>
+                                                            <i className="bx bx-check" style={{ fontSize:10, color:"#fff" }} />
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
 
-                                    <div className="card-body">
+                                    {/* Animated form content */}
+                                    <div style={{ padding:"28px 28px 24px", opacity: tabVisible ? 1 : 0, transform: tabVisible ? "translateY(0)" : "translateY(6px)", transition:"opacity 0.16s ease, transform 0.16s ease" }}>
                                         <div className="row g-3">
                                             {config.fields[activeTab]
                                                 ?.filter((field) => !field.showIf || field.showIf(form))
                                                 .map((field) => (
-                                                    <div key={field.name} className={`col-md-${field.col || (field.type === "switch" ? 12 : 6)}`}>
-                                                        {field.type !== "switch" && field.type !== "combo-builder" && (
-                                                            <label className="form-label">{
-                                                                module === "package" &&
-                                                                    field.name === "royaltyValue"
-                                                                    ? (
-                                                                        form.royaltyType === "PERCENTAGE"
-                                                                            ? "Royalty %"
-                                                                            : "Royalty Amount"
-                                                                    )
-                                                                    : field.label
-                                                            }
-                                                                {field.required && (
-                                                                    <span className="text-danger">*</span>
-                                                                )}
+                                                    <div key={field.name} className={`col-md-${field.col || (["switch","checkbox"].includes(field.type) ? 12 : 6)}`}>
+                                                        {!["switch","checkbox","combo-builder","menu-price-preview"].includes(field.type) && (
+                                                            <label className="cmf-label">
+                                                                {module === "package" && field.name === "royaltyValue"
+                                                                    ? (form.royaltyType === "PERCENTAGE" ? "Royalty %" : "Royalty Amount")
+                                                                    : field.label}
+                                                                {field.required && <span style={{ color:"#D91E18", marginLeft:3 }}>*</span>}
                                                             </label>
                                                         )}
                                                         {renderField(field)}
@@ -2464,60 +3170,38 @@ const CommonMasterForm = ({
                                                 ))}
                                         </div>
 
-                                        <div className="d-flex justify-content-between mt-4">
-                                            <button
-                                                type="button"
-                                                className="btn btn-outline-secondary"
-                                                onClick={() => {
-                                                    if (currentTabIndex > 0) {
-                                                        setActiveTab(visibleTabs[currentTabIndex - 1]);
-                                                    }
-                                                }}
+                                        {/* Bottom prev / next */}
+                                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:28, paddingTop:20, borderTop:"1px solid #f0f0f0" }}>
+                                            <button type="button"
+                                                onClick={() => currentTabIndex > 0 && switchTab(visibleTabs[currentTabIndex - 1])}
                                                 disabled={currentTabIndex === 0}
-                                            >
-                                                <i className="bx bx-chevron-left me-1"></i> Previous
+                                                style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 20px", borderRadius:9, border:"1.5px solid #e9ecef", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:13, cursor: currentTabIndex === 0 ? "not-allowed" : "pointer", opacity: currentTabIndex === 0 ? 0.35 : 1, transition:"all 0.15s", fontFamily:"inherit" }}>
+                                                <i className="bx bx-chevron-left" style={{ fontSize:16 }} />Previous
                                             </button>
 
                                             {currentTabIndex < visibleTabs.length - 1 ? (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-primary"
-                                                    onClick={() => {
-                                                        setActiveTab(visibleTabs[currentTabIndex + 1]);
-                                                    }}
-                                                >
-                                                    Next <i className="bx bx-chevron-right ms-1"></i>
+                                                <button type="button" onClick={() => switchTab(visibleTabs[currentTabIndex + 1])}
+                                                    style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 24px", borderRadius:9, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", boxShadow:"0 3px 12px rgba(217,30,24,0.25)", transition:"all 0.18s", fontFamily:"inherit" }}>
+                                                    Next<i className="bx bx-chevron-right" style={{ fontSize:16 }} />
                                                 </button>
                                             ) : (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-primary"
-                                                    disabled={submitting}
-                                                    onClick={handleSubmit}
-                                                >
-                                                    {submitting ? (
-                                                        <>
-                                                            <span className="spinner-border spinner-border-sm me-2"></span>
-                                                            {mode === "edit" ? "Updating..." : "Saving..."}
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <i className="bx bx-save me-1"></i>
-                                                            {mode === "edit" ? "Update Record" : "Save Record"}
-                                                        </>
-                                                    )}
+                                                <button type="button" onClick={handleSubmit} disabled={submitting}
+                                                    style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 24px", borderRadius:9, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor: submitting ? "not-allowed" : "pointer", boxShadow:"0 3px 12px rgba(217,30,24,0.25)", opacity: submitting ? 0.8 : 1, transition:"all 0.18s", fontFamily:"inherit" }}>
+                                                    {submitting
+                                                        ? <><span className="spinner-border spinner-border-sm" style={{ width:13, height:13, borderWidth:2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
+                                                        : <><i className="bx bx-save" style={{ fontSize:15 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
                                                 </button>
                                             )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </form>
                 </div>
             </div>
-
-        </React.Fragment>
+        </>
     );
 };
 

@@ -1,17 +1,7 @@
-// models/masterModels/MasalaItemModel.js
-
 const mongoose = require("mongoose");
 
 const masalaItemSchema = new mongoose.Schema(
   {
-    itemCode: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      uppercase: true,
-    },
-
     itemName: {
       type: String,
       required: true,
@@ -23,6 +13,14 @@ const masalaItemSchema = new mongoose.Schema(
       required: true,
       enum: ["Masala", "Mix Powder", "Coating", "Seasoning", "Sauce"],
     },
+
+    vegType: {
+      type: String,
+      required: true,
+      enum: ["VEG", "NON_VEG"],
+      default: "VEG",
+    },
+
     packSize: {
       type: Number,
       required: true,
@@ -62,6 +60,72 @@ const masalaItemSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+
+    // ── Details ──────────────────────────────────────
+    mfd: {
+      type: Date,
+      required: true,
+    },
+
+    expiryDate: {
+      type: Date,
+      required: true,
+    },
+
+    batchNo: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50,
+    },
+
+    ingredients: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    allergens: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    usageInstructions: {
+      type: String,
+      required: true,
+    },
+
+    storageInstructions: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    // ── Settings ─────────────────────────────────────
+    isHalal: {
+      type: Boolean,
+      default: false,
+    },
+
+    isInstitutional: {
+      type: Boolean,
+      default: false,
+    },
+
+    fssaiNo: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 50,
+    },
+
+    manufacturer: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 300,
     },
 
     lowStockAlert: {

@@ -8,6 +8,8 @@ const enquiryController = require("../controllers/enquiryController");
 router.post("/", enquiryController.createEnquiry);
 router.get("/", enquiryController.getEnquiries);
 router.get("/next-id", enquiryController.getNextReferenceId);
+router.get("/:id/followup", enquiryController.getFollowupHistory);
+router.post("/:id/followup", enquiryController.addFollowup);
 router.get("/:id", enquiryController.getEnquiryById);
 router.put("/:id", enquiryController.updateEnquiry);
 router.delete("/:id", enquiryController.deleteEnquiry);

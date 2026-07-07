@@ -1,741 +1,484 @@
 import React, { useEffect } from "react";
-
-import {
-    Link,
-    useNavigate,
-    useParams,
-} from "react-router-dom";
-
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMasalaRequestStore } from "../../../store/store";
 
+/* ─── helpers ─────────────────────────────────────────────── */
+const fl  = (v) => v?.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "—";
+const fmtDate     = (d) => d ? new Date(d).toLocaleDateString("en-IN",  { day:"numeric", month:"short", year:"numeric" }) : "—";
+const fmtDateTime = (d) => d ? new Date(d).toLocaleString("en-IN",      { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "—";
+
+/* ─── status meta ──────────────────────────────────────────── */
+const STATUS_META = {
+  REQUESTED:    { color:"#64748b", bg:"rgba(100,116,139,0.1)",  border:"rgba(100,116,139,0.25)", icon:"bx-time-five",    step:1 },
+  UNDER_REVIEW: { color:"#d97706", bg:"rgba(217,119,6,0.1)",    border:"rgba(217,119,6,0.28)",   icon:"bx-search-alt",   step:2 },
+  APPROVED:     { color:"#2563eb", bg:"rgba(37,99,235,0.1)",    border:"rgba(37,99,235,0.25)",   icon:"bx-check-circle", step:3 },
+  DISPATCHED:   { color:"#7c3aed", bg:"rgba(124,58,237,0.1)",   border:"rgba(124,58,237,0.25)",  icon:"bx-package",      step:4 },
+  DELIVERED:    { color:"#059669", bg:"rgba(5,150,105,0.1)",    border:"rgba(5,150,105,0.25)",   icon:"bx-check-double", step:5 },
+  REJECTED:     { color:"#D91E18", bg:"rgba(217,30,24,0.1)",    border:"rgba(217,30,24,0.22)",   icon:"bx-x-circle",     step:99 },
+};
+const STATUS_STEPS = ["REQUESTED","UNDER_REVIEW","APPROVED","DISPATCHED","DELIVERED"];
+
+/* ─── sub-components ───────────────────────────────────────── */
+const StatusPill = ({ status }) => {
+  const s = STATUS_META[status] || STATUS_META.REQUESTED;
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:20, fontSize:12.5, fontWeight:700, color:s.color, background:s.bg, border:`1.5px solid ${s.border}`, whiteSpace:"nowrap" }}>
+      <i className={`bx ${s.icon}`} style={{ fontSize:15 }}/>{fl(status)}
+    </span>
+  );
+};
+
+/* solid white pill for use on dark banner backgrounds */
+const BannerStatusPill = ({ status }) => {
+  const s = STATUS_META[status] || STATUS_META.REQUESTED;
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"7px 14px", borderRadius:20, fontSize:12.5, fontWeight:800, color:s.color, background:"#fff", border:"none", whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.2)" }}>
+      <i className={`bx ${s.icon}`} style={{ fontSize:14 }}/>{fl(status)}
+    </span>
+  );
+};
+
+const PriorityChip = ({ priority }) => {
+  const urgent = priority === "Urgent";
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:20, fontSize:12, fontWeight:700, color: urgent ? "#D91E18" : "#2563eb", background: urgent ? "rgba(217,30,24,0.09)" : "rgba(37,99,235,0.09)", border:`1.5px solid ${urgent ? "rgba(217,30,24,0.22)" : "rgba(37,99,235,0.22)"}` }}>
+      <i className={`bx ${urgent ? "bx-error" : "bx-check-circle"}`} style={{ fontSize:14 }}/>{priority}
+    </span>
+  );
+};
+
+const InfoField = ({ icon, label, children }) => (
+  <div style={{ display:"flex", gap:12, padding:"13px 0", borderBottom:"1px solid #f3f4f6" }}>
+    <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,rgba(217,30,24,0.08) 0%,rgba(249,115,22,0.05) 100%)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
+      <i className={`bx ${icon}`} style={{ color:"#D91E18", fontSize:16 }}/>
+    </div>
+    <div style={{ flex:1 }}>
+      <div style={{ fontSize:11, color:"#9ca3af", fontWeight:600, textTransform:"uppercase", letterSpacing:0.6, marginBottom:3 }}>{label}</div>
+      <div style={{ fontSize:13.5, color:"#1A1A1A", fontWeight:600, lineHeight:1.4 }}>{children || <span style={{ color:"#d1d5db" }}>—</span>}</div>
+    </div>
+  </div>
+);
+
+/* ─── skeleton loader ──────────────────────────────────────── */
+const Skeleton = ({ h = 18, w = "100%", r = 8, mb = 0 }) => (
+  <div style={{ height:h, width:w, borderRadius:r, background:"linear-gradient(90deg,#f3f4f6 25%,#e9eaeb 50%,#f3f4f6 75%)", backgroundSize:"200% 100%", animation:"skeletonShimmer 1.5s infinite", marginBottom:mb }}/>
+);
+
+/* ─── main component ───────────────────────────────────────── */
 const MasalaFranchiseRequestView = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { singleRequest, fetchSingleRequest, loading } = useMasalaRequestStore();
 
-    const { id } = useParams();
-    const navigate = useNavigate();
+  useEffect(() => { if (id) fetchSingleRequest(id); }, [id]);
 
-    const {
-        singleRequest,
-        fetchSingleRequest,
-        loading,
-    } = useMasalaRequestStore();
+  const data = singleRequest;
 
-    // ======================================================
-    // FETCH REQUEST
-    // ======================================================
-
-    useEffect(() => {
-
-        if (id) {
-
-            fetchSingleRequest(id);
-        }
-
-    }, [id]);
-
-    const data = singleRequest;
-
-    // const data ;
-
-    // ======================================================
-    // LOADING
-    // ======================================================
-
-    if (loading || !data) {
-
-        return (
-
-            <div className="text-center py-5">
-
-                Loading...
-
-            </div>
-        );
-    }
-
-    // ======================================================
-    // FORMAT LABEL
-    // ======================================================
-
-    const formatLabel = (value) =>
-        value
-            ?.toLowerCase()
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) =>
-                c.toUpperCase()
-            );
-
-    // ======================================================
-    // STATUS CLASS
-    // ======================================================
-
-    const statusClass =
-        data.status === "APPROVED"
-            ? "bg-info"
-            : data.status === "DISPATCHED"
-                ? "bg-primary"
-                : data.status === "DELIVERED"
-                    ? "bg-success"
-                    : data.status === "REJECTED"
-                        ? "bg-danger"
-                        : data.status === "UNDER_REVIEW"
-                            ? "bg-warning text-dark"
-                            : "bg-secondary";
-
-    const priorityClass =
-        data.priority === "Urgent"
-            ? "bg-danger"
-            : "bg-warning text-dark";
-
+  /* ── loading state ── */
+  if (loading || !data) {
     return (
-
-        <div className="page-content">
-
-            <div className="container-fluid">
-
-                {/* ====================================================== */}
-                {/* PAGE TITLE */}
-                {/* ====================================================== */}
-
-                <div className="row">
-
-                    <div className="col-12">
-
-                        <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-
-                            <h4 className="mb-sm-0 font-size-18">
-
-                                Franchise Request View
-
-                            </h4>
-
-                            <div>
-
-    <button
-        type="button"
-        className="btn btn-light border d-flex align-items-center gap-1"
-        onClick={() => navigate(-1)}
-    >
-
-        <i className="bx bx-arrow-back"></i>
-
-        Back
-
-    </button>
-
-</div>
-
-                            <div className="page-title-right">
-
-                                <ol className="breadcrumb m-0">
-
-                                    <li className="breadcrumb-item">
-
-                                        <Link to="/dashboard">
-                                            Dashboard
-                                        </Link>
-
-                                    </li>
-
-                                    <li className="breadcrumb-item">
-
-                                        <Link to="/manufacture-masala-franchise-request">
-                                            Franchise Requests
-                                        </Link>
-
-                                    </li>
-
-                                    <li className="breadcrumb-item active">
-                                        View
-                                    </li>
-
-                                </ol>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
+      <div className="page-content">
+        <div className="container-fluid">
+          {/* skeleton hero */}
+          <div style={{ background:"linear-gradient(135deg,#D91E18 0%,#c81010 40%,#b45309 100%)", borderRadius:20, padding:"32px 28px", marginBottom:24, position:"relative", overflow:"hidden" }}>
+            <div style={{ position:"absolute", top:-30, right:-30, width:140, height:140, borderRadius:"50%", background:"rgba(255,255,255,0.06)" }}/>
+            <div style={{ position:"absolute", bottom:-40, right:60, width:100, height:100, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
+            <div style={{ display:"flex", alignItems:"center", gap:18 }}>
+              <div style={{ width:56, height:56, borderRadius:14, background:"rgba(255,255,255,0.15)", animation:"pulse 1.5s infinite" }}/>
+              <div style={{ flex:1 }}>
+                <div style={{ height:22, width:"40%", borderRadius:8, background:"rgba(255,255,255,0.2)", marginBottom:10, animation:"pulse 1.5s infinite" }}/>
+                <div style={{ height:14, width:"25%", borderRadius:6, background:"rgba(255,255,255,0.12)", animation:"pulse 1.5s infinite" }}/>
+              </div>
+            </div>
+          </div>
+          <div className="row g-3">
+            <div className="col-xl-8">
+              <div className="card"><div className="card-body" style={{ padding:24 }}>
+                <Skeleton h={20} w="35%" mb={20}/>
+                <div className="row g-3">
+                  {[1,2,3,4,5,6].map(i => <div key={i} className="col-md-6"><Skeleton h={55} r={10}/></div>)}
                 </div>
-
-                {/* ====================================================== */}
-                {/* SUMMARY */}
-                {/* ====================================================== */}
-
-                <div className="card">
-
-                    <div className="card-body">
-
-                        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-                            <div>
-
-                                <h4 className="mb-1">
-
-                                    {
-                                        data.franchise?.franchiseName
-                                    }
-
-                                </h4>
-
-                                <p className="text-muted mb-1">
-
-                                    Request ID :
-                                    {" "}
-
-                                    <strong>
-                                        {data.requestId}
-                                    </strong>
-
-                                </p>
-
-                                <p className="text-muted mb-0">
-
-                                    Created :
-                                    {" "}
-
-                                    {
-                                        new Date(
-                                            data.createdAt
-                                        ).toLocaleString()
-                                    }
-
-                                </p>
-
-                            </div>
-
-                            <div className="text-end">
-
-                                <span className={`badge ${statusClass} fs-6`}>
-
-                                    {
-                                        formatLabel(
-                                            data.status
-                                        )
-                                    }
-
-                                </span>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div className="row">
-
-                    {/* ====================================================== */}
-                    {/* LEFT */}
-                    {/* ====================================================== */}
-
-                    <div className="col-xl-8">
-
-                        {/* ====================================================== */}
-                        {/* REQUEST DETAILS */}
-                        {/* ====================================================== */}
-
-                        <div className="card">
-
-                            <div className="card-header">
-
-                                <h5 className="mb-0">
-                                    Request Details
-                                </h5>
-
-                            </div>
-
-                            <div className="card-body">
-
-                                <div className="row g-4">
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Franchise ID
-                                        </label>
-
-                                        <div>
-                                            {data.franchise?.franchiseId}
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Phone
-                                        </label>
-
-                                        <div>
-                                            {data.franchise?.phone || "-"}
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Location
-                                        </label>
-
-                                        <div>
-                                            {data.franchise?.location || "-"}
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Email
-                                        </label>
-
-                                        <div>
-                                            {data.franchise?.email || "-"}
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Required Date
-                                        </label>
-
-                                        <div>
-
-                                            {
-                                                new Date(
-                                                    data.requiredDate
-                                                ).toLocaleDateString()
-                                            }
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Priority
-                                        </label>
-
-                                        <div>
-
-                                            <span className={`badge ${priorityClass}`}>
-
-                                                {data.priority}
-
-                                            </span>
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Payment Option
-                                        </label>
-
-                                        <div>
-                                            {data.paymentOption}
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-6">
-
-                                        <label className="form-label text-muted">
-                                            Payment Status
-                                        </label>
-
-                                        <div>
-                                            {formatLabel(data.paymentStatus)}
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                        {/* ====================================================== */}
-                        {/* ORDER ITEMS */}
-                        {/* ====================================================== */}
-
-                        <div className="card">
-
-                            <div className="card-header">
-
-                                <h5 className="mb-0">
-                                    Order Items
-                                </h5>
-
-                            </div>
-
-                            <div className="card-body">
-
-                                <div className="table-responsive">
-
-                                    <table className="table table-bordered align-middle mb-0">
-
-                                        <thead className="table-light">
-
-                                            <tr>
-
-                                                <th>S.No</th>
-
-                                                <th>Item Name</th>
-
-                                                <th>Pack Size</th>
-
-                                                <th>Unit</th>
-
-                                                <th>Price</th>
-
-                                                <th>Quantity</th>
-
-                                                <th>Amount</th>
-
-                                            </tr>
-
-                                        </thead>
-
-                                        <tbody>
-
-                                            {
-                                                data.items?.map(
-                                                    (
-                                                        item,
-                                                        index
-                                                    ) => (
-
-                                                        <tr key={index}>
-
-                                                            <td>
-                                                                {index + 1}
-                                                            </td>
-
-                                                            <td>
-                                                                {item.itemName}
-                                                            </td>
-
-                                                            <td>
-                                                                {item.packSize}
-                                                            </td>
-
-                                                            <td>
-                                                                {formatLabel(item.unit)}
-                                                            </td>
-
-                                                            <td>
-                                                                ₹{item.price}
-                                                            </td>
-
-                                                            <td>
-                                                                {item.quantity}
-                                                            </td>
-
-                                                            <td>
-                                                                ₹{item.amount}
-                                                            </td>
-
-                                                        </tr>
-                                                    )
-                                                )
-                                            }
-
-                                        </tbody>
-
-                                    </table>
-
-                                </div>
-
-                                {/* TOTALS */}
-
-                                <div className="row mt-4">
-
-                                    <div className="col-md-4">
-
-                                        <div className="border rounded p-3">
-
-                                            <small className="text-muted">
-                                                Total Items
-                                            </small>
-
-                                            <h5 className="mb-0 mt-1">
-                                                {data.totalItems}
-                                            </h5>
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-4">
-
-                                        <div className="border rounded p-3">
-
-                                            <small className="text-muted">
-                                                Total Quantity
-                                            </small>
-
-                                            <h5 className="mb-0 mt-1">
-                                                {data.totalQty}
-                                            </h5>
-
-                                        </div>
-
-                                    </div>
-
-                                    <div className="col-md-4">
-
-                                        <div className="border rounded p-3">
-
-                                            <small className="text-muted">
-                                                Total Amount
-                                            </small>
-
-                                            <h5 className="mb-0 mt-1">
-                                                ₹{data.totalAmount}
-                                            </h5>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {/* ====================================================== */}
-                    {/* RIGHT */}
-                    {/* ====================================================== */}
-
-                    <div className="col-xl-4">
-
-                        {/* ====================================================== */}
-                        {/* FRANCHISE REMARKS */}
-                        {/* ====================================================== */}
-
-                        <div className="card">
-
-                            <div className="card-header">
-
-                                <h5 className="mb-0">
-                                    Franchise Remarks
-                                </h5>
-
-                            </div>
-
-                            <div className="card-body">
-
-                                <p className="mb-0 text-muted">
-
-                                    {data.remarks || "-"}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        {/* ====================================================== */}
-                        {/* ADMIN REMARKS */}
-                        {/* ====================================================== */}
-
-                        <div className="card">
-
-                            <div className="card-header">
-
-                                <h5 className="mb-0">
-                                    Admin Remarks
-                                </h5>
-
-                            </div>
-
-                            <div className="card-body">
-
-                                <p className="mb-0 text-muted">
-
-                                    {data.adminRemarks || "-"}
-
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        {/* ====================================================== */}
-                        {/* DISPATCH DETAILS */}
-                        {/* ====================================================== */}
-
-                        {
-                            data.status === "DISPATCHED" && (
-
-                                <div className="card">
-
-                                    <div className="card-header">
-
-                                        <h5 className="mb-0">
-                                            Dispatch Details
-                                        </h5>
-
-                                    </div>
-
-                                    <div className="card-body">
-
-                                        <div className="mb-3">
-
-                                            <small className="text-muted">
-                                                Transport Name
-                                            </small>
-
-                                            <div>
-                                                {data.transportName || "-"}
-                                            </div>
-
-                                        </div>
-
-                                        <div className="mb-3">
-
-                                            <small className="text-muted">
-                                                Tracking Number
-                                            </small>
-
-                                            <div>
-                                                {data.trackingNumber || "-"}
-                                            </div>
-
-                                        </div>
-
-                                        <div className="mb-3">
-
-                                            <small className="text-muted">
-                                                Dispatch Remarks
-                                            </small>
-
-                                            <div>
-                                                {data.dispatchRemarks || "-"}
-                                            </div>
-
-                                        </div>
-
-                                        <div>
-
-                                            <small className="text-muted">
-                                                Dispatch Date
-                                            </small>
-
-                                            <div>
-
-                                                {
-                                                    new Date(
-                                                        data.dispatchedDate
-                                                    ).toLocaleString()
-                                                }
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-                            )
-                        }
-
-                        {/* ====================================================== */}
-                        {/* STATUS TIMELINE */}
-                        {/* ====================================================== */}
-
-                        <div className="card">
-
-                            <div className="card-header">
-
-                                <h5 className="mb-0">
-                                    Status Timeline
-                                </h5>
-
-                            </div>
-
-                            <div className="card-body">
-
-                                {
-                                    data.statusHistory?.length > 0 ? (
-
-                                        data.statusHistory.map(
-                                            (
-                                                history,
-                                                index
-                                            ) => (
-
-                                                <div
-                                                    key={index}
-                                                    className="border-bottom pb-3 mb-3"
-                                                >
-
-                                                    <div className="fw-bold">
-
-                                                        {
-                                                            formatLabel(
-                                                                history.status
-                                                            )
-                                                        }
-
-                                                    </div>
-
-                                                    <div className="small text-muted">
-
-                                                        {
-                                                            new Date(
-                                                                history.updatedAt
-                                                            ).toLocaleString()
-                                                        }
-
-                                                    </div>
-
-                                                    <div>
-
-                                                        {
-                                                            history.remarks || "-"
-                                                        }
-
-                                                    </div>
-
-                                                </div>
-                                            )
-                                        )
-
-                                    ) : (
-
-                                        <div className="text-muted">
-                                            No history available
-                                        </div>
-
-                                    )
-                                }
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+              </div></div>
+            </div>
+            <div className="col-xl-4">
+              <div className="card"><div className="card-body" style={{ padding:24 }}>
+                <Skeleton h={20} w="50%" mb={20}/>
+                {[1,2,3,4,5].map(i => <Skeleton key={i} h={44} r={10} mb={12}/>)}
+              </div></div>
+            </div>
+          </div>
+          {/* spinner overlay text */}
+          <div style={{ textAlign:"center", padding:"8px 0 16px" }}>
+            <div style={{ display:"inline-flex", alignItems:"center", gap:10, padding:"10px 22px", borderRadius:30, background:"#fff", boxShadow:"0 2px 12px rgba(0,0,0,0.08)", fontSize:13, color:"#6b7280", fontWeight:500 }}>
+              <div className="spinner-border" style={{ width:18, height:18, borderWidth:2.5, color:"#D91E18" }} role="status"/>
+              Loading request details…
+            </div>
+          </div>
+          <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}} @keyframes skeletonShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+        </div>
+      </div>
+    );
+  }
+
+  const totalCalc = data.items?.reduce((s, it) => s + Number(it.quantity || 0) * Number(it.price || 0), 0) || data.totalAmount || 0;
+  const currentStep = data.status === "REJECTED" ? -1 : (STATUS_META[data.status]?.step || 1);
+
+  return (
+    <React.Fragment>
+      <style>{`
+        @keyframes fadeSlideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .view-animate { animation: fadeSlideUp 0.35s ease both; }
+        .view-animate:nth-child(2) { animation-delay:0.06s }
+        .view-animate:nth-child(3) { animation-delay:0.12s }
+      `}</style>
+
+      <div className="page-content"><div className="container-fluid">
+
+        {/* ── page header ── */}
+        <div className="row view-animate"><div className="col-12">
+          <div className="page-title-box d-sm-flex align-items-center justify-content-between">
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <button onClick={() => navigate(-1)} style={{ width:36, height:36, borderRadius:9, border:"1.5px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                <i className="bx bx-arrow-back" style={{ fontSize:16 }}/>
+              </button>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <i className="bx bx-bowl-hot" style={{ color:"#fff", fontSize:22 }}/>
+              </div>
+              <div>
+                <h4 className="mb-0" style={{ fontWeight:800, fontSize:18, color:"#1A1A1A" }}>Request Details</h4>
+                <div style={{ fontSize:12, color:"#F97316", fontWeight:600, marginTop:1 }}>Masala · Franchise Request · View</div>
+              </div>
+            </div>
+            <ol className="breadcrumb m-0">
+              <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
+              <li className="breadcrumb-item"><Link to="/manufacture-masala-franchise-request">Franchise Requests</Link></li>
+              <li className="breadcrumb-item active">View</li>
+            </ol>
+          </div>
+        </div></div>
+
+        {/* ── hero banner ── */}
+        <div className="row mb-3 view-animate"><div className="col-12">
+          <div style={{ background:"linear-gradient(135deg,#1A1A1A 0%,#2d1010 50%,#D91E18 100%)", borderRadius:20, padding:"24px 28px", position:"relative", boxShadow:"0 8px 32px rgba(217,30,24,0.28)" }}>
+            {/* decorative circles — kept inside but with overflow:hidden only on a wrapper so they don't clip content */}
+            <div style={{ position:"absolute", inset:0, borderRadius:20, overflow:"hidden", pointerEvents:"none", zIndex:0 }}>
+              <div style={{ position:"absolute", top:-50, right:-50, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
+              <div style={{ position:"absolute", bottom:-60, right:80, width:150, height:150, borderRadius:"50%", background:"rgba(249,115,22,0.08)" }}/>
+              <div style={{ position:"absolute", top:20, right:180, width:60, height:60, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
             </div>
 
+            {/* row 1: franchise info left | actions right */}
+            <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:16, position:"relative", zIndex:1 }}>
+              {/* left */}
+              <div style={{ display:"flex", alignItems:"center", gap:16, minWidth:0 }}>
+                <div style={{ width:52, height:52, borderRadius:14, background:"rgba(255,255,255,0.12)", backdropFilter:"blur(8px)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, border:"1.5px solid rgba(255,255,255,0.18)" }}>
+                  <i className="bx bx-store" style={{ color:"#fff", fontSize:26 }}/>
+                </div>
+                <div style={{ minWidth:0 }}>
+                  <div style={{ fontWeight:800, fontSize:19, color:"#fff", lineHeight:1.2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{data.franchise?.franchiseName || "—"}</div>
+                  <div style={{ fontSize:11.5, fontFamily:"monospace", color:"rgba(255,255,255,0.5)", marginTop:4, letterSpacing:0.4 }}>{data.franchise?.franchiseId}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:5 }}>
+                    <i className="bx bx-calendar" style={{ fontSize:12, color:"rgba(255,255,255,0.4)" }}/>
+                    <span style={{ fontSize:11.5, color:"rgba(255,255,255,0.45)" }}>{fmtDateTime(data.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* right: Request ID + Status + Edit — solid backgrounds for readability */}
+              <div style={{ display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
+                <div style={{ padding:"8px 14px", borderRadius:10, background:"rgba(0,0,0,0.35)", border:"1px solid rgba(255,255,255,0.18)", textAlign:"center" }}>
+                  <div style={{ fontSize:9.5, color:"rgba(255,255,255,0.7)", fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, marginBottom:2 }}>Request ID</div>
+                  <div style={{ fontFamily:"monospace", fontWeight:800, fontSize:13.5, color:"#fff", whiteSpace:"nowrap" }}>{data.requestId || "—"}</div>
+                </div>
+                <BannerStatusPill status={data.status}/>
+                <Link
+                  to={`/manufacture-masala-franchise-request/edit/${data._id}`}
+                  state={{ rowData: data }}
+                  style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"9px 16px", borderRadius:10, background:"#fff", border:"none", color:"#D91E18", fontWeight:700, fontSize:13, cursor:"pointer", textDecoration:"none", whiteSpace:"nowrap", boxShadow:"0 2px 8px rgba(0,0,0,0.2)" }}
+                >
+                  <i className="bx bx-edit-alt" style={{ fontSize:15 }}/> Edit
+                </Link>
+              </div>
+            </div>
+
+            {/* row 2: quick stats */}
+            <div style={{ display:"flex", gap:10, marginTop:18, flexWrap:"wrap", position:"relative", zIndex:1 }}>
+              {[
+                { icon:"bx-list-ul",        label:"Items",    value: data.totalItems ?? "—",                                               color:"#F97316" },
+                { icon:"bx-layer",          label:"Quantity", value: data.totalQty   ?? "—",                                               color:"#60a5fa" },
+                { icon:"bx-rupee",          label:"Amount",   value:`₹${Number(data.totalAmount || totalCalc).toLocaleString()}`,           color:"#34d399" },
+                { icon:"bx-calendar-check", label:"Required", value: fmtDate(data.requiredDate),                                            color:"#a78bfa" },
+              ].map(s => (
+                <div key={s.label} style={{ display:"flex", alignItems:"center", gap:8, padding:"7px 13px", borderRadius:10, background:"rgba(255,255,255,0.07)", border:"1px solid rgba(255,255,255,0.1)" }}>
+                  <i className={`bx ${s.icon}`} style={{ fontSize:17, color:s.color }}/>
+                  <div>
+                    <div style={{ fontSize:9.5, color:"rgba(255,255,255,0.4)", fontWeight:700, textTransform:"uppercase", letterSpacing:0.5 }}>{s.label}</div>
+                    <div style={{ fontSize:12.5, fontWeight:800, color:"#fff" }}>{s.value}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div></div>
+
+        {/* ── body ── */}
+        <div className="row g-3 view-animate">
+
+          {/* ── left col ── */}
+          <div className="col-xl-8">
+
+            {/* request details */}
+            <div className="card mb-3" style={{ borderRadius:16, border:"1.5px solid #f3f4f6", boxShadow:"0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div className="card-body" style={{ padding:24 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, paddingBottom:16, borderBottom:"1.5px solid #f3f4f6" }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,rgba(217,30,24,0.12) 0%,rgba(249,115,22,0.08) 100%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <i className="bx bx-detail" style={{ color:"#D91E18", fontSize:17 }}/>
+                  </div>
+                  <span style={{ fontWeight:700, fontSize:14.5, color:"#1A1A1A" }}>Request Details</span>
+                </div>
+
+                <div className="row g-0">
+                  <div className="col-md-6" style={{ paddingRight:20 }}>
+                    <InfoField icon="bx-id-card"        label="Franchise ID"    >{data.franchise?.franchiseId}</InfoField>
+                    <InfoField icon="bx-map-pin"        label="Location"        >{data.franchise?.location}</InfoField>
+                    <InfoField icon="bx-calendar-check" label="Required Date"   >{fmtDate(data.requiredDate)}</InfoField>
+                    <InfoField icon="bx-credit-card"    label="Payment Option"  >
+                      <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"3px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#059669", background:"rgba(5,150,105,0.08)", border:"1px solid rgba(5,150,105,0.2)" }}>
+                        <i className="bx bx-rupee" style={{ fontSize:12 }}/>{data.paymentOption}
+                      </span>
+                    </InfoField>
+                  </div>
+                  <div className="col-md-6" style={{ paddingLeft:20, borderLeft:"1.5px solid #f3f4f6" }}>
+                    <InfoField icon="bx-phone"    label="Phone"          >{data.franchise?.phone}</InfoField>
+                    <InfoField icon="bx-envelope" label="Email"          >{data.franchise?.email}</InfoField>
+                    <InfoField icon="bx-error"    label="Priority"       >{data.priority ? <PriorityChip priority={data.priority}/> : null}</InfoField>
+                    <InfoField icon="bx-wallet"   label="Payment Status" >{fl(data.paymentStatus)}</InfoField>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* order items */}
+            <div className="card" style={{ borderRadius:16, border:"1.5px solid #f3f4f6", boxShadow:"0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div className="card-body" style={{ padding:24 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6, paddingBottom:16, borderBottom:"1.5px solid #f3f4f6" }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,rgba(217,30,24,0.12) 0%,rgba(249,115,22,0.08) 100%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <i className="bx bx-list-ul" style={{ color:"#D91E18", fontSize:17 }}/>
+                  </div>
+                  <span style={{ fontWeight:700, fontSize:14.5, color:"#1A1A1A" }}>Order Items</span>
+                  {data.items?.length > 0 && (
+                    <span style={{ marginLeft:"auto", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", borderRadius:10, padding:"2px 9px", fontSize:11, fontWeight:700 }}>{data.items.length}</span>
+                  )}
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table table-hover table-centered align-middle mb-0 text-nowrap">
+                    <thead className="table-light">
+                      <tr>
+                        <th style={{ width:50, fontSize:12 }}>#</th>
+                        <th style={{ fontSize:12 }}>Item Name</th>
+                        <th style={{ fontSize:12 }}>Pack Size</th>
+                        <th style={{ fontSize:12 }}>Unit</th>
+                        <th style={{ fontSize:12 }}>Price</th>
+                        <th style={{ fontSize:12 }}>Qty</th>
+                        <th style={{ fontSize:12 }}>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.items?.length ? data.items.map((item, i) => (
+                        <tr key={i}>
+                          <td style={{ color:"#9ca3af", fontSize:12, fontWeight:600 }}>{i + 1}</td>
+                          <td>
+                            <div style={{ fontWeight:700, fontSize:13.5, color:"#1A1A1A" }}>{item.itemName}</div>
+                          </td>
+                          <td><span style={{ fontWeight:600, color:"#374151" }}>{item.packSize}</span></td>
+                          <td>
+                            <span style={{ display:"inline-flex", alignItems:"center", padding:"3px 9px", borderRadius:20, fontSize:11, fontWeight:700, color:"#6b7280", background:"#f3f4f6", border:"1px solid #e5e7eb" }}>
+                              {fl(item.unit)}
+                            </span>
+                          </td>
+                          <td><span style={{ fontWeight:600, color:"#374151" }}>₹{Number(item.price || 0).toLocaleString()}</span></td>
+                          <td><span style={{ fontWeight:800, fontSize:14, color:"#1A1A1A" }}>{item.quantity}</span></td>
+                          <td><span style={{ fontWeight:800, color:"#059669", fontSize:13.5 }}>₹{(Number(item.quantity || 0) * Number(item.price || 0)).toLocaleString()}</span></td>
+                        </tr>
+                      )) : (
+                        <tr><td colSpan="7" className="text-center py-5 text-muted">
+                          <i className="bx bx-bowl-hot" style={{ fontSize:32, display:"block", marginBottom:8, opacity:0.3 }}/>
+                          No items in this request
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* totals */}
+                <div className="row g-3 mt-3">
+                  {[
+                    { label:"Total Items",    val: data.totalItems,  icon:"bx-list-ul",  color:"#F97316", bg:"rgba(249,115,22,0.08)",   border:"rgba(249,115,22,0.22)"  },
+                    { label:"Total Quantity", val: data.totalQty,    icon:"bx-layer",    color:"#2563eb", bg:"rgba(37,99,235,0.08)",    border:"rgba(37,99,235,0.22)"   },
+                    { label:"Total Amount",   val:`₹${Number(data.totalAmount || totalCalc).toLocaleString()}`, icon:"bx-rupee", color:"#059669", bg:"rgba(5,150,105,0.08)", border:"rgba(5,150,105,0.22)" },
+                  ].map(s => (
+                    <div key={s.label} className="col-md-4">
+                      <div style={{ padding:"16px", borderRadius:13, background:s.bg, border:`1.5px solid ${s.border}`, textAlign:"center" }}>
+                        <i className={`bx ${s.icon}`} style={{ fontSize:22, color:s.color, display:"block", marginBottom:6 }}/>
+                        <div style={{ fontSize:11, color:s.color, fontWeight:600, textTransform:"uppercase", letterSpacing:0.5, marginBottom:4 }}>{s.label}</div>
+                        <div style={{ fontWeight:800, fontSize:22, color:s.color }}>{s.val}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* ── right col ── */}
+          <div className="col-xl-4">
+
+            {/* status stepper */}
+            <div className="card mb-3" style={{ borderRadius:16, border:"1.5px solid #f3f4f6", boxShadow:"0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div className="card-body" style={{ padding:24 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:20, paddingBottom:14, borderBottom:"1.5px solid #f3f4f6" }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,rgba(217,30,24,0.12) 0%,rgba(249,115,22,0.08) 100%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <i className="bx bx-git-branch" style={{ color:"#D91E18", fontSize:17 }}/>
+                  </div>
+                  <span style={{ fontWeight:700, fontSize:14.5, color:"#1A1A1A" }}>Status Progress</span>
+                </div>
+
+                {data.status === "REJECTED" ? (
+                  <div style={{ textAlign:"center", padding:"20px 0" }}>
+                    <div style={{ width:56, height:56, borderRadius:"50%", background:"rgba(217,30,24,0.1)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 12px", border:"2px solid rgba(217,30,24,0.25)" }}>
+                      <i className="bx bx-x-circle" style={{ fontSize:28, color:"#D91E18" }}/>
+                    </div>
+                    <div style={{ fontWeight:700, fontSize:14, color:"#D91E18", marginBottom:4 }}>Request Rejected</div>
+                    <div style={{ fontSize:12, color:"#9ca3af" }}>This request has been rejected</div>
+                  </div>
+                ) : (
+                  <div style={{ position:"relative", paddingLeft:2 }}>
+                    {STATUS_STEPS.map((key, idx) => {
+                      const m = STATUS_META[key];
+                      const done = currentStep > m.step;
+                      const active = currentStep === m.step;
+                      const pending = currentStep < m.step;
+                      const isLast = idx === STATUS_STEPS.length - 1;
+                      return (
+                        <div key={key} style={{ display:"flex", gap:14, position:"relative", paddingBottom: isLast ? 0 : 22 }}>
+                          {/* line */}
+                          {!isLast && (
+                            <div style={{ position:"absolute", left:16, top:34, bottom:0, width:2, background: done ? m.color : "#f3f4f6", borderRadius:2, zIndex:0 }}/>
+                          )}
+                          {/* dot */}
+                          <div style={{ width:34, height:34, borderRadius:"50%", flexShrink:0, zIndex:1, display:"flex", alignItems:"center", justifyContent:"center", background: done ? m.color : active ? m.bg : "#f9fafb", border:`2px solid ${done || active ? m.color : "#e5e7eb"}`, boxShadow: active ? `0 0 0 4px ${m.bg}` : "none", transition:"all 0.2s" }}>
+                            {done
+                              ? <i className="bx bx-check" style={{ fontSize:17, color:"#fff" }}/>
+                              : <i className={`bx ${m.icon}`} style={{ fontSize:15, color: active ? m.color : "#d1d5db" }}/>
+                            }
+                          </div>
+                          {/* label */}
+                          <div style={{ paddingTop:6 }}>
+                            <div style={{ fontWeight: active ? 700 : 600, fontSize:13, color: pending ? "#d1d5db" : "#1A1A1A" }}>{fl(key)}</div>
+                            {active && (
+                              <div style={{ fontSize:11, color:m.color, fontWeight:700, marginTop:2, display:"flex", alignItems:"center", gap:4 }}>
+                                <span style={{ width:6, height:6, borderRadius:"50%", background:m.color, display:"inline-block", animation:"pulse 1.2s infinite" }}/>
+                                Current status
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* history log below stepper */}
+                {data.statusHistory?.length > 0 && (
+                  <div style={{ marginTop:20, paddingTop:16, borderTop:"1.5px solid #f3f4f6" }}>
+                    <div style={{ fontSize:11, color:"#9ca3af", fontWeight:600, textTransform:"uppercase", letterSpacing:0.6, marginBottom:12 }}>History Log</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                      {data.statusHistory.map((h, i) => {
+                        const m = STATUS_META[h.status] || STATUS_META.REQUESTED;
+                        return (
+                          <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:10, background:"#f9fafb", border:"1px solid #f3f4f6" }}>
+                            <div style={{ width:28, height:28, borderRadius:"50%", background:m.bg, border:`1.5px solid ${m.border}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                              <i className={`bx ${m.icon}`} style={{ fontSize:13, color:m.color }}/>
+                            </div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontWeight:700, fontSize:12.5, color:m.color }}>{fl(h.status)}</div>
+                              <div style={{ fontSize:11, color:"#9ca3af", marginTop:1 }}>{fmtDateTime(h.updatedAt)}</div>
+                              {h.remarks && <div style={{ fontSize:11.5, color:"#6b7280", marginTop:3 }}>{h.remarks}</div>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* remarks */}
+            <div className="card mb-3" style={{ borderRadius:16, border:"1.5px solid #f3f4f6", boxShadow:"0 1px 6px rgba(0,0,0,0.05)" }}>
+              <div className="card-body" style={{ padding:24 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18, paddingBottom:14, borderBottom:"1.5px solid #f3f4f6" }}>
+                  <div style={{ width:34, height:34, borderRadius:9, background:"linear-gradient(135deg,rgba(217,30,24,0.12) 0%,rgba(249,115,22,0.08) 100%)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                    <i className="bx bx-comment-detail" style={{ color:"#D91E18", fontSize:17 }}/>
+                  </div>
+                  <span style={{ fontWeight:700, fontSize:14.5, color:"#1A1A1A" }}>Remarks</span>
+                </div>
+
+                {[
+                  { label:"Franchise Remarks", value: data.remarks,       icon:"bx-store"      },
+                  { label:"Admin Remarks",      value: data.adminRemarks,  icon:"bx-shield-alt" },
+                ].map(r => (
+                  <div key={r.label} style={{ marginBottom:14 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:11.5, color:"#9ca3af", fontWeight:600, textTransform:"uppercase", letterSpacing:0.5, marginBottom:7 }}>
+                      <i className={`bx ${r.icon}`} style={{ fontSize:13 }}/>{r.label}
+                    </div>
+                    <div style={{ fontSize:13, color: r.value ? "#374151" : "#d1d5db", fontStyle: r.value ? "normal" : "italic", lineHeight:1.65, background:"#f9fafb", borderRadius:10, padding:"11px 14px", border:"1.5px solid #f3f4f6" }}>
+                      {r.value || `No ${r.label.toLowerCase()} provided`}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* dispatch details — conditional */}
+            {(data.status === "DISPATCHED" || data.status === "DELIVERED") && (
+              <div className="card" style={{ borderRadius:16, border:"1.5px solid rgba(124,58,237,0.2)", boxShadow:"0 1px 6px rgba(124,58,237,0.08)" }}>
+                <div className="card-body" style={{ padding:24 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18, paddingBottom:14, borderBottom:"1.5px solid #f3f4f6" }}>
+                    <div style={{ width:34, height:34, borderRadius:9, background:"rgba(124,58,237,0.1)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="bx bx-package" style={{ color:"#7c3aed", fontSize:17 }}/>
+                    </div>
+                    <span style={{ fontWeight:700, fontSize:14.5, color:"#1A1A1A" }}>Dispatch Details</span>
+                  </div>
+                  {[
+                    { icon:"bx-truck",       label:"Transport",    value: data.transportName  },
+                    { icon:"bx-barcode",     label:"Tracking No.", value: data.trackingNumber, mono:true },
+                    { icon:"bx-calendar",    label:"Dispatch Date",value: fmtDateTime(data.dispatchedDate) },
+                    { icon:"bx-note",        label:"Remarks",      value: data.dispatchRemarks },
+                  ].map(f => (
+                    <div key={f.label} style={{ display:"flex", gap:12, padding:"11px 0", borderBottom:"1px solid #f9fafb" }}>
+                      <div style={{ width:30, height:30, borderRadius:8, background:"rgba(124,58,237,0.08)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                        <i className={`bx ${f.icon}`} style={{ color:"#7c3aed", fontSize:15 }}/>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:11, color:"#9ca3af", fontWeight:600, textTransform:"uppercase", letterSpacing:0.5, marginBottom:3 }}>{f.label}</div>
+                        <div style={{ fontSize:13.5, fontWeight:600, color: f.value ? "#1A1A1A" : "#d1d5db", fontFamily: f.mono ? "monospace" : "inherit" }}>{f.value || "—"}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
-    );
+
+      </div></div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+    </React.Fragment>
+  );
 };
 
 export default MasalaFranchiseRequestView;

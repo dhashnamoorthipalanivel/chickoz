@@ -1,428 +1,194 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDocuments } from "../../../store/store";
+import { toast } from "react-toastify";
 
-const initialData = [
-    {
-        id: 1,
-        documentCode: "GST_CERT",
-        documentName: "GST Certificate",
-        documentType: "LEGAL",
-        isMandatory: true,
-        status: "ACTIVE",
-    },
-    {
-        id: 2,
-        documentCode: "FSSAI",
-        documentName: "FSSAI License",
-        documentType: "LICENSE",
-        isMandatory: true,
-        status: "ACTIVE",
-    },
-    {
-        id: 3,
-        documentCode: "OWNER_ID",
-        documentName: "Owner ID Proof",
-        documentType: "IDENTITY",
-        isMandatory: true,
-        status: "ACTIVE",
-    },
-    {
-        id: 4,
-        documentCode: "SHOP_PHOTO",
-        documentName: "Shop Front Photo",
-        documentType: "MEDIA",
-        isMandatory: false,
-        status: "ACTIVE",
-    },
-    {
-        id: 5,
-        documentCode: "FRANCHISE_AGR",
-        documentName: "Franchise Agreement",
-        documentType: "LEGAL",
-        isMandatory: false,
-        status: "INACTIVE",
-    },
-];
+const formatLabel = (v) => v?.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "";
 
-const formatLabel = (value) => {
-    return value
-        ?.toLowerCase()
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (char) => char.toUpperCase());
+const statusPill = (status) => {
+  const s = status === "ACTIVE"
+    ? { color:"#059669", bg:"rgba(5,150,105,0.08)", border:"rgba(5,150,105,0.2)" }
+    : { color:"#D91E18", bg:"rgba(217,30,24,0.08)", border:"rgba(217,30,24,0.18)" };
+  return (
+    <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 11px", borderRadius:20, fontSize:11.5, fontWeight:700, letterSpacing:0.3, color:s.color, background:s.bg, border:`1px solid ${s.border}`, whiteSpace:"nowrap" }}>
+      <span style={{ width:6, height:6, borderRadius:"50%", background:s.color, flexShrink:0 }}/>{formatLabel(status)}
+    </span>
+  );
 };
 
-const statusBadge = (status) => {
-    const map = {
-        ACTIVE: "bg-success",
-        INACTIVE: "bg-danger",
-    };
-
-    return (
-        <span className={`badge ${map[status] || "bg-secondary"}`}>
-            {formatLabel(status)}
-        </span>
-    );
+const typePill = (type) => {
+  const map = { LEGAL:{color:"#2563eb",bg:"rgba(37,99,235,0.08)",border:"rgba(37,99,235,0.2)"}, LICENSE:{color:"#d97706",bg:"rgba(217,119,6,0.08)",border:"rgba(217,119,6,0.2)"}, IDENTITY:{color:"#7c3aed",bg:"rgba(124,58,237,0.08)",border:"rgba(124,58,237,0.2)"}, FINANCIAL:{color:"#059669",bg:"rgba(5,150,105,0.08)",border:"rgba(5,150,105,0.2)"}, MEDIA:{color:"#F97316",bg:"rgba(249,115,22,0.09)",border:"rgba(249,115,22,0.2)"}, ADDRESS_PROOF:{color:"#6b7280",bg:"#f3f4f6",border:"#e5e7eb"} };
+  const s = map[type] || { color:"#6b7280", bg:"#f3f4f6", border:"#e5e7eb" };
+  return <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 11px", borderRadius:20, fontSize:11.5, fontWeight:700, letterSpacing:0.3, color:s.color, background:s.bg, border:`1px solid ${s.border}`, whiteSpace:"nowrap" }}>{formatLabel(type)}</span>;
 };
 
-const yesNoBadge = (value) => {
-    return value ? (
-        <span className="badge bg-success-subtle text-success">Yes</span>
-    ) : (
-        <span className="badge bg-danger-subtle text-danger">No</span>
-    );
-};
+const mandatoryPill = (val) => val
+  ? <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#D91E18", background:"rgba(217,30,24,0.07)", border:"1px solid rgba(217,30,24,0.2)", whiteSpace:"nowrap" }}><i className="bx bx-check-shield" style={{ fontSize:13 }}/>Yes</span>
+  : <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"4px 10px", borderRadius:20, fontSize:11.5, fontWeight:700, color:"#9ca3af", background:"#f9fafb", border:"1px solid #e5e7eb", whiteSpace:"nowrap" }}>No</span>;
+
+const DeleteModal = ({ onClose, onConfirm, deleting }) => (
+  <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(15,15,15,0.65)", backdropFilter:"blur(6px)", WebkitBackdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16, animation:"fadeIn 0.18s ease" }}>
+    <div style={{ background:"#fff", borderRadius:24, padding:"40px 32px 32px", maxWidth:420, width:"100%", boxShadow:"0 32px 80px rgba(0,0,0,0.22)", animation:"scaleIn 0.22s cubic-bezier(0.34,1.56,0.64,1)", textAlign:"center", position:"relative" }}>
+      <button onClick={onClose} style={{ position:"absolute", top:14, right:14, width:32, height:32, borderRadius:"50%", background:"#f3f4f6", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", color:"#9ca3af", fontSize:20 }} onMouseEnter={e=>{e.currentTarget.style.background="#e5e7eb"}} onMouseLeave={e=>{e.currentTarget.style.background="#f3f4f6"}}><i className="bx bx-x"/></button>
+      <div style={{ position:"relative", display:"inline-flex", marginBottom:22 }}>
+        <div style={{ position:"absolute", inset:-10, borderRadius:"50%", border:"1.5px solid rgba(217,30,24,0.15)", animation:"pulseDot 2.2s ease infinite" }}/>
+        <div style={{ position:"absolute", inset:-20, borderRadius:"50%", border:"1px solid rgba(217,30,24,0.07)" }}/>
+        <div style={{ width:80, height:80, borderRadius:"50%", background:"linear-gradient(135deg,#D91E18 0%,#991B1B 100%)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 10px 28px rgba(217,30,24,0.38)" }}>
+          <i className="bx bx-trash" style={{ color:"#fff", fontSize:32 }}/>
+        </div>
+      </div>
+      <h4 style={{ fontWeight:800, fontSize:20, color:"#1A1A1A", margin:"0 0 10px" }}>Delete Record?</h4>
+      <p style={{ color:"#6b7280", fontSize:13.5, lineHeight:1.65, margin:"0 0 28px" }}>This record will be <span style={{ color:"#D91E18", fontWeight:700 }}>permanently removed</span>. This action cannot be undone.</p>
+      <div style={{ display:"flex", gap:12 }}>
+        <button onClick={onClose} style={{ flex:1, padding:"13px 0", borderRadius:12, border:"1.5px solid #e5e7eb", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:14, cursor:"pointer" }} onMouseEnter={e=>{e.currentTarget.style.background="#f3f4f6"}} onMouseLeave={e=>{e.currentTarget.style.background="#f9fafb"}}>Cancel</button>
+        <button onClick={onConfirm} disabled={deleting} style={{ flex:1, padding:"13px 0", borderRadius:12, border:"none", background:"linear-gradient(135deg,rgba(217,30,24,0.92) 0%,rgba(153,27,27,0.96) 100%)", color:"#fff", fontWeight:700, fontSize:14, cursor:deleting?"not-allowed":"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:7, opacity:deleting?0.82:1 }} onMouseEnter={e=>{if(!deleting)e.currentTarget.style.transform="translateY(-1px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
+          {deleting?<><span className="spinner-border spinner-border-sm" style={{ width:15, height:15, borderWidth:2 }}/> Deleting...</>:<><i className="bx bx-trash" style={{ fontSize:17 }}/> Delete</>}
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 const Document = () => {
-    const [search, setSearch] = useState("");
-    const [statusFilter, setStatusFilter] = useState("ALL");
-    const [typeFilter, setTypeFilter] = useState("ALL");
-    const [selected, setSelected] = useState([]);
-    const [data, setData] = useState(initialData);
-    const [page, setPage] = useState(1);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deleteId, setDeleteId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
-    const perPage = 10;
+  const { documents, fetchDocuments, deleteDocument } = useDocuments();
+  useEffect(() => { fetchDocuments(); }, []);
 
-    const {documents, fetchDocuments, deleteDocument}  = useDocuments();
+  const filtered = documents.filter(item =>
+    (item.documentName?.toLowerCase().includes(search.toLowerCase()) || item.documentType?.toLowerCase().includes(search.toLowerCase())) &&
+    (statusFilter === "ALL" || item.status === statusFilter) &&
+    (typeFilter === "ALL" || item.documentType === typeFilter)
+  );
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page-1)*perPage, page*perPage);
 
-    useEffect(() => {
-        fetchDocuments();
-    },[])
-
-    const filtered = documents.filter((item) => {
-        const matchSearch =
-            item.documentName.toLowerCase().includes(search.toLowerCase()) ||
-            item.documentCode.toLowerCase().includes(search.toLowerCase()) ||
-            item.documentType.toLowerCase().includes(search.toLowerCase());
-
-        const matchStatus =
-            statusFilter === "ALL" || item.status === statusFilter;
-
-        const matchType =
-            typeFilter === "ALL" || item.documentType === typeFilter;
-
-        return matchSearch && matchStatus && matchType;
-    });
-
-    const totalPages = Math.ceil(filtered.length / perPage);
-    const paged = filtered.slice((page - 1) * perPage, page * perPage);
-
-    const toggleSelect = (id) => {
-        setSelected((prev) =>
-            prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-        );
-    };
-
-    const toggleAll = () => {
-        if (selected.length === paged.length) {
-            setSelected([]);
-        } else {
-            setSelected(paged.map((r) => r._id));
-        }
-    };
-
-    const confirmDelete = (id) => {
-        setDeleteId(id);
-        setShowDeleteModal(true);
-    };
-
-    const handleDelete = async () => {
+  const confirmDelete = (id) => { setDeleteId(id); setShowDeleteModal(true); };
+  const handleDelete = async () => {
+    setDeleting(true);
     try {
-        await deleteDocument(deleteId);
-        await fetchDocuments();
+      await deleteDocument(deleteId); await fetchDocuments();
+      toast.success("Document deleted"); setShowDeleteModal(false); setDeleteId(null);
+    } catch (e) { toast.error(e?.response?.data?.message || "Failed to delete"); }
+    finally { setDeleting(false); }
+  };
 
-        setShowDeleteModal(false);
-        setDeleteId(null);
+  return (
+    <React.Fragment>
+      <div className="page-content"><div className="container-fluid">
+        <div className="row"><div className="col-12">
+          <div className="page-title-box d-sm-flex align-items-center justify-content-between">
+            <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <i className="bx bx-file" style={{ color:"#fff", fontSize:22 }}/>
+              </div>
+              <div>
+                <h4 className="mb-0" style={{ fontWeight:800, fontSize:18, color:"#1A1A1A" }}>Document Management</h4>
+                <div style={{ fontSize:12, color:"#F97316", fontWeight:600, marginTop:1 }}>Masters · Document</div>
+              </div>
+            </div>
+            <ol className="breadcrumb m-0"><li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li><li className="breadcrumb-item active">Document</li></ol>
+          </div>
+        </div></div>
 
-        setSelected((prev) =>
-            prev.filter((item) => item !== deleteId)
-        );
-
-    } catch (error) {
-        console.log(error);
-    }
-};
-
-    return (
-        <React.Fragment>
-            <div className="page-content">
-                <div className="container-fluid">
-                    {/* Page Title */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="page-title-box d-sm-flex align-items-center justify-content-between">
-                                <h4 className="mb-sm-0 font-size-18">Document Management</h4>
-                                <div className="page-title-right">
-                                    <ol className="breadcrumb m-0">
-                                        <li className="breadcrumb-item">
-                                            <Link to="/dashboard">Dashboard</Link>
-                                        </li>
-                                        <li className="breadcrumb-item active">
-                                            Document Management
-                                        </li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Table Card */}
-                    <div className="row">
-                        <div className="col-12">
-                            <div className="card">
-                                <div className="card-header">
-                                    <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                        <h4 className="card-title mb-0">Document Records</h4>
-                                        <div className="d-flex gap-2">
-                                            {selected.length > 0 && (
-                                                <button
-                                                    className="btn btn-sm btn-danger"
-                                                    onClick={handleBulkDelete}
-                                                >
-                                                    <i className="bx bx-trash me-1"></i> Delete (
-                                                    {selected.length})
-                                                </button>
-                                            )}
-                                            <Link to="/master-document/add" className="btn btn-sm btn-primary">
-                                                <i className="bx bx-plus me-1"></i> Add Document
-                                            </Link>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="card-body">
-                                    {/* Filters */}
-                                    <div className="row mb-3 g-2">
-                                        <div className="col-sm-12 col-md-5">
-                                            <div className="position-relative">
-                                                <input
-                                                    type="text"
-                                                    className="form-control"
-                                                    placeholder="Search by document name, code or type..."
-                                                    value={search}
-                                                    onChange={(e) => {
-                                                        setSearch(e.target.value);
-                                                        setPage(1);
-                                                    }}
-                                                />
-                                                <i
-                                                    className="bx bx-search position-absolute"
-                                                    style={{
-                                                        top: "50%",
-                                                        right: "12px",
-                                                        transform: "translateY(-50%)",
-                                                        color: "#adb5bd",
-                                                    }}
-                                                ></i>
-                                            </div>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-3">
-                                            <select
-                                                className="form-select"
-                                                value={statusFilter}
-                                                onChange={(e) => {
-                                                    setStatusFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Status</option>
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="INACTIVE">Inactive</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-sm-6 col-md-2">
-                                            <select
-                                                className="form-select"
-                                                value={typeFilter}
-                                                onChange={(e) => {
-                                                    setTypeFilter(e.target.value);
-                                                    setPage(1);
-                                                }}
-                                            >
-                                                <option value="ALL">All Types</option>
-                                                <option value="LEGAL">Legal</option>
-                                                <option value="LICENSE">License</option>
-                                                <option value="IDENTITY">Identity</option>
-                                                <option value="MEDIA">Media</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-2 text-end d-flex align-items-center justify-content-md-end">
-                                            <span className="text-muted font-size-13">
-                                                {filtered.length} result
-                                                {filtered.length !== 1 ? "s" : ""} found
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Table */}
-                                    <div className="table-responsive">
-                                        <table className="table table-hover table-centered align-middle mb-0">
-                                            <thead className="table-light">
-                                                <tr>
-                                                    <th style={{ width: "40px" }}>
-                                                        S.No
-                                                    </th>
-                                                    <th>Document Code</th>
-                                                    <th>Document Name</th>
-                                                    <th>Document Type</th>
-                                                    <th>Mandatory</th>
-                                                    <th>Status</th>
-                                                    <th className="text-center">Action</th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {paged.length === 0 ? (
-                                                    <tr>
-                                                        <td colSpan="9" className="text-center py-5 text-muted">
-                                                            <i className="bx bx-search-alt display-4 d-block mb-2"></i>
-                                                            No document records found.
-                                                        </td>
-                                                    </tr>
-                                                ) : (
-                                                    paged.map((row, index) => (
-                                                        <tr
-                                                            key={row._id}
-                                                            className={selected.includes(row._id) ? "table-active" : ""}
-                                                        >
-                                                             <td>{(page - 1) * perPage + index + 1}</td>
-
-                                                            <td>{row.documentCode}</td>
-                                                            <td>{row.documentName}</td>
-                                                            <td>{formatLabel(row.documentType)}</td>
-                                                            <td>{yesNoBadge(row.isMandatory)}</td>
-                                                            <td>{statusBadge(row.status)}</td>
-
-                                                            <td>
-                                                                <div className="d-flex justify-content-center gap-2">
-                                                                    <Link
-                                                                        to={`/master-document/edit/${row._id}`}
-                                                                        state={{ rowData: row }}
-                                                                        className="btn btn-sm btn-outline-primary"
-                                                                        title="Edit"
-                                                                    >
-                                                                        <i className="bx bx-edit-alt"></i>
-                                                                    </Link>
-                                                                    <button
-                                                                        className="btn btn-sm btn-outline-danger"
-                                                                        title="Delete"
-                                                                        onClick={() => confirmDelete(row._id)}
-                                                                    >
-                                                                        <i className="bx bx-trash-alt"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Pagination */}
-                                    {totalPages > 1 && (
-                                        <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
-                                            <div className="text-muted font-size-13">
-                                                Showing {(page - 1) * perPage + 1} –{" "}
-                                                {Math.min(page * perPage, filtered.length)} of{" "}
-                                                {filtered.length} entries
-                                            </div>
-
-                                            <ul className="pagination pagination-rounded mb-0">
-                                                <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p - 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-left"></i>
-                                                    </button>
-                                                </li>
-
-                                                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                                                    (p) => (
-                                                        <li
-                                                            key={p}
-                                                            className={`page-item ${page === p ? "active" : ""}`}
-                                                        >
-                                                            <button className="page-link" onClick={() => setPage(p)}>
-                                                                {p}
-                                                            </button>
-                                                        </li>
-                                                    )
-                                                )}
-
-                                                <li
-                                                    className={`page-item ${page === totalPages ? "disabled" : ""}`}
-                                                >
-                                                    <button
-                                                        className="page-link"
-                                                        onClick={() => setPage((p) => p + 1)}
-                                                    >
-                                                        <i className="bx bx-chevron-right"></i>
-                                                    </button>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        <div className="row"><div className="col-12"><div className="card">
+          <div className="card-header">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <h4 className="card-title mb-0">Document Records</h4>
+                <span style={{ background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", borderRadius:10, padding:"2px 9px", fontSize:11, fontWeight:700, boxShadow:"0 2px 6px rgba(217,30,24,0.3)" }}>{filtered.length}</span>
+              </div>
+              <Link to="/master-document/add" className="btn btn-sm btn-primary"><i className="bx bx-plus me-1"/>Add Document</Link>
+            </div>
+          </div>
+          <div className="card-body">
+            <div className="row mb-3 g-2 align-items-center">
+              <div className="col-auto d-flex align-items-center gap-2">
+                <span style={{ fontSize:13, color:"#6b7280", whiteSpace:"nowrap" }}>Show</span>
+                <select className="form-select form-select-sm" style={{ width:70 }} value={perPage} onChange={e=>{setPerPage(Number(e.target.value));setPage(1);}}>{[5,10,25,50].map(n=><option key={n} value={n}>{n}</option>)}</select>
+                <span style={{ fontSize:13, color:"#6b7280", whiteSpace:"nowrap" }}>entries</span>
+              </div>
+              <div className="col-sm-12 col-md-4">
+                <div className="position-relative">
+                  <input type="text" className="form-control" placeholder="Search by name, code or type..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}/>
+                  <i className="bx bx-search position-absolute" style={{ top:"50%", right:12, transform:"translateY(-50%)", color:"#adb5bd" }}/>
                 </div>
+              </div>
+              <div className="col-sm-6 col-md-2">
+                <select className="form-select" value={typeFilter} onChange={e=>{setTypeFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Types</option>
+                  <option value="LEGAL">Legal</option>
+                  <option value="LICENSE">License</option>
+                  <option value="IDENTITY">Identity</option>
+                  <option value="FINANCIAL">Financial</option>
+                  <option value="MEDIA">Media</option>
+                  <option value="ADDRESS_PROOF">Address Proof</option>
+                </select>
+              </div>
+              <div className="col-sm-6 col-md-2">
+                <select className="form-select" value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1);}}>
+                  <option value="ALL">All Status</option>
+                  <option value="ACTIVE">Active</option>
+                  <option value="INACTIVE">Inactive</option>
+                </select>
+              </div>
+              <div className="col text-end"><span className="text-muted font-size-13">{filtered.length} result{filtered.length!==1?"s":""} found</span></div>
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div
-                    className="modal fade show d-block"
-                    tabIndex="-1"
-                    style={{ background: "rgba(0,0,0,0.5)" }}
-                >
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content">
-                            <div className="modal-header border-0 pb-0">
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowDeleteModal(false)}
-                                ></button>
-                            </div>
+            <div className="table-responsive" style={{ overflowX:"auto" }}>
+              <table className="table table-hover table-centered align-middle mb-0 text-nowrap">
+                <thead className="table-light">
+                  <tr>
+                    <th style={{ width:60 }}>S.No</th>
+                    <th>Document Name</th>
+                    <th>Type</th>
+                    <th>Mandatory</th>
+                    <th>Status</th>
+                    <th className="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.length === 0 ? <tr><td colSpan="6" className="text-center py-5 text-muted"><i className="bx bx-search-alt display-4 d-block mb-2"/>No document records found.</td></tr>
+                  : paged.map((row, i) => (
+                    <tr key={row._id}>
+                      <td>{(page-1)*perPage+i+1}</td>
+                      <td style={{ fontWeight:600 }}>{row.documentName}</td>
+                      <td>{typePill(row.documentType)}</td>
+                      <td>{mandatoryPill(row.isMandatory)}</td>
+                      <td>{statusPill(row.status)}</td>
+                      <td><div className="d-flex justify-content-center gap-2">
+                        <Link to={`/master-document/edit/${row._id}`} state={{ rowData:row }} className="ckz-action-btn ckz-action-edit" title="Edit"><i className="bx bx-edit-alt"/></Link>
+                        <button className="ckz-action-btn ckz-action-delete" title="Delete" onClick={()=>confirmDelete(row._id)}><i className="bx bx-trash-alt"/></button>
+                      </div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                            <div className="modal-body text-center pb-4">
-                                <div className="avatar-md mx-auto mb-4">
-                                    <div className="avatar-title bg-danger-subtle text-danger rounded-circle font-size-32">
-                                        <i className="bx bx-trash-alt"></i>
-                                    </div>
-                                </div>
-                                <h5>Delete Document?</h5>
-                                <p className="text-muted mb-0">
-                                    Are you sure you want to delete this document? This action cannot
-                                    be undone.
-                                </p>
-                            </div>
-
-                            <div className="modal-footer border-0 pt-0 justify-content-center gap-2">
-                                <button
-                                    className="btn btn-secondary px-4"
-                                    onClick={() => setShowDeleteModal(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button className="btn btn-danger px-4" onClick={handleDelete}>
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {totalPages > 1 && (
+              <div className="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+                <div className="text-muted font-size-13">Showing {(page-1)*perPage+1}–{Math.min(page*perPage,filtered.length)} of {filtered.length} entries</div>
+                <ul className="pagination pagination-rounded mb-0">
+                  <li className={`page-item ${page===1?"disabled":""}`}><button className="page-link" onClick={()=>setPage(p=>p-1)}><i className="bx bx-chevron-left"/></button></li>
+                  {Array.from({length:totalPages},(_,i)=>i+1).map(p=><li key={p} className={`page-item ${page===p?"active":""}`}><button className="page-link" onClick={()=>setPage(p)}>{p}</button></li>)}
+                  <li className={`page-item ${page===totalPages?"disabled":""}`}><button className="page-link" onClick={()=>setPage(p=>p+1)}><i className="bx bx-chevron-right"/></button></li>
+                </ul>
+              </div>
             )}
-        </React.Fragment>
-    );
+          </div>
+        </div></div></div>
+      </div></div>
+      {showDeleteModal && <DeleteModal onClose={()=>{setShowDeleteModal(false);setDeleteId(null);}} onConfirm={handleDelete} deleting={deleting}/>}
+    </React.Fragment>
+  );
 };
 
 export default Document;

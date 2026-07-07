@@ -32,6 +32,12 @@ import {
   updateLeadSource,
 } from "../api/leadSourceApi";
 import {
+  createMaterial,
+  deleteMaterial,
+  getMaterials,
+  updateMaterial,
+} from "../api/materialApi";
+import {
   createDocument,
   deleteDocument,
   getDocuments,
@@ -79,6 +85,16 @@ import {
   updateMasalaRequestStatus,
 } from "../api/masalaRequestApi";
 import { createCustomerApi, getCustomerByMobileApi, getFranchiseCustomersApi } from "../api/customerApi";
+import { getNotificationsApi, markAsReadApi, markAllAsReadApi } from "../api/notificationApi";
+import { getMyOrdersApi, getOrderByIdApi, createOrderApi, updateOrderStatusApi } from "../api/orderApi";
+import {
+  getSubscriptions,
+  getMySubscription,
+  getSubscriptionByFranchise,
+  enableSubscription,
+  extendSubscription,
+  suspendSubscription,
+} from "../api/subscriptionApi";
 
 // Package
 export const usePackageStore = create((set) => ({
@@ -268,6 +284,33 @@ export const useDocuments = create((set) => ({
 
   deleteDocument: async (id) => {
     const res = await deleteDocument(id);
+    return res.data;
+  },
+}));
+
+// Materials
+export const useMaterials = create((set) => ({
+  materials: [],
+  loading: false,
+
+  fetchMaterials: async () => {
+    set({ loading: true });
+    const res = await getMaterials();
+    set({ materials: res.data, loading: false });
+  },
+
+  addMaterial: async (data) => {
+    const res = await createMaterial(data);
+    return res.data;
+  },
+
+  updateMaterial: async (id, data) => {
+    const res = await updateMaterial(id, data);
+    return res.data;
+  },
+
+  deleteMaterial: async (id) => {
+    const res = await deleteMaterial(id);
     return res.data;
   },
 }));
@@ -647,27 +690,21 @@ export const useFranchiseMenuStore = create((set) => ({
   },
 
   updateVisibility: async (data) => {
+    const { menuId, isVisibleInBilling } = data;
+    set((state) => ({
+      menus: state.menus.map((m) =>
+        (m.menuId || m._id) === menuId ? { ...m, isVisibleInBilling } : m
+      ),
+    }));
     try {
-      set({
-        loading: true,
-      });
-
       await updateMenuVisibility(data);
-
-      // ✅ REFRESH MENUS
-      const res = await getMyMenus();
-
-      set({
-        menus: res.data.menus,
-
-        loading: false,
-      });
     } catch (error) {
-      console.log(error);
-
-      set({
-        loading: false,
-      });
+      set((state) => ({
+        menus: state.menus.map((m) =>
+          (m.menuId || m._id) === menuId ? { ...m, isVisibleInBilling: !isVisibleInBilling } : m
+        ),
+      }));
+      throw error;
     }
   },
 }));
@@ -957,5 +994,119 @@ export const useMasalaRequestStore = create((set) => ({
 
       throw error;
     }
+  },
+}));
+
+// Notifications
+export const useNotificationStore = create((set) => ({
+  notifications: [],
+  unreadCount: 0,
+  loading: false,
+
+  fetchNotifications: async () => {
+    try {
+      set({ loading: true });
+      const res = await getNotificationsApi();
+      set({ notifications: res.data.data, unreadCount: res.data.unreadCount, loading: false });
+    } catch (_) {
+      set({ loading: false });
+    }
+  },
+
+  markAsRead: async (id) => {
+    try {
+      await markAsReadApi(id);
+      set((state) => ({
+        notifications: state.notifications.map((n) => n._id === id ? { ...n, isRead: true } : n),
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      }));
+    } catch (_) {}
+  },
+
+  markAllAsRead: async () => {
+    try {
+      await markAllAsReadApi();
+      set((state) => ({
+        notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
+        unreadCount: 0,
+      }));
+    } catch (_) {}
+  },
+}));
+
+// Orders
+export const useOrderStore = create((set) => ({
+  orders:        [],
+  loading:       false,
+  selectedOrder: null,
+
+  fetchMyOrders: async () => {
+    set({ loading: true });
+    try {
+      const res = await getMyOrdersApi();
+      set({ orders: res.data, loading: false });
+    } catch (_) {
+      set({ loading: false });
+    }
+  },
+
+  fetchOrderById: async (id) => {
+    set({ loading: true });
+    try {
+      const res = await getOrderByIdApi(id);
+      set({ selectedOrder: res.data, loading: false });
+      return res.data;
+    } catch (err) {
+      set({ loading: false });
+      throw err;
+    }
+  },
+
+  createOrder: async (data) => {
+    const res = await createOrderApi(data);
+    return res.data;
+  },
+
+  updateOrderStatus: async (id, data) => {
+    const res = await updateOrderStatusApi(id, data);
+    return res.data;
+  },
+}));
+
+// Subscription
+export const useSubscriptionStore = create((set, get) => ({
+  subscriptions: [],   // [{ franchise, subscription }]
+  mySubscription: null,
+  loading: false,
+
+  fetchSubscriptions: async () => {
+    set({ loading: true });
+    try {
+      const res = await getSubscriptions();
+      set({ subscriptions: res.data, loading: false });
+    } catch (_) { set({ loading: false }); }
+  },
+
+  fetchMySubscription: async () => {
+    try {
+      const res = await getMySubscription();
+      set({ mySubscription: res.data });
+      return res.data;
+    } catch (_) { return null; }
+  },
+
+  enableSubscription: async (franchiseId, data) => {
+    const res = await enableSubscription(franchiseId, data);
+    return res.data;
+  },
+
+  extendSubscription: async (franchiseId, data) => {
+    const res = await extendSubscription(franchiseId, data);
+    return res.data;
+  },
+
+  suspendSubscription: async (franchiseId) => {
+    const res = await suspendSubscription(franchiseId);
+    return res.data;
   },
 }));

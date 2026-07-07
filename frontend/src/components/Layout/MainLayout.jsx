@@ -9,10 +9,34 @@ import TopbarLoader from './TopbarLoader';
 import Waves from 'node-waves';
 import 'node-waves/dist/waves.min.css';
 import { useTheme } from '../../context/ThemeContext';
+import SquarePatternBg from '../SquarePatternBg';
+import SubscriptionExpired from '../../pages/Subscription/SubscriptionExpired';
+import { useSubscriptionStore } from '../../store/store';
 
 const MainLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Compute synchronously so admin users never see the blank flash
+  const _user       = JSON.parse(localStorage.getItem("user") || "{}");
+  const _isFranchise = _user?.role === "user" || _user?.role === "franchise";
+
+  const [subExpired, setSubExpired] = useState(false);
+  const [subChecked, setSubChecked] = useState(!_isFranchise); // true for admins immediately
+
   const location = useLocation();
+  const { fetchMySubscription } = useSubscriptionStore();
+
+  /* Only franchise/user roles need the subscription check */
+  useEffect(() => {
+    if (!_isFranchise) return; // admin — already checked = true
+
+    fetchMySubscription()
+      .then(sub => {
+        if (!sub || sub.status !== "ACTIVE") setSubExpired(true);
+        setSubChecked(true);
+      })
+      .catch(() => setSubChecked(true));
+  }, []);
   const { 
     layout: contextLayout, 
     layoutMode, 
@@ -76,13 +100,18 @@ const MainLayout = ({ children }) => {
     }
   }, [isSidebarOpen, layout, sidebarSize]);
 
+  /* Show nothing until subscription check completes (avoid flash) */
+  if (!subChecked) return null;
+  if (subExpired)  return <SubscriptionExpired />;
+
   return (
     <div id="layout-wrapper">
+      <SquarePatternBg />
       <TopbarLoader />
       {layout === 'vertical' ? (
         <React.Fragment>
           <Header toggleSidebar={toggleSidebar} />
-          <Sidebar />
+          <Sidebar toggleSidebar={toggleSidebar} />
         </React.Fragment>
       ) : (
         <HeaderHorizontal />
