@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFranchiseStore } from "../../../store/store";
+import { toast } from "react-toastify";
 
 const formatLabel = (value) => {
   if (!value) return "";
@@ -8,48 +9,22 @@ const formatLabel = (value) => {
 };
 
 const TYPE_STYLE = {
-  FRANCHISE:   { color: "#1D4ED8", bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)",  icon: "bx-store" },
-  OUTLET:      { color: "#B45309", bg: "rgba(245,158,11,0.09)",  border: "rgba(245,158,11,0.22)", icon: "bx-building-house" },
-  HEAD_OFFICE: { color: "#065F46", bg: "rgba(16,185,129,0.08)",  border: "rgba(16,185,129,0.2)",  icon: "bx-building" },
-  KITCHEN:     { color: "#D91E18", bg: "rgba(217,30,24,0.07)",   border: "rgba(217,30,24,0.18)",  icon: "bx-restaurant" },
-  WAREHOUSE:   { color: "#374151", bg: "#f3f4f6",                border: "#e5e7eb",               icon: "bx-archive" },
+  FRANCHISE: { color: "#1D4ED8", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", icon: "bx-store" },
+  OUTLET: { color: "#B45309", bg: "rgba(245,158,11,0.09)", border: "rgba(245,158,11,0.22)", icon: "bx-building-house" },
+  HEAD_OFFICE: { color: "#065F46", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", icon: "bx-building" },
+  KITCHEN: { color: "#D91E18", bg: "rgba(217,30,24,0.07)", border: "rgba(217,30,24,0.18)", icon: "bx-restaurant" },
+  WAREHOUSE: { color: "#374151", bg: "#f3f4f6", border: "#e5e7eb", icon: "bx-archive" },
 };
 
-const INVITE_STYLE = {
-  DRAFT:       { color: "#6b7280", bg: "#f3f4f6",                border: "#e5e7eb"               },
-  INVITE_SENT: { color: "#B45309", bg: "rgba(245,158,11,0.09)",  border: "rgba(245,158,11,0.22)" },
-  ACTIVE:      { color: "#065F46", bg: "rgba(16,185,129,0.08)",  border: "rgba(16,185,129,0.2)"  },
-  EXPIRED:     { color: "#991B1B", bg: "rgba(153,27,27,0.07)",   border: "rgba(153,27,27,0.18)"  },
-};
 
-const INVITE_LABEL = {
-  DRAFT: "Draft", INVITE_SENT: "Invite Sent", ACTIVE: "ERP Active", EXPIRED: "Expired",
-};
-
-const typeBadge = (type) => {
-  if (!type) return null;
-  const s = TYPE_STYLE[type] || { color: "#6b7280", bg: "#f3f4f6", border: "#e5e7eb", icon: "bx-store" };
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "4px 11px", borderRadius: 20,
-      fontSize: 11.5, fontWeight: 700, letterSpacing: 0.3,
-      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
-      whiteSpace: "nowrap",
-    }}>
-      <i className={`bx ${s.icon}`} style={{ fontSize: 12 }} />
-      {formatLabel(type)}
-    </span>
-  );
-};
 
 const statusBadge = (status) => {
   const active = status === "ACTIVE";
   const pending = status === "PENDING" || status === "UNDER_MAINTENANCE";
   const color = active ? "#065F46" : pending ? "#B45309" : "#991B1B";
-  const bg    = active ? "rgba(16,185,129,0.08)" : pending ? "rgba(245,158,11,0.09)" : "rgba(153,27,27,0.07)";
-  const bdr   = active ? "rgba(16,185,129,0.2)"  : pending ? "rgba(245,158,11,0.22)" : "rgba(153,27,27,0.18)";
-  const dot   = active ? "#10B981" : pending ? "#F59E0B" : "#991B1B";
+  const bg = active ? "rgba(16,185,129,0.08)" : pending ? "rgba(245,158,11,0.09)" : "rgba(153,27,27,0.07)";
+  const bdr = active ? "rgba(16,185,129,0.2)" : pending ? "rgba(245,158,11,0.22)" : "rgba(153,27,27,0.18)";
+  const dot = active ? "#10B981" : pending ? "#F59E0B" : "#991B1B";
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
@@ -64,28 +39,14 @@ const statusBadge = (status) => {
   );
 };
 
-const inviteBadge = (status) => {
-  if (!status) return null;
-  const s = INVITE_STYLE[status] || INVITE_STYLE.DRAFT;
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "4px 11px", borderRadius: 20,
-      fontSize: 11.5, fontWeight: 700,
-      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
-      whiteSpace: "nowrap",
-    }}>
-      {INVITE_LABEL[status] || formatLabel(status)}
-    </span>
-  );
-};
-
 const Franchise = () => {
-  const [search, setSearch]             = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [typeFilter, setTypeFilter]     = useState("ALL");
-  const [page, setPage]                 = useState(1);
-  const [perPage, setPerPage]           = useState(10);
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [showCredModal, setShowCredModal] = useState(false);
+  const [selectedCreds, setSelectedCreds] = useState(null);
 
   const { franchises, fetchFranchises, loading } = useFranchiseStore();
 
@@ -101,7 +62,7 @@ const Franchise = () => {
       item.manager?.toLowerCase().includes(q) ||
       item.ownerName?.toLowerCase().includes(q);
     const matchStatus = statusFilter === "ALL" || item.status === statusFilter;
-    const matchType   = typeFilter   === "ALL" || item.type   === typeFilter;
+    const matchType = typeFilter === "ALL" || item.type === typeFilter;
     return matchSearch && matchStatus && matchType;
   });
 
@@ -160,7 +121,7 @@ const Franchise = () => {
                         boxShadow: "0 2px 6px rgba(217,30,24,0.3)",
                       }}>{filtered.length}</span>
                     </div>
-                    <Link
+                    {/* <Link
                       to="/master-franchise/add"
                       className="btn btn-primary"
                       style={{
@@ -170,7 +131,7 @@ const Franchise = () => {
                       }}
                     >
                       <i className="bx bx-plus" style={{ fontSize: 16 }} /> Add Franchise
-                    </Link>
+                    </Link> */}
                   </div>
                 </div>
 
@@ -236,10 +197,8 @@ const Franchise = () => {
                             <th>Franchise</th>
                             <th>Owner / Manager</th>
                             <th>Contact</th>
-                            <th>Type</th>
                             <th>Package</th>
                             <th>Business Status</th>
-                            <th>ERP Status</th>
                             <th>Opening Date</th>
                             <th className="text-center">Actions</th>
                           </tr>
@@ -247,7 +206,7 @@ const Franchise = () => {
                         <tbody>
                           {paged.length === 0 ? (
                             <tr>
-                              <td colSpan="10" className="text-center py-5 text-muted">
+                              <td colSpan="9" className="text-center py-5 text-muted">
                                 <i className="bx bx-search-alt display-4 d-block mb-2" />
                                 No franchise records found.
                               </td>
@@ -286,7 +245,7 @@ const Franchise = () => {
                                   </div>
                                 )}
                               </td>
-                              <td>{typeBadge(row.type)}</td>
+                              {/* <td>{typeBadge(row.type)}</td> */}
                               <td>
                                 {row.packageName ? (
                                   <span style={{
@@ -305,12 +264,23 @@ const Franchise = () => {
                                 )}
                               </td>
                               <td>{statusBadge(row.status)}</td>
-                              <td>{inviteBadge(row.inviteStatus)}</td>
                               <td style={{ fontSize: 12.5, color: "#374151" }}>
                                 {row.openingDate ? new Date(row.openingDate).toLocaleDateString("en-GB") : "—"}
                               </td>
                               <td>
                                 <div className="d-flex justify-content-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedCreds(row);
+                                      setShowCredModal(true);
+                                    }}
+                                    className="ckz-action-btn"
+                                    style={{ color: "#4f46e5", background: "rgba(79, 70, 229, 0.1)" }}
+                                    title="View Credentials"
+                                  >
+                                    <i className="bx bx-clipboard" />
+                                  </button>
                                   <Link
                                     to={`/master-franchise/edit/${row._id}`}
                                     state={{ rowData: row }}
@@ -356,6 +326,51 @@ const Franchise = () => {
 
         </div>
       </div>
+
+      {/* Credentials Modal */}
+      {showCredModal && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1050, background: "rgba(0,0,0,0.5)" }} onClick={() => setShowCredModal(false)}>
+            <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+              <div className="modal-content border-0" style={{ borderRadius: 16, overflow: "hidden", boxShadow: "0 10px 40px rgba(0,0,0,0.2)" }}>
+                <div className="modal-header border-0 pb-0" style={{ padding: "24px 24px 10px" }}>
+                  <h5 className="modal-title fw-bold" style={{ color: "#1A1A1A", display: "flex", alignItems: "center", gap: 8 }}>
+                    <i className="bx bx-shield-quarter text-primary" style={{ fontSize: 22 }} />
+                    Franchise Login Credentials
+                  </h5>
+                  <button type="button" className="btn-close" onClick={() => setShowCredModal(false)}></button>
+                </div>
+                <div className="modal-body" style={{ padding: 24 }}>
+                  <div style={{ background: "#f8f9fa", borderRadius: 12, padding: 16, border: "1px solid #e9ecef", marginBottom: 16 }}>
+                    <div style={{ marginBottom: 12 }}>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Username (Email)</label>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{selectedCreds?.email || "N/A"}</div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>Password</label>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1A1A" }}>{selectedCreds?.password || "Not set"}</div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const textToCopy = `Username: ${selectedCreds?.email || "N/A"}\nPassword: ${selectedCreds?.password || "Not set"}`;
+                      navigator.clipboard.writeText(textToCopy);
+                      toast.success("Credentials copied to clipboard!");
+                      setShowCredModal(false);
+                    }}
+                    style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#4f46e5 0%,#6366f1 100%)", color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: "pointer", boxShadow: "0 4px 16px rgba(79,70,229,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                  >
+                    <i className="bx bx-copy" style={{ fontSize: 16 }} />
+                    Copy to Clipboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
     </React.Fragment>
   );
 };

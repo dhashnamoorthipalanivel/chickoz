@@ -39,6 +39,11 @@ const franchiseSchema = new mongoose.Schema(
       required: true,
     },
 
+    password: {
+      type: String,
+      default: "",
+    },
+
     packageName: {
       type: String,
       default: "",
@@ -60,6 +65,16 @@ const franchiseSchema = new mongoose.Schema(
     location: {
       type: String,
       default: "",
+    },
+
+    latitude: {
+      type: Number,
+      default: null,
+    },
+
+    longitude: {
+      type: Number,
+      default: null,
     },
 
     state: {
@@ -201,6 +216,12 @@ const franchiseSchema = new mongoose.Schema(
         isVisibleInBilling: {
           type: Boolean,
           default: true,
+        },
+
+        // ✅ SALE PRICE OVERRIDE
+        salePrice: {
+          type: Number,
+          default: null,
         },
       },
     ],

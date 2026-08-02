@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { toast } from "react-toastify";
+import { useVendorStore } from "../../../store/store";
 
 const SectionHeader = ({ icon, title, c1 = "#D91E18", c2 = "#F97316" }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, paddingBottom: 14, borderBottom: "1px solid #f3f4f6" }}>
@@ -25,9 +26,24 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
     ["HOLD", "RETURN", "CANCELLED"].includes(formData?.leadStatus) ||
     formData?.isFranchiseCreated;
 
+  const { vendors, fetchVendors } = useVendorStore();
+
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === "vendorName") {
+      const selectedVendor = vendors.find(v => v.name === value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+        vendorPhone: selectedVendor ? selectedVendor.phone : prev.vendorPhone
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const paidAmount  = (formData?.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
@@ -37,7 +53,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
   return (
     <div className="card" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
-      <div className="card-body" style={{ padding: "24px 26px", pointerEvents: isLocked ? "none" : "auto", opacity: isLocked ? 0.8 : 1 }}>
+      <div className="card-body" style={{ padding: "24px 26px" }}>
 
         {isLocked && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(217,30,24,0.07)", border: "1px solid rgba(217,30,24,0.2)", borderRadius: 10, padding: "12px 16px", marginBottom: 20 }}>
@@ -85,11 +101,6 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
               </div>
 
               <div className="col-md-6">
-                <FieldLabel>Branding Type</FieldLabel>
-                <input className="form-control" value={formData.brandingType || ""} readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
-              </div>
-
-              <div className="col-md-6">
                 <FieldLabel>Accessories</FieldLabel>
                 <input className="form-control" value={formData.accessories || ""} readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
               </div>
@@ -126,12 +137,17 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
               <div className="col-md-6">
                 <FieldLabel required>Vendor Name</FieldLabel>
-                <input type="text" name="vendorName" value={formData.vendorName || ""} className="form-control" onChange={handleChange} placeholder="Enter vendor name" />
+                <select name="vendorName" value={formData.vendorName || ""} className="form-select" onChange={handleChange} disabled={isLocked}>
+                  <option value="">Select Vendor...</option>
+                  {(vendors || []).filter(v => v.status === "ACTIVE").map(v => (
+                    <option key={v._id} value={v.name}>{v.name} ({v.vendorCode || 'N/A'})</option>
+                  ))}
+                </select>
               </div>
 
               <div className="col-md-6">
                 <FieldLabel>Vendor Phone</FieldLabel>
-                <input type="text" name="vendorPhone" value={formData.vendorPhone || ""} className="form-control" onChange={handleChange} placeholder="Enter vendor phone" />
+                <input type="text" name="vendorPhone" value={formData.vendorPhone || ""} className="form-control" onChange={handleChange} placeholder="Vendor phone (auto-fills)" disabled={isLocked} />
               </div>
 
               <div className="col-md-6">
@@ -140,6 +156,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                   type="date"
                   name="assignDate"
                   className="form-control"
+                  disabled={isLocked}
                   value={formData.assignDate ? new Date(formData.assignDate).toISOString().split("T")[0] : ""}
                   onChange={handleChange}
                 />
@@ -151,6 +168,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                   type="date"
                   name="expectedDate"
                   className="form-control"
+                  disabled={isLocked}
                   value={formData.expectedDate ? new Date(formData.expectedDate).toISOString().split("T")[0] : ""}
                   onChange={handleChange}
                 />
@@ -167,7 +185,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
               <div className="col-md-6">
                 <FieldLabel required>Manufacture Status</FieldLabel>
-                <select name="manufactureStatus" value={formData.manufactureStatus || ""} className="form-select" onChange={handleChange}>
+                <select name="manufactureStatus" value={formData.manufactureStatus || ""} className="form-select" onChange={handleChange} disabled={isLocked}>
                   <option value="">Select Status</option>
                   <option value="PENDING">Pending</option>
                   <option value="ASSIGNED">Assigned</option>
@@ -184,30 +202,173 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                   type="date"
                   name="dispatchDate"
                   className="form-control"
+                  disabled={isLocked}
                   value={formData.dispatchDate ? new Date(formData.dispatchDate).toISOString().split("T")[0] : ""}
                   onChange={handleChange}
                 />
               </div>
 
+              {/* ── Cart Images (Multiple) ── */}
               <div className="col-md-12">
-                <FieldLabel required>Cart Image</FieldLabel>
+                <FieldLabel required>Cart Images (Multiple)</FieldLabel>
                 <input
                   type="file"
+                  multiple
+                  accept="image/*"
                   className="form-control"
+                  disabled={isLocked}
                   onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    setFormData(prev => ({ ...prev, cartImage: file, cartImageName: file.name }));
+                    const files = Array.from(e.target.files || []);
+                    if (files.length === 0) return;
+
+                    const readPromises = files.map(file => {
+                      return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          resolve({
+                            url: event.target.result,
+                            name: file.name
+                          });
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    });
+
+                    Promise.all(readPromises).then(newImages => {
+                      setFormData(prev => {
+                        const existingUrls = Array.isArray(prev.cartImages) && prev.cartImages.length > 0
+                          ? prev.cartImages
+                          : (prev.cartImage ? [prev.cartImage] : []);
+                        const existingNames = Array.isArray(prev.cartImageNames) && prev.cartImageNames.length > 0
+                          ? prev.cartImageNames
+                          : (prev.cartImageName ? [prev.cartImageName] : []);
+
+                        const updatedUrls = [...existingUrls, ...newImages.map(img => img.url)];
+                        const updatedNames = [...existingNames, ...newImages.map(img => img.name)];
+
+                        return {
+                          ...prev,
+                          cartImages: updatedUrls,
+                          cartImageNames: updatedNames,
+                          cartImage: updatedUrls[0] || "",
+                          cartImageName: updatedNames[0] || "",
+                        };
+                      });
+                    });
+                    e.target.value = "";
                   }}
                 />
-                {(formData.cartImageName || formData.cartImage) && (
-                  <div className="mt-2">
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.22)" }}>
-                      <i className="bx bx-check-circle" style={{ fontSize: 14 }} />
-                      {formData.cartImageName || (typeof formData.cartImage === "string" ? formData.cartImage : formData.cartImage?.name)}
-                    </span>
-                  </div>
-                )}
+
+                {/* ── Image Gallery Grid ── */}
+                {(() => {
+                  const imagesList = Array.isArray(formData.cartImages) && formData.cartImages.length > 0
+                    ? formData.cartImages
+                    : (formData.cartImage ? [formData.cartImage] : []);
+                  const namesList = Array.isArray(formData.cartImageNames) && formData.cartImageNames.length > 0
+                    ? formData.cartImageNames
+                    : (formData.cartImageName ? [formData.cartImageName] : []);
+
+                  if (imagesList.length === 0) return null;
+
+                  return (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#374151", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                        <i className="bx bx-images" style={{ fontSize: 16, color: "#7c3aed" }} />
+                        Uploaded Cart Images ({imagesList.length}):
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                        {imagesList.map((imgSrc, idx) => {
+                          const fileName = namesList[idx] || (typeof imgSrc === "string" && !imgSrc.startsWith("data:") ? imgSrc.split("/").pop() : `Image ${idx + 1}`);
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                position: "relative",
+                                width: 120,
+                                borderRadius: 10,
+                                border: "1.5px solid #e5e7eb",
+                                background: "#fff",
+                                padding: 6,
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                              }}
+                            >
+                              <img
+                                src={imgSrc}
+                                alt={fileName}
+                                style={{
+                                  width: "100%",
+                                  height: 85,
+                                  objectFit: "cover",
+                                  borderRadius: 7,
+                                  background: "#f3f4f6",
+                                }}
+                              />
+                              <div
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "#374151",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  marginTop: 4,
+                                  textAlign: "center",
+                                }}
+                                title={fileName}
+                              >
+                                {fileName}
+                              </div>
+
+                              {!isLocked && (
+                                <button
+                                  type="button"
+                                  title="Remove Image"
+                                  onClick={() => {
+                                    setFormData(prev => {
+                                      const curImgs = [...(Array.isArray(prev.cartImages) && prev.cartImages.length > 0 ? prev.cartImages : [prev.cartImage])];
+                                      const curNames = [...(Array.isArray(prev.cartImageNames) && prev.cartImageNames.length > 0 ? prev.cartImageNames : [prev.cartImageName])];
+                                      curImgs.splice(idx, 1);
+                                      curNames.splice(idx, 1);
+
+                                      return {
+                                        ...prev,
+                                        cartImages: curImgs,
+                                        cartImageNames: curNames,
+                                        cartImage: curImgs[0] || "",
+                                        cartImageName: curNames[0] || "",
+                                      };
+                                    });
+                                  }}
+                                  style={{
+                                    position: "absolute",
+                                    top: -6,
+                                    right: -6,
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: "50%",
+                                    background: "#ef4444",
+                                    color: "#fff",
+                                    border: "2px solid #fff",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontSize: 14,
+                                    boxShadow: "0 2px 6px rgba(239,68,68,0.4)",
+                                    lineHeight: 1,
+                                    padding: 0,
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </>
           )}

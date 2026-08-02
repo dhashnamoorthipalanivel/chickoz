@@ -9,18 +9,7 @@ const User = require("../../models/user");
 exports.getFranchises = async (req, res) => {
   try {
 
-    // ✅ AUTO UPDATE EXPIRED INVITES
-    await Franchise.updateMany(
-      {
-        inviteStatus: "INVITE_SENT",
-        inviteExpiry: { $lt: new Date() }
-      },
-      {
-        $set: {
-          inviteStatus: "EXPIRED"
-        }
-      }
-    );
+
 
     const data = await Franchise.find({
       isDeleted: false,
@@ -63,6 +52,7 @@ exports.getFranchiseById = async (req, res) => {
 // ==========================================
 
 exports.updateFranchise = async (req, res) => {
+  console.log("UPDATE FRANCHISE CALLED WITH BODY:", req.body);
   try {
     const updatedData = await Franchise.findByIdAndUpdate(
       req.params.id,
@@ -78,12 +68,59 @@ exports.updateFranchise = async (req, res) => {
       });
     }
 
+    // Handle User creation/update if username or password provided
+    const { username, password } = req.body;
+    if (username || password) {
+      const User = require("../../models/user");
+      let user = await User.findOne({
+          $or: [
+              { franchiseId: updatedData._id }, 
+              { email: username },
+              { phone: updatedData.contact }
+          ]
+      });
+      if (!user) {
+        // Create if they typed a password
+        if (password && username) {
+          user = await User.create({
+            firstName: updatedData.ownerName,
+            email: username,
+            phone: updatedData.contact,
+            password: password,
+            role: "franchise",
+            franchiseId: updatedData._id,
+            isActive: true,
+            isEmailVerified: true
+          });
+          updatedData.inviteStatus = "ACTIVE";
+          updatedData.passwordSetupAt = new Date();
+          updatedData.email = username;
+          updatedData.password = password;
+          await updatedData.save();
+        }
+      } else {
+        // Update existing
+        if (username) {
+          user.email = username;
+          updatedData.email = username;
+        }
+        if (password) {
+          user.password = password; // Will be hashed by pre-save hook
+          updatedData.password = password; // Save plaintext to Franchise model for clipboard popup
+        }
+        user.franchiseId = updatedData._id; // Ensure linked
+        await user.save();
+        if (username || password) await updatedData.save();
+      }
+    }
+
     res.status(200).json({
       message: "Franchise updated successfully",
 
       data: updatedData,
     });
   } catch (error) {
+    console.error("FRANCHISE UPDATE ERROR: ", error);
     res.status(500).json({
       message: error.message,
     });
@@ -103,37 +140,25 @@ exports.sendFranchiseInvite = async (req, res) => {
       });
     }
 
-    // ✅ ONLY ACTIVE
-    if (franchise.status !== "ACTIVE") {
+
+
+    // ✅ RESEND COOLDOWN (2 MINUTES)
+    const cooldownTime = 2 * 60 * 1000;
+
+    if (
+      franchise.inviteSentAt &&
+      Date.now() - new Date(franchise.inviteSentAt).getTime() < cooldownTime
+    ) {
+      const remainingTime = Math.ceil(
+        (cooldownTime -
+          (Date.now() - new Date(franchise.inviteSentAt).getTime())) /
+        1000
+      );
+
       return res.status(400).json({
-        message: "Only ACTIVE franchise can receive invitation",
+        message: `Please wait ${remainingTime} seconds before resending invitation`,
       });
     }
-
-    // ✅ PREVENT RESEND IF ALREADY ACTIVATED
-if (franchise.inviteStatus === "ACTIVE") {
-  return res.status(400).json({
-    message: "Franchise already activated",
-  });
-}
-
-// ✅ RESEND COOLDOWN (2 MINUTES)
-const cooldownTime = 2 * 60 * 1000;
-
-if (
-  franchise.inviteSentAt &&
-  Date.now() - new Date(franchise.inviteSentAt).getTime() < cooldownTime
-) {
-  const remainingTime = Math.ceil(
-    (cooldownTime -
-      (Date.now() - new Date(franchise.inviteSentAt).getTime())) /
-      1000
-  );
-
-  return res.status(400).json({
-    message: `Please wait ${remainingTime} seconds before resending invitation`,
-  });
-}
 
     // ✅ GENERATE TOKEN
     const inviteToken = crypto.randomBytes(32).toString("hex");
@@ -148,9 +173,9 @@ if (
 
     franchise.inviteSentAt = new Date();
 
-franchise.inviteStatus = "INVITE_SENT";
+    franchise.inviteStatus = "INVITE_SENT";
 
-franchise.inviteCount += 1;
+    franchise.inviteCount += 1;
 
     await franchise.save();
 
@@ -264,15 +289,15 @@ exports.setupPassword = async (req, res) => {
     }
 
     // ✅ PASSWORD STRENGTH VALIDATION
-const passwordRegex =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-if (!passwordRegex.test(password)) {
-  return res.status(400).json({
-    message:
-      "Password must contain uppercase, lowercase, number, special character and minimum 8 characters",
-  });
-}
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must contain uppercase, lowercase, number, special character and minimum 8 characters",
+      });
+    }
 
     // ✅ FIND FRANCHISE
     const franchise = await Franchise.findOne({
@@ -329,13 +354,13 @@ if (!passwordRegex.test(password)) {
     // ✅ UPDATE FRANCHISE
     franchise.inviteStatus = "ACTIVE";
 
-franchise.inviteToken = "";
+    franchise.inviteToken = "";
 
-franchise.inviteExpiry = null;
+    franchise.inviteExpiry = null;
 
-franchise.inviteSentAt = null;
+    franchise.inviteSentAt = null;
 
-franchise.passwordSetupAt = new Date();
+    franchise.passwordSetupAt = new Date();
 
     await franchise.save();
 

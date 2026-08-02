@@ -20,7 +20,29 @@
     <link href="/assets/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Full Page Initial Circular Preloader -->
+      <div id="preloader-overlay" style="position:fixed;inset:0;background:#ffffff;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;">
+        <div style="position:relative;width:64px;height:64px;">
+          <svg width="64" height="64" viewBox="0 0 50 50" style="animation:chickoz-html-spin 0.85s linear infinite;">
+            <defs>
+              <linearGradient id="html-loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#D91E18" />
+                <stop offset="100%" stop-color="#F97316" />
+              </linearGradient>
+            </defs>
+            <circle cx="25" cy="25" r="20" fill="none" stroke="#f1f5f9" stroke-width="4.5"/>
+            <circle cx="25" cy="25" r="20" fill="none" stroke="url(#html-loader-grad)" stroke-width="4.5" stroke-dasharray="85 150" stroke-linecap="round"/>
+          </svg>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#D91E18,#F97316);box-shadow:0 0 12px rgba(217,30,24,0.4);animation:chickoz-html-pulse 1.2s ease-in-out infinite;"></div>
+        </div>
+        <div style="font-weight:800;font-size:14px;color:#1A1A1A;letter-spacing:0.5px;">Loading Chickoz ERP…</div>
+        <style>
+          @keyframes chickoz-html-spin { 0%{transform:rotate(0deg);} 100%{transform:rotate(360deg);} }
+          @keyframes chickoz-html-pulse { 0%,100%{transform:translate(-50%,-50%) scale(0.85);opacity:0.7;} 50%{transform:translate(-50%,-50%) scale(1.15);opacity:1;} }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

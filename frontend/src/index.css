@@ -72,6 +72,9 @@ body {
 .page-content {
   animation: fadeIn 0.28s ease;
 }
+.page-content .page-content {
+  padding-top: 0 !important;
+}
 
 /* ── 4. Cards ────────────────────────────────────────────────── */
 .card {
@@ -238,6 +241,40 @@ a.btn-primary:visited { color: #fff !important; }
   font-weight: 500 !important;
   margin-top: 5px !important;
 }
+
+/* ── Remove Red Box on react-select multiValueRemove Hover/Focus/Active & Typing Area ── */
+.react-select__multi-value__remove,
+.react-select__multi-value__remove:hover,
+.react-select__multi-value__remove:focus,
+.react-select__multi-value__remove:active,
+[class*="-MultiValueRemove"],
+[class*="-MultiValueRemove"]:hover,
+[class*="-MultiValueRemove"]:focus,
+[class*="-MultiValueRemove"]:active,
+[class*="-multiValueRemove"],
+[class*="-multiValueRemove"]:hover,
+[class*="-multiValueRemove"]:focus,
+[class*="-multiValueRemove"]:active,
+div[class*="multiValueRemove"],
+div[class*="multiValueRemove"]:hover,
+div[class*="multiValueRemove"]:focus,
+div[class*="multiValueRemove"]:active {
+  background-color: #cbd5e1 !important;
+  color: #111827 !important;
+}
+
+.react-select__input,
+.react-select__input input,
+.react-select__input-container,
+[class*="-Input"],
+[class*="-input"],
+[class*="-Input"] input,
+[class*="-input"] input {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .form-label {
   font-size: 13px !important;
   font-weight: 600 !important;

@@ -6,13 +6,14 @@ import LeadInfoFrom from "./LeadInfoFrom";
 import { useLeadStore, usePaymentModes } from "../../../store/store";
 import { createFranchise, getLeadById, updateLead } from "../../../api/leadApi";
 import { useNavigate, useParams } from "react-router-dom";
+import CircularLoader from "../../../components/Common/CircularLoader";
 
 const stages = [
-  { key: "SITE_VISIT",  icon: "bx bx-map",          label: "Site Visit",   sub: "Walk-in & location" },
-  { key: "APPROVAL",    icon: "bx bx-check-shield",  label: "Approval",     sub: "Legal & site status" },
-  { key: "TRAINING",    icon: "bx bx-book",          label: "Training",     sub: "Cart & training" },
-  { key: "PAYMENT",     icon: "bx bx-credit-card",   label: "Payment",      sub: "Fees & collection" },
-  { key: "FINAL_SETUP", icon: "bx bx-store",         label: "Final Setup",  sub: "KYC & contract" },
+  { key: "SITE_VISIT", icon: "bx bx-map", label: "Site Visit", sub: "Walk-in & location" },
+  { key: "APPROVAL", icon: "bx bx-check-shield", label: "Approval", sub: "Legal & site status" },
+  { key: "TRAINING", icon: "bx bx-book", label: "Training", sub: "Cart & training" },
+  { key: "PAYMENT", icon: "bx bx-credit-card", label: "Payment", sub: "Fees & collection" },
+  { key: "FINAL_SETUP", icon: "bx bx-store", label: "Final Setup", sub: "KYC & contract" },
 ];
 
 const stageKeys = stages.map(s => s.key);
@@ -22,24 +23,26 @@ const formatLabel = (value) =>
 
 /* ── Stage circle gradient per status ── */
 const stageStyle = (status, isActive) => {
-  if (status === "completed")   return { bg: "linear-gradient(135deg,#059669,#34d399)", shadow: "rgba(5,150,105,0.35)" };
-  if (status === "cancelled")   return { bg: "linear-gradient(135deg,#D91E18,#f87171)", shadow: "rgba(217,30,24,0.35)" };
+  if (status === "completed") return { bg: "linear-gradient(135deg,#059669,#34d399)", shadow: "rgba(5,150,105,0.35)" };
+  if (status === "cancelled") return { bg: "linear-gradient(135deg,#D91E18,#f87171)", shadow: "rgba(217,30,24,0.35)" };
   if (status === "in-progress") return { bg: "linear-gradient(135deg,#d97706,#fbbf24)", shadow: "rgba(217,119,6,0.35)" };
-  if (isActive)                 return { bg: "linear-gradient(135deg,#D91E18,#F97316)", shadow: "rgba(217,30,24,0.35)" };
+  if (isActive) return { bg: "linear-gradient(135deg,#D91E18,#F97316)", shadow: "rgba(217,30,24,0.35)" };
   return { bg: "linear-gradient(135deg,#d1d5db,#e5e7eb)", shadow: "transparent" };
 };
 
 const LeadWizardForm = ({ onBack }) => {
   const [activeStage, setActiveStage] = useState(0);
   const [showFranchiseModal, setShowFranchiseModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState("Processing...");
 
   const [formData, setFormData] = useState({
     stages: {
-      SITE_VISIT:  { completed: false, data: { visitType: "", visitDate: "", location: "", deliveryLocation: "" } },
-      APPROVAL:    { completed: false, data: { siteStatus: "", approvalStatus: "", legalStatus: "" } },
-      TRAINING:    { completed: false, data: { trainingStatus: "", trainingStart: "", parentsDetails: "", cartRequired: false, cartRequiredDate: "", cartPriority: "", cartSize: "", brandingType: "", accessories: "", cartManufactureStatus: "NOT_ASSIGNED", cartAssignedVendor: "" } },
-      PAYMENT:     { completed: false, data: { totalAmount: 0, payments: [] } },
-      FINAL_SETUP: { completed: false, data: { contractSigned: "", bankDetails: "", kycDocument: "", royaltyDocument: "" } },
+      SITE_VISIT: { completed: false, data: { visitType: "", visitDate: "", location: "", deliveryLocation: "" } },
+      APPROVAL: { completed: false, data: { siteStatus: "", approvalStatus: "", legalStatus: "" } },
+      TRAINING: { completed: false, data: { trainingStatus: "", trainingStart: "", parentsDetails: "", cartRequired: false, cartRequiredDate: "", cartPriority: "", cartSize: "", brandingType: "", accessories: "", cartManufactureStatus: "NOT_ASSIGNED", cartAssignedVendor: "" } },
+      PAYMENT: { completed: false, data: { totalAmount: 0, payments: [] } },
+      FINAL_SETUP: { completed: false, data: { contractSigned: "", bankDetails: "", bankAccountHolderName: "", bankName: "", bankIfscCode: "", kycDocument: "", royaltyDocument: "", ewayBillFile: "", draftAmount: "" } },
     },
   });
 
@@ -51,12 +54,13 @@ const LeadWizardForm = ({ onBack }) => {
 
   const checkStageCompleted = (stageKey, data) => {
     const stage = data?.stages?.[stageKey]?.data || {};
-    if (stageKey === "SITE_VISIT")  return stage.visitType && stage.visitDate && stage.location;
-    if (stageKey === "APPROVAL")    return stage.siteStatus === "Approved" && stage.approvalStatus === "Approved" && stage.legalStatus === "Completed";
-    if (stageKey === "TRAINING")    return stage.trainingStatus === "Completed";
+    if (stageKey === "SITE_VISIT") return stage.visitType && stage.visitDate && stage.location;
+    if (stageKey === "APPROVAL") return stage.siteStatus === "Approved" && stage.approvalStatus === "Approved" && stage.legalStatus === "Completed";
+    if (stageKey === "TRAINING") return stage.trainingStatus === "Completed";
     if (stageKey === "PAYMENT") {
+      if (stage.payLater) return true;
       const total = Number(stage.totalAmount || 0);
-      const paid  = (stage.payments || []).reduce((a, b) => a + b.amount, 0);
+      const paid = (stage.payments || []).reduce((a, b) => a + b.amount, 0);
       return total > 0 && paid >= total;
     }
     if (stageKey === "FINAL_SETUP") return stage.contractSigned === "Yes";
@@ -69,10 +73,24 @@ const LeadWizardForm = ({ onBack }) => {
         const res = await getLeadById(id);
         const leadData = res.data;
         if (leadData?.interestedPackage && typeof leadData.interestedPackage === "object") {
-          leadData.stages.TRAINING.data.cartAmount    = leadData.stages.TRAINING.data.cartRequired === "yes" ? Number(leadData.interestedPackage.cartAmount || 0) : 0;
-          leadData.stages.TRAINING.data.cartSize      = leadData.interestedPackage.cartSize      || "";
-          leadData.stages.TRAINING.data.brandingType  = leadData.interestedPackage.brandingType  || "";
-          leadData.stages.TRAINING.data.accessories   = leadData.interestedPackage.accessories   || "";
+          const trainingData = leadData.stages?.TRAINING?.data;
+          if (trainingData) {
+            if (trainingData.cartAmount === undefined || trainingData.cartAmount === 0) {
+              trainingData.cartAmount = trainingData.cartRequired === "yes" ? Number(leadData.interestedPackage.cartAmount || 0) : 0;
+            }
+            if (!trainingData.cartSize) {
+              trainingData.cartSize = leadData.interestedPackage.cartSize || "";
+            }
+            if (!trainingData.brandingType) {
+              trainingData.brandingType = leadData.interestedPackage.brandingType || "";
+            }
+            if (trainingData.accessories === undefined) {
+              const pkgMats = leadData.interestedPackage.packageMaterials || [];
+              trainingData.accessories = pkgMats.length > 0
+                ? pkgMats.map(m => (typeof m === "string" ? m : m.materialName)).filter(Boolean).join(", ")
+                : leadData.interestedPackage.accessories || "";
+            }
+          }
         }
         setFormData(leadData);
         const firstIncomplete = stages.findIndex(s => !checkStageCompleted(s.key, res.data));
@@ -85,13 +103,13 @@ const LeadWizardForm = ({ onBack }) => {
   }, [id]);
 
   const stageRequiredFields = {
-    SITE_VISIT:  ["visitType", "visitDate", "location"],
-    APPROVAL:    ["siteStatus", "approvalStatus", "legalStatus"],
-    TRAINING:    formData?.stages?.TRAINING?.data?.cartRequired === "yes"
-                   ? ["trainingStatus", "trainingStart", "cartRequired", "cartSize", "cartRequiredDate", "cartPriority"]
-                   : ["trainingStatus", "trainingStart", "cartRequired"],
-    PAYMENT:     ["totalAmount"],
-    FINAL_SETUP: ["contractSigned", "bankDetails", "kycDocument", "royaltyDocument"],
+    SITE_VISIT: ["visitType", "visitDate", "location"],
+    APPROVAL: ["siteStatus", "approvalStatus", "legalStatus"],
+    TRAINING: formData?.stages?.TRAINING?.data?.cartRequired === "yes"
+      ? ["trainingStatus", "trainingStart", "cartRequired", "cartSize", "cartRequiredDate", "cartPriority"]
+      : ["trainingStatus", "trainingStart", "cartRequired"],
+    PAYMENT: ["totalAmount"],
+    FINAL_SETUP: ["contractSigned", "bankDetails", "bankAccountHolderName", "bankName", "bankIfscCode", "kycDocument", "royaltyDocument"],
   };
 
   const validateCurrentStage = () => {
@@ -109,11 +127,15 @@ const LeadWizardForm = ({ onBack }) => {
 
   const getStageStatus = (stageKey) => {
     if (stageKey === "PAYMENT") {
-      const total = Number(formData?.stages?.PAYMENT?.data?.totalAmount || 0);
-      const paid  = (formData?.stages?.PAYMENT?.data?.payments || []).reduce((a, b) => a + b.amount || 0, 0);
-      if (paid === 0) return "not-started";
-      if (paid < total) return "in-progress";
-      return "completed";
+      if (formData?.stages?.PAYMENT?.data?.payLater) {
+        return "completed";
+      } else {
+        const total = Number(formData?.stages?.PAYMENT?.data?.totalAmount || 0);
+        const paid = (formData?.stages?.PAYMENT?.data?.payments || []).reduce((a, b) => a + (Number(b.amount) || 0), 0);
+        if (paid === 0) return "not-started";
+        if (paid < total) return "in-progress";
+        return "completed";
+      }
     }
 
     if (stageKey === "APPROVAL") {
@@ -155,15 +177,45 @@ const LeadWizardForm = ({ onBack }) => {
 
   const allStagesCompleted = stages.every(s => getStageStatus(s.key) === "completed");
 
+  const sanitizeLeadPayload = (raw) => {
+    let p;
+    try {
+      p = JSON.parse(JSON.stringify(raw));
+    } catch (_) {
+      p = { ...raw };
+    }
+    if (p.interestedPackage && typeof p.interestedPackage === "object") {
+      p.interestedPackage = p.interestedPackage._id || p.interestedPackage.id || p.interestedPackage;
+    }
+    if (p.leadSource && typeof p.leadSource === "object") {
+      p.leadSource = p.leadSource._id || p.leadSource.id || p.leadSource;
+    }
+    const finalSetup = p?.stages?.FINAL_SETUP?.data;
+    if (finalSetup) {
+      if (raw?.stages?.FINAL_SETUP?.data?.kycDocument instanceof File) {
+        finalSetup.kycDocument = raw.stages.FINAL_SETUP.data.kycDocument.name;
+        finalSetup.kycDocumentName = raw.stages.FINAL_SETUP.data.kycDocument.name;
+      }
+      if (raw?.stages?.FINAL_SETUP?.data?.royaltyDocument instanceof File) {
+        finalSetup.royaltyDocument = raw.stages.FINAL_SETUP.data.royaltyDocument.name;
+        finalSetup.royaltyDocumentName = raw.stages.FINAL_SETUP.data.royaltyDocument.name;
+      }
+      if (raw?.stages?.FINAL_SETUP?.data?.ewayBillFile instanceof File) {
+        finalSetup.ewayBillFile = raw.stages.FINAL_SETUP.data.ewayBillFile.name;
+        finalSetup.ewayBillFileName = raw.stages.FINAL_SETUP.data.ewayBillFile.name;
+      }
+    }
+    return p;
+  };
+
   const handleNext = async () => {
     if (!validateCurrentStage()) return;
+    setActionLoading(true);
+    setLoadingMsg("Saving progress...");
     try {
       const currentStage = stages[activeStage].key;
       const updatedData = { ...formData, stages: { ...formData.stages, [currentStage]: { ...formData.stages[currentStage], completed: true } } };
-      const payload = structuredClone(formData);
-      const finalSetup = payload?.stages?.FINAL_SETUP?.data;
-      if (finalSetup?.kycDocument instanceof File)     { finalSetup.kycDocumentName = finalSetup.kycDocument.name;     finalSetup.kycDocument = finalSetup.kycDocument.name; }
-      if (finalSetup?.royaltyDocument instanceof File) { finalSetup.royaltyDocumentName = finalSetup.royaltyDocument.name; finalSetup.royaltyDocument = finalSetup.royaltyDocument.name; }
+      const payload = sanitizeLeadPayload(formData);
       console.log("payload: ", payload);
       await updateLead(formData._id, payload);
       setFormData(updatedData);
@@ -173,6 +225,8 @@ const LeadWizardForm = ({ onBack }) => {
     } catch (error) {
       console.log(error);
       toast.error("Update Failed");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -181,17 +235,10 @@ const LeadWizardForm = ({ onBack }) => {
   };
 
   const handleSave = async () => {
+    setActionLoading(true);
+    setLoadingMsg("Saving draft...");
     try {
-      const payload = JSON.parse(JSON.stringify(formData));
-      const finalSetup = payload?.stages?.FINAL_SETUP?.data;
-      if (formData?.stages?.FINAL_SETUP?.data?.kycDocument instanceof File) {
-        finalSetup.kycDocument     = formData.stages.FINAL_SETUP.data.kycDocument.name;
-        finalSetup.kycDocumentName = formData.stages.FINAL_SETUP.data.kycDocument.name;
-      }
-      if (formData?.stages?.FINAL_SETUP?.data?.royaltyDocument instanceof File) {
-        finalSetup.royaltyDocument     = formData.stages.FINAL_SETUP.data.royaltyDocument.name;
-        finalSetup.royaltyDocumentName = formData.stages.FINAL_SETUP.data.royaltyDocument.name;
-      }
+      const payload = sanitizeLeadPayload(formData);
       const currentStage = stages[activeStage].key;
       const updatedData = { ...formData, stages: { ...formData.stages, [currentStage]: { ...formData.stages[currentStage], completed: getStageStatus(currentStage) === "completed" } } };
       console.log("payload: ", payload);
@@ -202,16 +249,17 @@ const LeadWizardForm = ({ onBack }) => {
     } catch (error) {
       console.log(error);
       toast.error("Save Failed");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleComplete = async () => {
     if (!allStagesCompleted) { toast.error("Complete all stages first"); return; }
+    setActionLoading(true);
+    setLoadingMsg("Completing lead setup...");
     try {
-      const payload = structuredClone(formData);
-      const finalSetup = payload?.stages?.FINAL_SETUP?.data;
-      if (finalSetup?.kycDocument instanceof File)     { finalSetup.kycDocumentName = finalSetup.kycDocument.name;     finalSetup.kycDocument = finalSetup.kycDocument.name; }
-      if (finalSetup?.royaltyDocument instanceof File) { finalSetup.royaltyDocumentName = finalSetup.royaltyDocument.name; finalSetup.royaltyDocument = finalSetup.royaltyDocument.name; }
+      const payload = sanitizeLeadPayload(formData);
       payload.leadStatus = "COMPLETED";
       await updateLead(formData._id, payload);
       setFormData(prev => ({ ...prev, leadStatus: "COMPLETED" }));
@@ -220,18 +268,47 @@ const LeadWizardForm = ({ onBack }) => {
     } catch (error) {
       console.log(error);
       toast.error("Completion Failed");
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleCreateFranchise = async () => {
     try {
-      await createFranchise(formData._id);
-      toast.success("Franchise Created Successfully");
+      if (formData.isFranchiseCreated) {
+        toast.info("Franchise already created for this lead. Redirecting to Franchise Master...");
+        setShowFranchiseModal(false);
+        navigate("/master-franchise");
+        return;
+      }
+
+      setActionLoading(true);
+      setLoadingMsg("Creating Franchise...");
+
+      const res = await createFranchise(formData._id);
+      const isAlready = res?.data?.alreadyExisted;
+
+      if (isAlready) {
+        toast.info("Franchise already created for this lead. Redirecting to Franchise Master...");
+      } else {
+        toast.success("Franchise Created Successfully! Redirecting to Franchise Master...");
+      }
+
       setFormData(prev => ({ ...prev, isFranchiseCreated: true, leadStatus: "COMPLETED" }));
       setShowFranchiseModal(false);
-      navigate("/crm-lead");
+      navigate("/master-franchise");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Franchise Creation Failed");
+      const msg = error.response?.data?.message || "";
+      if (msg.toLowerCase().includes("already") || msg.toLowerCase().includes("duplicate")) {
+        toast.info("Franchise already created for this lead. Redirecting to Franchise Master...");
+        setFormData(prev => ({ ...prev, isFranchiseCreated: true, leadStatus: "COMPLETED" }));
+        setShowFranchiseModal(false);
+        navigate("/master-franchise");
+      } else {
+        toast.error(msg || "Franchise Creation Failed");
+      }
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -261,8 +338,8 @@ const LeadWizardForm = ({ onBack }) => {
 
   /* ── Status pill ── */
   const statusPill = (s) => {
-    const map = { COMPLETED: ["#059669","rgba(5,150,105,0.1)"], IN_PROGRESS: ["#d97706","rgba(217,119,6,0.1)"], HOLD: ["#7c3aed","rgba(124,58,237,0.1)"], CANCELLED: ["#D91E18","rgba(217,30,24,0.1)"], RETURN: ["#D91E18","rgba(217,30,24,0.1)"] };
-    const [c, bg] = map[s] || ["#6b7280","#f3f4f6"];
+    const map = { COMPLETED: ["#059669", "rgba(5,150,105,0.1)"], IN_PROGRESS: ["#d97706", "rgba(217,119,6,0.1)"], HOLD: ["#7c3aed", "rgba(124,58,237,0.1)"], CANCELLED: ["#D91E18", "rgba(217,30,24,0.1)"], RETURN: ["#D91E18", "rgba(217,30,24,0.1)"] };
+    const [c, bg] = map[s] || ["#6b7280", "#f3f4f6"];
     return (
       <span style={{ padding: "3px 11px", borderRadius: 20, fontSize: 11.5, fontWeight: 700, color: c, background: bg, border: `1px solid ${c}30` }}>
         {formatLabel(s) || "New"}
@@ -272,10 +349,11 @@ const LeadWizardForm = ({ onBack }) => {
 
   return (
     <div className="page-content">
+      {actionLoading && <CircularLoader overlay message={loadingMsg} />}
       <div className="container-fluid">
 
         {/* Back button */}
-        <div className="mb-3">
+        <div className="mb-3" style={{ position: "relative", zIndex: 0 }}>
           <button type="button" onClick={() => navigate(-1)}
             style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", cursor: "pointer" }}>
             <i className="bx bx-arrow-back" style={{ fontSize: 16 }} />
@@ -283,7 +361,7 @@ const LeadWizardForm = ({ onBack }) => {
         </div>
 
         {/* Page header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22, position: "relative", zIndex: 0 }}>
           <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#D91E18,#F97316)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(217,30,24,0.3)", flexShrink: 0 }}>
             <i className="bx bx-network-chart" style={{ color: "#fff", fontSize: 22 }} />
           </div>
@@ -295,7 +373,7 @@ const LeadWizardForm = ({ onBack }) => {
 
         {/* Customer info banner */}
         {formData?.name && (
-          <div style={{ background: "linear-gradient(135deg,#1A1A1A,#2d2d2d)", borderRadius: 14, padding: "14px 20px", marginBottom: 18, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ background: "linear-gradient(135deg,#1A1A1A,#2d2d2d)", borderRadius: 14, padding: "14px 20px", marginBottom: 18, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", position: "relative", zIndex: 0 }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#D91E18,#F97316)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <i className="bx bx-user" style={{ color: "#fff", fontSize: 18 }} />
             </div>
@@ -311,15 +389,15 @@ const LeadWizardForm = ({ onBack }) => {
         )}
 
         {/* ── Stepper ── */}
-        <div className="card mb-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+        <div className="card mb-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative", zIndex: 0 }}>
           <div className="card-body" style={{ padding: "22px 28px" }}>
             <div style={{ display: "flex", alignItems: "flex-start" }}>
 
               {stages.map((stage, index) => {
-                const status   = getStageStatus(stage.key);
+                const status = getStageStatus(stage.key);
                 const isActive = activeStage === index;
                 const { bg, shadow } = stageStyle(status, isActive);
-                const isCompleted    = status === "completed";
+                const isCompleted = status === "completed";
 
                 return (
                   <React.Fragment key={stage.key}>
@@ -373,7 +451,7 @@ const LeadWizardForm = ({ onBack }) => {
             )}
 
             {/* Action buttons */}
-            <div className="card mt-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+            <div className="card mt-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative", zIndex: 0 }}>
               <div className="card-body" style={{ padding: "18px 22px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
 

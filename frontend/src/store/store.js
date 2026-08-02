@@ -418,10 +418,10 @@ export const useEnquiryStore = create((set) => ({
         enquiries: state.enquiries.map((e) =>
           e._id === id
             ? {
-                ...e,
-                status: "CONVERTED_TO_LEAD",
-                isConverted: true,
-              }
+              ...e,
+              status: "CONVERTED_TO_LEAD",
+              isConverted: true,
+            }
             : e,
         ),
       }));
@@ -690,18 +690,25 @@ export const useFranchiseMenuStore = create((set) => ({
   },
 
   updateVisibility: async (data) => {
-    const { menuId, isVisibleInBilling } = data;
+    const { menuId, isVisibleInBilling, salePrice } = data;
     set((state) => ({
-      menus: state.menus.map((m) =>
-        (m.menuId || m._id) === menuId ? { ...m, isVisibleInBilling } : m
-      ),
+      menus: state.menus.map((m) => {
+        if ((m.menuId || m._id) === menuId) {
+          const updated = { ...m };
+          if (isVisibleInBilling !== undefined) updated.isVisibleInBilling = isVisibleInBilling;
+          if (salePrice !== undefined) updated.salePrice = salePrice;
+          return updated;
+        }
+        return m;
+      }),
     }));
     try {
       await updateMenuVisibility(data);
     } catch (error) {
+      // Very basic rollback for visibility
       set((state) => ({
         menus: state.menus.map((m) =>
-          (m.menuId || m._id) === menuId ? { ...m, isVisibleInBilling: !isVisibleInBilling } : m
+          (m.menuId || m._id) === menuId && isVisibleInBilling !== undefined ? { ...m, isVisibleInBilling: !isVisibleInBilling } : m
         ),
       }));
       throw error;
@@ -821,11 +828,11 @@ export const useCustomerStore = create((set) => ({
   getFranchiseCustomers: async (franchiseId) => {
 
     const response = await getFranchiseCustomersApi(
-            franchiseId
-        );
+      franchiseId
+    );
 
     return response.customers;
-},
+  },
 
 }));
 
@@ -1020,7 +1027,7 @@ export const useNotificationStore = create((set) => ({
         notifications: state.notifications.map((n) => n._id === id ? { ...n, isRead: true } : n),
         unreadCount: Math.max(0, state.unreadCount - 1),
       }));
-    } catch (_) {}
+    } catch (_) { }
   },
 
   markAllAsRead: async () => {
@@ -1030,14 +1037,14 @@ export const useNotificationStore = create((set) => ({
         notifications: state.notifications.map((n) => ({ ...n, isRead: true })),
         unreadCount: 0,
       }));
-    } catch (_) {}
+    } catch (_) { }
   },
 }));
 
 // Orders
 export const useOrderStore = create((set) => ({
-  orders:        [],
-  loading:       false,
+  orders: [],
+  loading: false,
   selectedOrder: null,
 
   fetchMyOrders: async () => {
@@ -1107,6 +1114,57 @@ export const useSubscriptionStore = create((set, get) => ({
 
   suspendSubscription: async (franchiseId) => {
     const res = await suspendSubscription(franchiseId);
+    return res.data;
+  },
+}));
+
+import { createVendor, getAllVendors, getSingleVendor, updateVendor, deleteVendor } from '../api/vendorApi';
+
+export const useVendorStore = create((set) => ({
+  vendors: [],
+  singleVendor: null,
+  loading: false,
+
+  fetchVendors: async () => {
+    try {
+      set({ loading: true });
+      const res = await getAllVendors();
+      set({ vendors: res.data.data, loading: false });
+    } catch (error) {
+      set({ loading: false });
+      console.log(error);
+    }
+  },
+
+  fetchSingleVendor: async (id) => {
+    try {
+      set({ loading: true });
+      const res = await getSingleVendor(id);
+      set({ singleVendor: res.data.data, loading: false });
+    } catch (error) {
+      set({ loading: false });
+      console.log(error);
+    }
+  },
+
+  createVendor: async (data) => {
+    set({ loading: true });
+    const res = await createVendor(data);
+    set({ loading: false });
+    return res.data;
+  },
+
+  updateVendor: async (id, data) => {
+    set({ loading: true });
+    const res = await updateVendor(id, data);
+    set({ loading: false });
+    return res.data;
+  },
+
+  deleteVendor: async (id) => {
+    set({ loading: true });
+    const res = await deleteVendor(id);
+    set({ loading: false });
     return res.data;
   },
 }));

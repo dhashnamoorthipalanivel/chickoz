@@ -18,7 +18,7 @@ const TopbarLoader = () => {
 
   return (
     <div className="pace pace-active">
-      <div className="pace-progress" style={{ 
+      <div className="pace-progress" style={{
         transform: 'translate3d(100%, 0px, 0px)',
         transition: 'transform 600ms ease-out',
         width: '100%',

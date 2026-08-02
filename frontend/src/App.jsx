@@ -4,11 +4,18 @@ import AppRoutes from './routes';
 import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css";
+import { useAutoLogout } from './utils/sessionManager';
+
+const AutoLogoutHandler = () => {
+  useAutoLogout();
+  return null;
+};
 
 function App() {
   return (
     <ThemeProvider>
       <Router>
+        <AutoLogoutHandler />
         <AppRoutes />
         <ToastContainer
           position="top-right"

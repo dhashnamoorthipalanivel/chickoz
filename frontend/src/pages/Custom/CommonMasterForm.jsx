@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPackage } from "../../api/packageApi";
-import { useDocuments, useFranchiseStore, useLeadSources, useMasalaItems, useMaterials, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore } from "../../store/store";
+import { useDocuments, useFranchiseStore, useLeadSources, useMasalaItems, useMaterials, useMenuItems, useOrderTypes, usePackageStore, usePaymentModes, useTaxStore, useVendorStore } from "../../store/store";
 import { toast } from "react-toastify";
 
 
@@ -11,7 +11,7 @@ const MODULE_CONFIG = {
         listPath: "/master-franchise",
         icon: "bx-store",
         imageField: "logo",
-        tabs: ["basic", "contact", "settings"],
+        tabs: ["basic", "contact", "settings", "password"],
         fields: {
             basic: [{ name: "referenceId", label: "Reference ID", type: "text", readOnly: true, },
             { name: "franchiseId", label: "Franchise Id", type: "text", readOnly: true, },
@@ -42,7 +42,7 @@ const MODULE_CONFIG = {
                     name: "state",
                     label: "State",
                     type: "text",
-                    required: true,
+                    readOnly: true,
                 },
 
                 {
@@ -71,6 +71,10 @@ const MODULE_CONFIG = {
                 { name: "isActiveForBilling", label: "Enable Billing", type: "switch", desc: "Allow this franchise to access billing/POS" },
                 { name: "allowMenuControl", label: "Allow Menu Control", type: "switch", desc: "Allow local menu item availability changes" },
                 { name: "allowReports", label: "Allow Reports Access", type: "switch", desc: "Allow branch to view reports" },
+            ],
+            password: [
+                { name: "username", label: "Username", type: "text", required: true },
+                { name: "password", label: "Password", type: "password", required: true, minLength: 8, pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", title: "Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)." },
             ],
         },
         initialValues: {
@@ -473,7 +477,7 @@ const MODULE_CONFIG = {
         tabs: ["basic", "settings"],
         fields: {
             basic: [
-                { name: "materialName",  label: "Material Name",  type: "text",   required: true,  placeholder: "E.g. Sandwich Toaster", maxLength: 100 },
+                { name: "materialName", label: "Material Name", type: "text", required: true, placeholder: "E.g. Sandwich Toaster", maxLength: 100 },
                 {
                     name: "category", label: "Category", type: "select", required: true,
                     options: ["EQUIPMENT", "UTENSIL", "UNIFORM", "ACCESSORY", "STATIONERY", "FURNITURE"],
@@ -482,12 +486,12 @@ const MODULE_CONFIG = {
                     name: "powerType", label: "Power Type", type: "select", required: true,
                     options: ["GAS", "ELECTRIC", "MANUAL", "NOT_APPLICABLE"],
                 },
-                { name: "quantity",      label: "Default Quantity", type: "number", required: true },
+                { name: "quantity", label: "Default Quantity", type: "number", required: true },
                 {
                     name: "unit", label: "Unit", type: "select", required: true,
                     options: ["PCS", "SET", "BOX", "PAIR", "KG", "LTR"],
                 },
-                { name: "description",   label: "Description",    type: "textarea", placeholder: "Optional notes about this material", col: 12, maxLength: 500 },
+                { name: "description", label: "Description", type: "textarea", placeholder: "Optional notes about this material", col: 12, maxLength: 500 },
             ],
             settings: [
                 { name: "status", label: "Status", type: "select", options: ["ACTIVE", "INACTIVE"] },
@@ -520,6 +524,7 @@ const MODULE_CONFIG = {
                         "MEDIA",
                         "ADDRESS_PROOF"]
                 },
+                { name: "validationYear", label: "Validation Year", type: "number", placeholder: "e.g., 1, 2, 5 (Years)" },
                 { name: "description", label: "Description", type: "textarea", placeholder: "Enter description", col: 12, maxLength: 500 },
             ],
             settings: [
@@ -532,6 +537,55 @@ const MODULE_CONFIG = {
             documentType: "",
             description: "",
             isMandatory: false,
+            status: "ACTIVE",
+        },
+    },
+    vendor: {
+        title: "Vendor",
+        listPath: "/master-vendor",
+        icon: "bx-buildings",
+        tabs: ["basic", "bank", "settings"],
+        fields: {
+            basic: [
+                { name: "name", label: "Name", type: "text", required: true, maxLength: 100 },
+                { name: "phone", label: "Phone", type: "tel", required: true, maxLength: 10, minLength: 10 },
+                { name: "email", label: "Email", type: "email", pattern: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}", title: "Enter a valid email address" },
+                { name: "companyName", label: "Company Name", type: "text", maxLength: 100 },
+                { name: "gstNo", label: "GST No", type: "text", required: true, maxLength: 15, minLength: 15, pattern: "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$", title: "Enter a valid 15-character GST number (e.g. 22AAAAA0000A1Z5)" },
+                { name: "address", label: "Address", type: "textarea", required: true, col: 12 },
+                { name: "city", label: "City", type: "text", required: true, maxLength: 50 },
+                { name: "state", label: "State", type: "text", required: true, maxLength: 50 },
+            ],
+            bank: [
+                { name: "bankName", label: "Bank Name", type: "text", required: true, maxLength: 100 },
+                { name: "accountNumber", label: "Account Number", type: "text", required: true, minLength: 9, maxLength: 18, pattern: "^[0-9]{9,18}$", title: "Enter a valid account number (9 to 18 digits)" },
+                { name: "ifscCode", label: "IFSC Code", type: "text", required: true, maxLength: 11, minLength: 11, pattern: "^[A-Z]{4}0[A-Z0-9]{6}$", title: "Enter a valid 11-character IFSC code (e.g. SBIN0001234)" },
+                { name: "accountHolderName", label: "Account Holder Name", type: "text", required: true, maxLength: 100 },
+            ],
+            settings: [
+                {
+                    name: "status",
+                    label: "Status",
+                    type: "select",
+                    options: ["ACTIVE", "INACTIVE"],
+                    required: true,
+                },
+            ],
+        },
+        initialValues: {
+            vendorCode: "",
+            name: "",
+            companyName: "",
+            phone: "",
+            email: "",
+            address: "",
+            city: "",
+            state: "",
+            gstNo: "",
+            bankName: "",
+            accountNumber: "",
+            ifscCode: "",
+            accountHolderName: "",
             status: "ACTIVE",
         },
     },
@@ -1030,7 +1084,7 @@ const RichTextEditor = ({ name, value, onChange, placeholder }) => {
     const updateActiveFormats = () => {
         const cmds = ["bold", "italic", "underline", "strikeThrough", "insertOrderedList", "insertUnorderedList", "justifyLeft", "justifyCenter", "justifyRight"];
         const active = {};
-        cmds.forEach(cmd => { try { active[cmd] = document.queryCommandState(cmd); } catch (_) {} });
+        cmds.forEach(cmd => { try { active[cmd] = document.queryCommandState(cmd); } catch (_) { } });
         setActiveFormats(active);
     };
 
@@ -1049,25 +1103,25 @@ const RichTextEditor = ({ name, value, onChange, placeholder }) => {
     const GROUPS = [
         {
             tools: [
-                { cmd: "bold",        label: "B", labelStyle: { fontWeight:900, fontFamily:"Georgia,serif", fontSize:14 }, title: "Bold (Ctrl+B)" },
-                { cmd: "italic",      label: "I", labelStyle: { fontStyle:"italic", fontFamily:"Georgia,serif", fontSize:14 }, title: "Italic (Ctrl+I)" },
-                { cmd: "underline",   label: "U", labelStyle: { textDecoration:"underline" }, title: "Underline (Ctrl+U)" },
-                { cmd: "strikeThrough", label: "S", labelStyle: { textDecoration:"line-through" }, title: "Strikethrough" },
+                { cmd: "bold", label: "B", labelStyle: { fontWeight: 900, fontFamily: "Georgia,serif", fontSize: 14 }, title: "Bold (Ctrl+B)" },
+                { cmd: "italic", label: "I", labelStyle: { fontStyle: "italic", fontFamily: "Georgia,serif", fontSize: 14 }, title: "Italic (Ctrl+I)" },
+                { cmd: "underline", label: "U", labelStyle: { textDecoration: "underline" }, title: "Underline (Ctrl+U)" },
+                { cmd: "strikeThrough", label: "S", labelStyle: { textDecoration: "line-through" }, title: "Strikethrough" },
             ]
         },
         {
             tools: [
-                { cmd: "insertOrderedList",   icon: "bx-list-ol",      title: "Ordered List" },
-                { cmd: "insertUnorderedList", icon: "bx-list-ul",      title: "Bullet List" },
-                { cmd: "indent",              icon: "bx-right-indent",  title: "Indent" },
-                { cmd: "outdent",             icon: "bx-left-indent",   title: "Outdent" },
+                { cmd: "insertOrderedList", icon: "bx-list-ol", title: "Ordered List" },
+                { cmd: "insertUnorderedList", icon: "bx-list-ul", title: "Bullet List" },
+                { cmd: "indent", icon: "bx-right-indent", title: "Indent" },
+                { cmd: "outdent", icon: "bx-left-indent", title: "Outdent" },
             ]
         },
         {
             tools: [
-                { cmd: "justifyLeft",   icon: "bx-align-left",   title: "Align Left" },
+                { cmd: "justifyLeft", icon: "bx-align-left", title: "Align Left" },
                 { cmd: "justifyCenter", icon: "bx-align-middle", title: "Align Center" },
-                { cmd: "justifyRight",  icon: "bx-align-right",  title: "Align Right" },
+                { cmd: "justifyRight", icon: "bx-align-right", title: "Align Right" },
             ]
         },
         {
@@ -1152,20 +1206,20 @@ const RichTextEditor = ({ name, value, onChange, placeholder }) => {
                         <option value="h2">Heading 2</option>
                         <option value="h3">Heading 3</option>
                     </select>
-                    <i className="bx bx-chevron-down" style={{ position:"absolute", right:5, top:"50%", transform:"translateY(-50%)", fontSize:13, color:"#94a3b8", pointerEvents:"none" }} />
+                    <i className="bx bx-chevron-down" style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "#94a3b8", pointerEvents: "none" }} />
                 </div>
 
                 {/* Tool groups with separators */}
                 {GROUPS.map((group, gi) => (
                     <React.Fragment key={gi}>
-                        <div style={{ width:1, height:20, background:"#e2e8f0", margin:"0 3px", flexShrink:0 }} />
+                        <div style={{ width: 1, height: 20, background: "#e2e8f0", margin: "0 3px", flexShrink: 0 }} />
                         {group.tools.map(tool => <ToolBtn key={tool.cmd} tool={tool} />)}
                     </React.Fragment>
                 ))}
 
                 {/* Spacer + label */}
-                <div style={{ flex:1 }}/>
-                <span style={{ fontSize:10.5, fontWeight:600, color:"#cbd5e1", letterSpacing:0.4, textTransform:"uppercase", whiteSpace:"nowrap" }}>Rich Text</span>
+                <div style={{ flex: 1 }} />
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: "#cbd5e1", letterSpacing: 0.4, textTransform: "uppercase", whiteSpace: "nowrap" }}>Rich Text</span>
             </div>
 
             {/* Editable area */}
@@ -1201,12 +1255,12 @@ const RichTextEditor = ({ name, value, onChange, placeholder }) => {
                 borderTop: "1px solid #f1f5f9",
                 background: "#fafafa",
             }}>
-                <div style={{ display:"flex", gap:12 }}>
-                    <span style={{ fontSize:11, color:"#94a3b8", fontWeight:500 }}>
-                        <span style={{ fontWeight:700, color:"#64748b" }}>{wordCount}</span> words
+                <div style={{ display: "flex", gap: 12 }}>
+                    <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
+                        <span style={{ fontWeight: 700, color: "#64748b" }}>{wordCount}</span> words
                     </span>
-                    <span style={{ fontSize:11, color:"#94a3b8", fontWeight:500 }}>
-                        <span style={{ fontWeight:700, color:"#64748b" }}>{charCount}</span> characters
+                    <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>
+                        <span style={{ fontWeight: 700, color: "#64748b" }}>{charCount}</span> characters
                     </span>
                 </div>
                 {charCount > 0 && (
@@ -1218,9 +1272,9 @@ const RichTextEditor = ({ name, value, onChange, placeholder }) => {
                             if (editorRef.current) { editorRef.current.innerHTML = ""; }
                             sync();
                         }}
-                        style={{ fontSize:11, color:"#cbd5e1", background:"none", border:"none", cursor:"pointer", padding:"2px 6px", borderRadius:5, fontWeight:600, transition:"color 0.13s" }}
-                        onMouseEnter={e=>{ e.currentTarget.style.color="#ef4444"; }}
-                        onMouseLeave={e=>{ e.currentTarget.style.color="#cbd5e1"; }}
+                        style={{ fontSize: 11, color: "#cbd5e1", background: "none", border: "none", cursor: "pointer", padding: "2px 6px", borderRadius: 5, fontWeight: 600, transition: "color 0.13s" }}
+                        onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = "#cbd5e1"; }}
                     >
                         Clear
                     </button>
@@ -1255,10 +1309,26 @@ const CMF_CSS = `
   .cmf-animate { animation:cmfIn 0.22s ease; }
 `;
 
+const EMPTY_OBJ = {};
+
+const TAB_ICONS = {
+    basic: "bx-info-circle",
+    bank: "bx-buildings",
+    settings: "bx-cog",
+    contact: "bx-user",
+    location: "bx-map",
+    address: "bx-map",
+    franchise: "bx-store",
+    pricing: "bx-rupee",
+    items: "bx-list-ul",
+    documents: "bx-file",
+    password: "bx-lock-alt",
+};
+
 const CommonMasterForm = ({
     module = "menu",
     mode = "add",
-    initialData = {},
+    initialData = EMPTY_OBJ,
     onSubmitSuccess,
 }) => {
     const navigate = useNavigate();
@@ -1270,6 +1340,7 @@ const CommonMasterForm = ({
     const [success, setSuccess] = useState(false);
     const [errors, setErrors] = useState({});
     const [imagePreview, setImagePreview] = useState(initialData?.[config.imageField] || null);
+    const [showPassword, setShowPassword] = useState({});
 
     // Get create / update action from Zustand store
     const { addPackage, updatePackage } = usePackageStore();
@@ -1281,7 +1352,8 @@ const CommonMasterForm = ({
     const { addDocument, updateDocument } = useDocuments();
     const { addMaterial, updateMaterial, materials: materialMasterList, fetchMaterials, loading: materialsLoading } = useMaterials();
     const { addMenuItem, updateMenuItem, menuItems, fetchMenuItems, nonComboMenuItems, fetchNonComboMenuItems, loading: menuItemsLoading } = useMenuItems();
-    const { saveFranchise, sendInvitation } = useFranchiseStore();
+    const { saveFranchise } = useFranchiseStore();
+    const { createVendor: addVendor, updateVendor: editVendor } = useVendorStore();
 
     // create
     const createApiMap = {
@@ -1294,6 +1366,7 @@ const CommonMasterForm = ({
         document: addDocument,
         material: addMaterial,
         menu: addMenuItem,
+        vendor: addVendor,
     }
     // update
     const updateApiMap = {
@@ -1306,7 +1379,8 @@ const CommonMasterForm = ({
         document: updateDocument,
         material: updateMaterial,
         menu: updateMenuItem,
-        franchise: saveFranchise
+        franchise: saveFranchise,
+        vendor: editVendor,
     }
 
     useEffect(() => {
@@ -1318,24 +1392,6 @@ const CommonMasterForm = ({
             fetchMenuItems();
         }
     }, [module]);
-
-    // Email send request
-    const handleSendInvitation = async () => {
-        try {
-            const res = await sendInvitation(initialData._id);
-            toast.success(res.message);
-            setForm((prev) => ({
-                ...prev,
-                inviteStatus: "INVITE_SENT",
-                inviteSentAt: new Date(),
-            }));
-            console.log("Sent invitation")
-
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to send invitation"
-            );
-        }
-    };
 
     // Calculate the total package value 
     const calculatePackageAmount = (form) => {
@@ -1414,10 +1470,12 @@ const CommonMasterForm = ({
                         portionName: item.menuId?.portionName || "",
                         qty: item.qty || 1
                     }))
-                    : initialData.comboItems || []
+                    : initialData.comboItems || [],
+
+            ...(module === "franchise" && mode === "edit" ? { username: initialData?.email || "" } : {})
         };
 
-    }, [config.initialValues, initialData]);
+    }, [config.initialValues, initialData, module, mode]);
 
 
     const [form, setForm] = useState(mergedInitialValues);
@@ -1451,7 +1509,10 @@ const CommonMasterForm = ({
 
     const getTabDone = (tab) => {
         const fields = config.fields[tab] || [];
-        const req = fields.filter(f => f.required && (!f.showIf || f.showIf(form)));
+        const req = fields.filter(f => {
+            if (mode === "edit" && f.name === "password") return false;
+            return f.required && (!f.showIf || f.showIf(form));
+        });
         if (req.length === 0) return fields.length > 0;
         return req.every(f => {
             const v = form[f.name];
@@ -1461,69 +1522,76 @@ const CommonMasterForm = ({
 
     const getSidebarStats = () => {
         if (module === "menu") return [
-            { icon:"bx-category",   val: formatLabel(form.category) || "No category yet" },
-            { icon:"bx-rupee",      val: form.price ? `₹ ${form.price}` : "No price yet" },
-            { icon:"bx-layer",      val: form.isCombo ? "Combo Item" : "Single Item" },
-            { icon:"bx-package",    val: form.portionQty && form.portionName ? `${form.portionQty} ${form.portionName}` : "No portion yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-category", val: formatLabel(form.category) || "No category yet" },
+            { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
+            { icon: "bx-layer", val: form.isCombo ? "Combo Item" : "Single Item" },
+            { icon: "bx-package", val: form.portionQty && form.portionName ? `${form.portionQty} ${form.portionName}` : "No portion yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "franchise") return [
-            { icon:"bx-barcode",  val: form.franchiseId  || "No code yet"     },
-            { icon:"bx-user",     val: form.ownerName    || "No owner yet"    },
-            { icon:"bx-phone",    val: form.contact      || "No contact yet"  },
-            { icon:"bx-map",      val: form.location     || "No location yet" },
+            { icon: "bx-barcode", val: form.franchiseId || "No code yet" },
+            { icon: "bx-user", val: form.ownerName || "No owner yet" },
+            { icon: "bx-phone", val: form.contact || "No contact yet" },
+            { icon: "bx-map", val: form.location || "No location yet" },
         ];
         if (module === "payment_mode") return [
-            { icon:"bx-tag",        val: form.paymentName   || "No name yet"  },
-            { icon:"bx-credit-card", val: formatLabel(form.paymentType) || "No type yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-tag", val: form.paymentName || "No name yet" },
+            { icon: "bx-credit-card", val: formatLabel(form.paymentType) || "No type yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "order_type") return [
-            { icon:"bx-package",   val: form.orderTypeName || "No name yet" },
-            { icon:"bx-check-circle", val: form.serviceChargeApplicable ? "Service Charge On" : "No Service Charge" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-package", val: form.orderTypeName || "No name yet" },
+            { icon: "bx-check-circle", val: form.serviceChargeApplicable ? "Service Charge On" : "No Service Charge" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "tax") return [
-            { icon:"bx-receipt",  val: form.taxName        || "No name yet"  },
-            { icon:"bx-percent",  val: form.taxPercentage  ? `${form.taxPercentage}%` : "No % yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-receipt", val: form.taxName || "No name yet" },
+            { icon: "bx-percent", val: form.taxPercentage ? `${form.taxPercentage}%` : "No % yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "lead_source") return [
-            { icon:"bx-share-alt", val: form.leadSourceName || "No lead source yet"  },
-            { icon:"bx-category",  val: formatLabel(form.leadSourceType) || "No type yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-share-alt", val: form.leadSourceName || "No lead source yet" },
+            { icon: "bx-category", val: formatLabel(form.leadSourceType) || "No type yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "document") return [
-            { icon:"bx-file",     val: form.documentName || "No document yet" },
-            { icon:"bx-category", val: formatLabel(form.documentType) || "No type yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-file", val: form.documentName || "No document yet" },
+            { icon: "bx-category", val: formatLabel(form.documentType) || "No type yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+        ];
+        if (module === "vendor") return [
+            { icon: "bx-user", val: form.name || "No name yet" },
+            { icon: "bx-barcode", val: form.vendorCode || "No code yet" },
+            { icon: "bx-phone", val: form.phone || "No phone yet" },
+            { icon: "bx-map", val: form.city || "No city yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "package") return [
-            { icon:"bx-package",      val: form.packageName  || "No package yet" },
-            { icon:"bx-rupee",        val: form.price        ? `₹ ${form.price}` : "No price yet" },
-            { icon:"bx-pie-chart-alt-2", val: formatLabel(form.royaltyType) || "No royalty yet" },
-            { icon:"bx-wallet",       val: form.totalAmount  ? `Total: ₹ ${form.totalAmount}` : "No total" },
-            { icon:"bx-food-menu",    val: (form.packageMenuItems || []).length > 0 ? `${form.packageMenuItems.length} menu item${form.packageMenuItems.length > 1 ? "s" : ""} selected` : "No menu items" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-package", val: form.packageName || "No package yet" },
+            { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
+            { icon: "bx-pie-chart-alt-2", val: formatLabel(form.royaltyType) || "No royalty yet" },
+            { icon: "bx-wallet", val: form.totalAmount ? `Total: ₹ ${form.totalAmount}` : "No total" },
+            { icon: "bx-food-menu", val: (form.packageMenuItems || []).length > 0 ? `${form.packageMenuItems.length} menu item${form.packageMenuItems.length > 1 ? "s" : ""} selected` : "No menu items" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "masala_items") return [
-            { icon:"bx-bowl-hot",  val: form.itemName  || "No item yet"   },
-            { icon:"bx-category",  val: formatLabel(form.category) || "No category yet" },
-            { icon:"bx-package",   val: form.packSize && form.unit ? `${form.packSize} ${formatLabel(form.unit)}` : "No pack size yet" },
-            { icon:"bx-rupee",     val: form.price     ? `₹ ${form.price}` : "No price yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-bowl-hot", val: form.itemName || "No item yet" },
+            { icon: "bx-category", val: formatLabel(form.category) || "No category yet" },
+            { icon: "bx-package", val: form.packSize && form.unit ? `${form.packSize} ${formatLabel(form.unit)}` : "No pack size yet" },
+            { icon: "bx-rupee", val: form.price ? `₹ ${form.price}` : "No price yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         if (module === "material") return [
-            { icon:"bx-box",      val: form.materialName || "No material yet" },
-            { icon:"bx-category", val: formatLabel(form.category)  || "No category yet"  },
-            { icon:"bx-plug",     val: formatLabel(form.powerType) || "No power type yet" },
-            { icon:"bx-hash",     val: form.quantity ? `${form.quantity} ${formatLabel(form.unit) || ""}` : "No qty yet" },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-box", val: form.materialName || "No material yet" },
+            { icon: "bx-category", val: formatLabel(form.category) || "No category yet" },
+            { icon: "bx-plug", val: formatLabel(form.powerType) || "No power type yet" },
+            { icon: "bx-hash", val: form.quantity ? `${form.quantity} ${formatLabel(form.unit) || ""}` : "No qty yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
         return [
-            { icon:"bx-barcode", val: form.code || "No code yet"  },
-            { icon:"bx-tag",     val: form.name || "No name yet"  },
-            { icon:"bx-check-shield", val: formatLabel(form.status) || "No status yet" },
+            { icon: "bx-barcode", val: form.code || "No code yet" },
+            { icon: "bx-tag", val: form.name || "No name yet" },
+            { icon: "bx-check-shield", val: formatLabel(form.status) || "No status yet" },
         ];
     };
 
@@ -1544,32 +1612,7 @@ const CommonMasterForm = ({
         setActiveTab(config.tabs[0]);
     }, [mergedInitialValues, initialData, config.imageField, config.tabs]);
 
-    // Resend button enable 
-    useEffect(() => {
-        if (
-            form.inviteStatus === "INVITE_SENT" &&
-            form.inviteSentAt
-        ) {
-            const sentTime = new Date(form.inviteSentAt).getTime();
 
-            const cooldown = 2 * 60;
-
-            const interval = setInterval(() => {
-                const now = Date.now();
-
-                const diff = cooldown - Math.floor((now - sentTime) / 1000);
-
-                if (diff <= 0) {
-                    setResendTimer(0);
-                    clearInterval(interval);
-                } else {
-                    setResendTimer(diff);
-                }
-            }, 1000);
-
-            return () => clearInterval(interval);
-        }
-    }, [form.inviteStatus, form.inviteSentAt]);
 
     // Outside click close for combo dropdown
     useEffect(() => {
@@ -1607,6 +1650,8 @@ const CommonMasterForm = ({
                 if (field.showIf && !field.showIf(form)) return;
 
                 if (field.required) {
+                    if (mode === "edit" && field.name === "password") return;
+
                     const value = form[field.name];
 
                     if (!value?.toString().trim()) {
@@ -1682,11 +1727,17 @@ const CommonMasterForm = ({
             return;
         }
 
-        if (name === "contact" || name === "phone" || type === "tel") {
+        if (name === "contact" || name === "phone" || type === "tel" || name === "accountNumber") {
             const numericValue = value.replace(/\D/g, "");
             setForm((prev) => ({
                 ...prev,
                 [name]: numericValue,
+            }));
+        }
+        else if (name === "gstNo" || name === "ifscCode") {
+            setForm((prev) => ({
+                ...prev,
+                [name]: value.toUpperCase(),
             }));
         }
         else if (type === "checkbox") {
@@ -1986,17 +2037,7 @@ const CommonMasterForm = ({
                 error?.response?.data?.error ||
                 error.message;
 
-            // duplicate key / unique code error
-            if (
-                msg.toLowerCase().includes("duplicate") ||
-                msg.toLowerCase().includes("already exists") ||
-                msg.toLowerCase().includes("e11000")
-            ) {
-                toast.dismiss();
-                toast.error("Code already exists. Please use unique code.");
-            } else {
-                toast.error(msg || "Something went wrong");
-            }
+            toast.error(msg || "Something went wrong");
         } finally {
             setSubmitting(false)
         }
@@ -2195,7 +2236,7 @@ const CommonMasterForm = ({
                 <div className="d-flex justify-content-between align-items-center mb-3">
                     <button
                         type="button"
-                        style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"linear-gradient(135deg,#D91E18,#F97316)", color:"#fff", fontWeight:600, fontSize:12.5, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
+                        style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#D91E18,#F97316)", color: "#fff", fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
                         onClick={addAddon}
                     >
                         <i className="bx bx-plus"></i> Add Addon
@@ -2310,7 +2351,7 @@ const CommonMasterForm = ({
 
                     <button
                         type="button"
-                        style={{ padding:"7px 14px", borderRadius:8, border:"none", background:"linear-gradient(135deg,#D91E18,#F97316)", color:"#fff", fontWeight:600, fontSize:12.5, cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}
+                        style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#D91E18,#F97316)", color: "#fff", fontWeight: 600, fontSize: 12.5, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
                         onClick={addCustomization}
                     >
                         <i className="bx bx-plus"></i> Add Option
@@ -2524,10 +2565,10 @@ const CommonMasterForm = ({
     };
 
     const FOOD_TYPE_COLOR = {
-        VEG:      "#10B981",
-        NON_VEG:  "#D91E18",
+        VEG: "#10B981",
+        NON_VEG: "#D91E18",
         BEVERAGE: "#3B82F6",
-        DESSERT:  "#F97316",
+        DESSERT: "#F97316",
     };
 
     const renderMenuChecklist = () => {
@@ -2539,13 +2580,13 @@ const CommonMasterForm = ({
                 </div>
             );
         }
-        const allItems   = (menuItems || []).filter(m => m.status === "ACTIVE" || !m.status);
+        const allItems = (menuItems || []).filter(m => m.status === "ACTIVE" || !m.status);
         const selectedIds = form.packageMenuItems || [];
 
         if (allItems.length === 0) {
             return (
-                <div style={{ textAlign:"center", padding:"48px 0", color:"#9ca3af" }}>
-                    <i className="bx bx-food-menu" style={{ fontSize:40, display:"block", marginBottom:10 }} />
+                <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
+                    <i className="bx bx-food-menu" style={{ fontSize: 40, display: "block", marginBottom: 10 }} />
                     No active menu items found. Add menu items in the Menu master first.
                 </div>
             );
@@ -2565,22 +2606,22 @@ const CommonMasterForm = ({
             <div>
                 {/* Selected banner */}
                 {selectedIds.length > 0 && (
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 16px", borderRadius:9, background:"rgba(217,30,24,0.05)", border:"1px solid rgba(217,30,24,0.14)", marginBottom:18 }}>
-                        <span style={{ fontSize:13, fontWeight:600, color:"#D91E18" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 16px", borderRadius: 9, background: "rgba(217,30,24,0.05)", border: "1px solid rgba(217,30,24,0.14)", marginBottom: 18 }}>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#D91E18" }}>
                             <i className="bx bx-check-circle me-1" />{selectedIds.length} item{selectedIds.length > 1 ? "s" : ""} selected for this package
                         </span>
                         <button type="button" onClick={() => setForm(p => ({ ...p, packageMenuItems: [] }))}
-                            style={{ border:"none", background:"none", color:"#9ca3af", fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit", padding:0 }}>
+                            style={{ border: "none", background: "none", color: "#9ca3af", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", padding: 0 }}>
                             Clear all
                         </button>
                     </div>
                 )}
 
                 {/* Legend */}
-                <div style={{ display:"flex", gap:16, flexWrap:"wrap", marginBottom:18 }}>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
                     {Object.entries(FOOD_TYPE_COLOR).map(([type, color]) => (
-                        <span key={type} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11.5, fontWeight:600, color:"#6b7280" }}>
-                            <span style={{ width:9, height:9, borderRadius:"50%", background:color, flexShrink:0 }} />
+                        <span key={type} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 600, color: "#6b7280" }}>
+                            <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, flexShrink: 0 }} />
                             {formatLabel(type)}
                         </span>
                     ))}
@@ -2591,68 +2632,68 @@ const CommonMasterForm = ({
                     const catItems = allItems.filter(m => m.category === cat);
                     const selCount = catItems.filter(m => selectedIds.includes(m._id)).length;
                     return (
-                        <div key={cat} style={{ marginBottom:30 }}>
+                        <div key={cat} style={{ marginBottom: 30 }}>
                             {/* Category header */}
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, paddingBottom:9, borderBottom:"2px solid #f5f5f5" }}>
-                                <span style={{ fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:1.2, color:"#6b7280" }}>
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, paddingBottom: 9, borderBottom: "2px solid #f5f5f5" }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#6b7280" }}>
                                     {formatLabel(cat)}
                                 </span>
-                                <span style={{ fontSize:11, fontWeight:600, padding:"2px 9px", borderRadius:20, background: selCount > 0 ? "rgba(217,30,24,0.08)" : "#f5f5f5", color: selCount > 0 ? "#D91E18" : "#9ca3af" }}>
+                                <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 20, background: selCount > 0 ? "rgba(217,30,24,0.08)" : "#f5f5f5", color: selCount > 0 ? "#D91E18" : "#9ca3af" }}>
                                     {selCount}/{catItems.length}
                                 </span>
                             </div>
 
                             {/* Item cards */}
-                            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(148px, 1fr))", gap:10 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))", gap: 10 }}>
                                 {catItems.map(item => {
-                                    const checked   = selectedIds.includes(item._id);
-                                    const dotColor  = FOOD_TYPE_COLOR[item.foodType] || "#6b7280";
+                                    const checked = selectedIds.includes(item._id);
+                                    const dotColor = FOOD_TYPE_COLOR[item.foodType] || "#6b7280";
                                     return (
                                         <div
                                             key={item._id}
                                             onClick={() => toggleItem(item._id)}
-                                            style={{ borderRadius:11, border:`1.5px solid ${checked ? "#D91E18" : "#e9ecef"}`, background: checked ? "rgba(217,30,24,0.03)" : "#fff", cursor:"pointer", overflow:"hidden", transition:"all 0.15s", userSelect:"none", position:"relative", boxShadow: checked ? "0 2px 10px rgba(217,30,24,0.12)" : "0 1px 3px rgba(0,0,0,0.04)" }}
+                                            style={{ borderRadius: 11, border: `1.5px solid ${checked ? "#D91E18" : "#e9ecef"}`, background: checked ? "rgba(217,30,24,0.03)" : "#fff", cursor: "pointer", overflow: "hidden", transition: "all 0.15s", userSelect: "none", position: "relative", boxShadow: checked ? "0 2px 10px rgba(217,30,24,0.12)" : "0 1px 3px rgba(0,0,0,0.04)" }}
                                         >
                                             {/* Image area */}
-                                            <div style={{ width:"100%", paddingBottom:"68%", position:"relative", background:"#f8f9fa", overflow:"hidden" }}>
+                                            <div style={{ width: "100%", paddingBottom: "68%", position: "relative", background: "#f8f9fa", overflow: "hidden" }}>
                                                 {item.image ? (
                                                     <img src={item.image} alt={item.menuName}
-                                                        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", transition:"transform 0.2s" }} />
+                                                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.2s" }} />
                                                 ) : (
-                                                    <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", background:"linear-gradient(135deg,#f8f9fa 0%,#f0f0f0 100%)" }}>
-                                                        <i className="bx bx-dish" style={{ fontSize:30, color:"#d1d5db" }} />
+                                                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg,#f8f9fa 0%,#f0f0f0 100%)" }}>
+                                                        <i className="bx bx-dish" style={{ fontSize: 30, color: "#d1d5db" }} />
                                                     </div>
                                                 )}
                                                 {/* Food type dot — top-left */}
-                                                <div style={{ position:"absolute", top:7, left:7, width:10, height:10, borderRadius:"50%", background:dotColor, border:"2.5px solid #fff", boxShadow:"0 1px 4px rgba(0,0,0,0.18)" }} />
+                                                <div style={{ position: "absolute", top: 7, left: 7, width: 10, height: 10, borderRadius: "50%", background: dotColor, border: "2.5px solid #fff", boxShadow: "0 1px 4px rgba(0,0,0,0.18)" }} />
                                                 {/* Checkbox — top-right */}
-                                                <div style={{ position:"absolute", top:6, right:6, width:21, height:21, borderRadius:6, border:`2px solid ${checked ? "#D91E18" : "rgba(255,255,255,0.9)"}`, background: checked ? "#D91E18" : "rgba(255,255,255,0.85)", backdropFilter:"blur(2px)", display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.14s", boxShadow:"0 1px 4px rgba(0,0,0,0.15)" }}>
-                                                    {checked && <i className="bx bx-check" style={{ color:"#fff", fontSize:13 }} />}
+                                                <div style={{ position: "absolute", top: 6, right: 6, width: 21, height: 21, borderRadius: 6, border: `2px solid ${checked ? "#D91E18" : "rgba(255,255,255,0.9)"}`, background: checked ? "#D91E18" : "rgba(255,255,255,0.85)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.14s", boxShadow: "0 1px 4px rgba(0,0,0,0.15)" }}>
+                                                    {checked && <i className="bx bx-check" style={{ color: "#fff", fontSize: 13 }} />}
                                                 </div>
                                                 {/* Price badge — bottom */}
                                                 {item.price && (
-                                                    <div style={{ position:"absolute", bottom:6, left:6, padding:"2px 7px", borderRadius:6, background:"rgba(0,0,0,0.55)", backdropFilter:"blur(3px)", color:"#fff", fontSize:11, fontWeight:700, letterSpacing:0.2 }}>
+                                                    <div style={{ position: "absolute", bottom: 6, left: 6, padding: "2px 7px", borderRadius: 6, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(3px)", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 0.2 }}>
                                                         ₹ {item.price}
                                                     </div>
                                                 )}
                                             </div>
 
                                             {/* Info below image */}
-                                            <div style={{ padding:"9px 10px 11px" }}>
-                                                <div style={{ fontWeight:700, fontSize:12.5, color: checked ? "#D91E18" : "#1A1A1A", lineHeight:1.3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", marginBottom:4 }}>
+                                            <div style={{ padding: "9px 10px 11px" }}>
+                                                <div style={{ fontWeight: 700, fontSize: 12.5, color: checked ? "#D91E18" : "#1A1A1A", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>
                                                     {item.menuName}
                                                 </div>
-                                                <div style={{ display:"flex", alignItems:"center", gap:4, flexWrap:"wrap" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                                                     {item.portionQty && item.portionName && (
-                                                        <span style={{ fontSize:10, color:"#9ca3af", fontWeight:500 }}>
+                                                        <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
                                                             {item.portionQty} {item.portionName}
                                                         </span>
                                                     )}
                                                     {item.portionQty && item.portionName && item.foodType && (
-                                                        <span style={{ color:"#e5e7eb", fontSize:9 }}>·</span>
+                                                        <span style={{ color: "#e5e7eb", fontSize: 9 }}>·</span>
                                                     )}
                                                     {item.foodType && (
-                                                        <span style={{ fontSize:10, fontWeight:600, color:dotColor }}>
+                                                        <span style={{ fontSize: 10, fontWeight: 600, color: dotColor }}>
                                                             {formatLabel(item.foodType)}
                                                         </span>
                                                     )}
@@ -2715,29 +2756,16 @@ const CommonMasterForm = ({
             maxLength:
                 field.maxLength,
 
-            readOnly: field.readOnly || (module === "franchise" && (
-                (
-                    form.inviteStatus ===
-                    "INVITE_SENT" &&
+            minLength:
+                field.minLength,
 
-                    ![
-                        "status",
-                        "isActiveForBilling",
-                        "allowMenuControl",
-                        "allowReports"
-                    ].includes(field.name)
-                )
+            pattern:
+                field.pattern,
 
-                ||
+            title:
+                field.title,
 
-                // ✅ INACTIVE LOCK
-                (
-                    form.status ===
-                    "INACTIVE" && field.name !== "status"
-                )
-
-            )
-            ),
+            readOnly: field.readOnly || (mode === "edit" && field.name === "username") || (module === "franchise" && form.status === "INACTIVE" && field.name !== "status"),
 
             disabled:
                 field.disabled,
@@ -2770,7 +2798,7 @@ const CommonMasterForm = ({
         if (field.type === "textarea") {
             return (
                 <>
-                    <textarea {...commonProps} rows={field.rows || 3} style={{ resize:"vertical" }} />
+                    <textarea {...commonProps} rows={field.rows || 3} style={{ resize: "vertical" }} />
                     {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
                 </>
             );
@@ -2826,11 +2854,11 @@ const CommonMasterForm = ({
         if (field.type === "switch") {
             const isOn = !!form[field.name];
             return (
-                <div style={{ padding:"16px 20px", borderRadius:12, border:`1.5px solid ${isOn ? "rgba(217,30,24,0.25)" : "#e9ecef"}`, background: isOn ? "rgba(217,30,24,0.03)" : "#fafafa", transition:"all 0.2s" }}>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:16 }}>
-                        <div style={{ flex:1 }}>
-                            <div style={{ fontWeight:700, fontSize:13.5, color:"#1A1A1A" }}>{field.label}</div>
-                            {field.desc && <div style={{ fontSize:12, color:"#9ca3af", marginTop:2 }}>{field.desc}</div>}
+                <div style={{ padding: "16px 20px", borderRadius: 12, border: `1.5px solid ${isOn ? "rgba(217,30,24,0.25)" : "#e9ecef"}`, background: isOn ? "rgba(217,30,24,0.03)" : "#fafafa", transition: "all 0.2s" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13.5, color: "#1A1A1A" }}>{field.label}</div>
+                            {field.desc && <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{field.desc}</div>}
                         </div>
                         <button type="button" className="cmf-switch"
                             style={{ background: isOn ? "linear-gradient(135deg,#D91E18,#F97316)" : "#e9ecef" }}
@@ -2846,13 +2874,13 @@ const CommonMasterForm = ({
             const isChecked = !!form[field.name];
             return (
                 <div
-                    style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer", padding:"10px 14px", borderRadius:9, border:`1.5px solid ${isChecked ? "rgba(217,30,24,0.3)" : "#e9ecef"}`, background: isChecked ? "rgba(217,30,24,0.04)" : "#fff", transition:"all 0.15s", userSelect:"none" }}
+                    style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: 9, border: `1.5px solid ${isChecked ? "rgba(217,30,24,0.3)" : "#e9ecef"}`, background: isChecked ? "rgba(217,30,24,0.04)" : "#fff", transition: "all 0.15s", userSelect: "none" }}
                     onClick={() => handleChange({ target: { name: field.name, type: "checkbox", checked: !isChecked } })}
                 >
-                    <div style={{ width:17, height:17, borderRadius:4, border:`2px solid ${isChecked ? "#D91E18" : "#ced4da"}`, background: isChecked ? "#D91E18" : "#fff", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.14s" }}>
-                        {isChecked && <i className="bx bx-check" style={{ color:"#fff", fontSize:11 }} />}
+                    <div style={{ width: 17, height: 17, borderRadius: 4, border: `2px solid ${isChecked ? "#D91E18" : "#ced4da"}`, background: isChecked ? "#D91E18" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.14s" }}>
+                        {isChecked && <i className="bx bx-check" style={{ color: "#fff", fontSize: 11 }} />}
                     </div>
-                    <span style={{ fontSize:13, fontWeight:600, color: isChecked ? "#D91E18" : "#374151" }}>{field.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: isChecked ? "#D91E18" : "#374151" }}>{field.label}</span>
                 </div>
             );
         }
@@ -2860,26 +2888,27 @@ const CommonMasterForm = ({
         if (field.type === "radio") {
             const val = form[field.name] || "";
             const RADIO_META = {
-                VEG:     { label: "Veg",     color: "#065F46", bg: "rgba(16,185,129,0.1)",  border: "rgba(16,185,129,0.35)",  dot: "#10B981", icon: "bx-leaf" },
-                NON_VEG: { label: "Non-Veg", color: "#991B1B", bg: "rgba(153,27,27,0.08)",  border: "rgba(153,27,27,0.3)",    dot: "#D91E18", icon: "bx-bowl-hot" },
+                VEG: { label: "Veg", color: "#065F46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.35)", dot: "#10B981", icon: "bx-leaf" },
+                NON_VEG: { label: "Non-Veg", color: "#991B1B", bg: "rgba(153,27,27,0.08)", border: "rgba(153,27,27,0.3)", dot: "#D91E18", icon: "bx-bowl-hot" },
             };
             return (
-                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {(field.options || []).map((opt) => {
                         const m = RADIO_META[opt] || { label: opt, color: "#374151", bg: "#f3f4f6", border: "#d1d5db", dot: "#6b7280", icon: "bx-circle" };
                         const selected = val === opt;
                         return (
                             <label key={opt} onClick={() => handleChange({ target: { name: field.name, value: opt } })}
-                                style={{ display:"inline-flex", alignItems:"center", gap:9, padding:"10px 18px", borderRadius:10, cursor:"pointer", userSelect:"none", transition:"all 0.18s",
+                                style={{
+                                    display: "inline-flex", alignItems: "center", gap: 9, padding: "10px 18px", borderRadius: 10, cursor: "pointer", userSelect: "none", transition: "all 0.18s",
                                     border: selected ? `2px solid ${m.border}` : "2px solid #e9ecef",
                                     background: selected ? m.bg : "#fafafa",
                                     boxShadow: selected ? `0 2px 8px ${m.dot}28` : "none",
                                 }}>
-                                <div style={{ width:16, height:16, borderRadius:"50%", border:`2px solid ${selected ? m.dot : "#ced4da"}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, transition:"all 0.15s" }}>
-                                    {selected && <div style={{ width:8, height:8, borderRadius:"50%", background:m.dot }} />}
+                                <div style={{ width: 16, height: 16, borderRadius: "50%", border: `2px solid ${selected ? m.dot : "#ced4da"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                                    {selected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: m.dot }} />}
                                 </div>
-                                <i className={`bx ${m.icon}`} style={{ fontSize:14, color: selected ? m.color : "#9ca3af" }} />
-                                <span style={{ fontWeight:700, fontSize:13.5, color: selected ? m.color : "#6b7280" }}>{m.label}</span>
+                                <i className={`bx ${m.icon}`} style={{ fontSize: 14, color: selected ? m.color : "#9ca3af" }} />
+                                <span style={{ fontWeight: 700, fontSize: 13.5, color: selected ? m.color : "#6b7280" }}>{m.label}</span>
                             </label>
                         );
                     })}
@@ -2952,22 +2981,69 @@ const CommonMasterForm = ({
                 );
 
             return (
-                <div style={{ borderRadius:14, background:"linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 100%)", padding:"22px 26px" }}>
-                    <div style={{ fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:1.2, color:"rgba(255,255,255,0.38)", marginBottom:16 }}>Final Price Preview</div>
+                <div style={{ borderRadius: 14, background: "linear-gradient(135deg,#1A1A1A 0%,#2D2D2D 100%)", padding: "22px 26px" }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "rgba(255,255,255,0.38)", marginBottom: 16 }}>Final Price Preview</div>
                     {[
-                        { label:"Base Price",        val:`₹ ${basePrice.toFixed(2)}`,       color:"rgba(255,255,255,0.55)" },
-                        { label:"Discount",          val:`- ₹ ${discountAmount.toFixed(2)}`, color:"#F97316" },
-                        { label:`Tax (${taxPercentage}%)`, val:`+ ₹ ${taxAmount.toFixed(2)}`,color:"rgba(255,255,255,0.55)" },
+                        { label: "Base Price", val: `₹ ${basePrice.toFixed(2)}`, color: "rgba(255,255,255,0.55)" },
+                        { label: "Discount", val: `- ₹ ${discountAmount.toFixed(2)}`, color: "#F97316" },
+                        { label: `Tax (${taxPercentage}%)`, val: `+ ₹ ${taxAmount.toFixed(2)}`, color: "rgba(255,255,255,0.55)" },
                     ].map(({ label, val, color }) => (
-                        <div key={label} style={{ display:"flex", justifyContent:"space-between", marginBottom:10, fontSize:13, color }}>
+                        <div key={label} style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, fontSize: 13, color }}>
                             <span>{label}</span><span>{val}</span>
                         </div>
                     ))}
-                    <div style={{ borderTop:"1px solid rgba(255,255,255,0.1)", paddingTop:14, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                        <span style={{ fontSize:14, fontWeight:700, color:"#fff" }}>Final Selling Price</span>
-                        <span style={{ fontSize:22, fontWeight:800, color:"#F97316", letterSpacing:-0.5 }}>₹ {finalPrice.toFixed(2)}</span>
+                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Final Selling Price</span>
+                        <span style={{ fontSize: 22, fontWeight: 800, color: "#F97316", letterSpacing: -0.5 }}>₹ {finalPrice.toFixed(2)}</span>
                     </div>
                 </div>
+            );
+        }
+
+        if (field.type === "password") {
+            const pass = form[field.name] || "";
+            const isVisible = !!showPassword[field.name];
+            let strength = null;
+            if (pass) {
+                if (pass.length < 6) strength = { label: "Weak", color: "#D91E18", width: "33%" };
+                else if (pass.length < 8 || !/(?=.*[A-Z])(?=.*[@$!%*?&])/.test(pass)) strength = { label: "Medium", color: "#d97706", width: "66%" };
+                else strength = { label: "Strong", color: "#059669", width: "100%" };
+            }
+
+            return (
+                <>
+                    <div className="position-relative">
+                        <input
+                            type={isVisible ? "text" : "password"}
+                            {...commonProps}
+                            style={{ ...commonProps.style, paddingRight: "42px" }}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-muted text-decoration-none px-3"
+                            style={{ border: "none", background: "none", zIndex: 5, cursor: "pointer", boxShadow: "none" }}
+                            onClick={() => setShowPassword((prev) => ({ ...prev, [field.name]: !prev[field.name] }))}
+                            tabIndex={-1}
+                            title={isVisible ? "Hide Password" : "Show Password"}
+                        >
+                            <i className={`bx ${isVisible ? "bx-hide" : "bx-show"}`} style={{ fontSize: "18px" }} />
+                        </button>
+                    </div>
+                    {strength && (
+                        <div style={{ marginTop: 8, padding: "0 2px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                                <span style={{ color: "#6b7280" }}>Password Strength</span>
+                                <span style={{ color: strength.color }}>{strength.label}</span>
+                            </div>
+                            <div style={{ height: 4, borderRadius: 2, background: "#e5e7eb", overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: strength.width, background: strength.color, transition: "all 0.3s ease" }} />
+                            </div>
+                        </div>
+                    )}
+                    {errors[field.name] && (
+                        <div className="invalid-feedback" style={{ display: "block" }}>{errors[field.name]}</div>
+                    )}
+                </>
             );
         }
 
@@ -2994,7 +3070,7 @@ const CommonMasterForm = ({
 
     const visibleTabs = getVisibleTabs();
     const currentTabIndex = visibleTabs.indexOf(activeTab);
-    const displayName = form.menuName || form.franchiseName || form.paymentName || form.orderTypeName || form.taxName || form.leadSourceName || form.documentName || form.materialName || form.packageName || form.itemName || `New ${config.title}`;
+    const displayName = form.name || form.menuName || form.franchiseName || form.paymentName || form.orderTypeName || form.taxName || form.leadSourceName || form.documentName || form.materialName || form.packageName || form.itemName || `New ${config.title}`;
 
     return (
         <>
@@ -3005,23 +3081,23 @@ const CommonMasterForm = ({
                     {/* ── Page header ── */}
                     <div className="row mb-4">
                         <div className="col-12">
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-                                <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                                    <div style={{ width:44, height:44, borderRadius:12, background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                                        <i className={`bx ${config.icon}`} style={{ color:"#fff", fontSize:22 }} />
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)", boxShadow: "0 4px 14px rgba(217,30,24,0.32)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <i className={`bx ${config.icon}`} style={{ color: "#fff", fontSize: 22 }} />
                                     </div>
                                     <div>
-                                        <h4 className="mb-0" style={{ fontWeight:800, fontSize:18, color:"#1A1A1A" }}>
+                                        <h4 className="mb-0" style={{ fontWeight: 800, fontSize: 18, color: "#1A1A1A" }}>
                                             {mode === "edit" ? `Edit ${config.title}` : `Create ${config.title}`}
                                         </h4>
-                                        <div style={{ fontSize:12, color:"#F97316", fontWeight:600, marginTop:1 }}>
+                                        <div style={{ fontSize: 12, color: "#F97316", fontWeight: 600, marginTop: 1 }}>
                                             Masters · {config.title}
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                    <button type="button" onClick={() => navigate(-1)} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8, border:"1.5px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>
-                                        <i className="bx bx-arrow-back" style={{ fontSize:15 }} /> Back
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <button type="button" onClick={() => navigate(-1)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                                        <i className="bx bx-arrow-back" style={{ fontSize: 15 }} /> Back
                                     </button>
                                     <ol className="breadcrumb m-0">
                                         <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
@@ -3034,8 +3110,8 @@ const CommonMasterForm = ({
                     </div>
 
                     {success && (
-                        <div style={{ padding:"14px 18px", borderRadius:10, background:"rgba(5,150,105,0.08)", border:"1px solid rgba(5,150,105,0.2)", color:"#065F46", marginBottom:20, display:"flex", alignItems:"center", gap:10, fontSize:13.5, fontWeight:600 }}>
-                            <i className="bx bx-check-circle" style={{ fontSize:20, color:"#10B981" }} />
+                        <div style={{ padding: "14px 18px", borderRadius: 10, background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.2)", color: "#065F46", marginBottom: 20, display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, fontWeight: 600 }}>
+                            <i className="bx bx-check-circle" style={{ fontSize: 20, color: "#10B981" }} />
                             {config.title} {mode === "edit" ? "updated" : "created"} successfully!
                         </div>
                     )}
@@ -3045,82 +3121,71 @@ const CommonMasterForm = ({
 
                             {/* ── Left sidebar ── */}
                             <div className="col-xl-3 col-lg-4 col-12">
-                                <div className="cmf-card" style={{ padding:24, position:"sticky", top:80 }}>
+                                <div className="cmf-card" style={{ padding: 24, position: "sticky", top: 80 }}>
 
                                     {/* Avatar / icon */}
-                                    <div style={{ textAlign:"center", marginBottom:20 }}>
-                                        <div style={{ position:"relative", display:"inline-block" }}>
+                                    <div style={{ textAlign: "center", marginBottom: 20 }}>
+                                        <div style={{ position: "relative", display: "inline-block" }}>
                                             {config.imageField && imagePreview ? (
-                                                <img src={imagePreview} alt="preview" style={{ width:72, height:72, borderRadius:18, objectFit:"cover", border:"3px solid #fff", boxShadow:"0 4px 14px rgba(0,0,0,0.12)" }} />
+                                                <img src={imagePreview} alt="preview" style={{ width: 72, height: 72, borderRadius: 18, objectFit: "cover", border: "3px solid #fff", boxShadow: "0 4px 14px rgba(0,0,0,0.12)" }} />
                                             ) : (
-                                                <div style={{ width:72, height:72, borderRadius:18, margin:"0 auto", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 8px 24px rgba(217,30,24,0.28)" }}>
-                                                    <i className={`bx ${config.icon}`} style={{ fontSize:32, color:"#fff" }} />
+                                                <div style={{ width: 72, height: 72, borderRadius: 18, margin: "0 auto", background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 8px 24px rgba(217,30,24,0.28)" }}>
+                                                    <i className={`bx ${config.icon}`} style={{ fontSize: 32, color: "#fff" }} />
                                                 </div>
                                             )}
                                             {config.imageField && (
-                                                <label style={{ position:"absolute", bottom:-4, right:-4, width:26, height:26, borderRadius:"50%", background:"#fff", border:"1.5px solid #e9ecef", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", boxShadow:"0 2px 8px rgba(0,0,0,0.1)" }}>
-                                                    <i className="bx bxs-camera" style={{ fontSize:13, color:"#6b7280" }} />
+                                                <label style={{ position: "absolute", bottom: -4, right: -4, width: 26, height: 26, borderRadius: "50%", background: "#fff", border: "1.5px solid #e9ecef", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                                                    <i className="bx bxs-camera" style={{ fontSize: 13, color: "#6b7280" }} />
                                                     <input type="file" accept="image/*" className="d-none" onChange={handleImageChange} />
                                                 </label>
                                             )}
                                         </div>
-                                        <div style={{ fontWeight:800, fontSize:15.5, color:"#1A1A1A", lineHeight:1.3, marginTop:12 }}>{displayName}</div>
-                                        <div style={{ display:"inline-block", marginTop:6, background:"rgba(217,30,24,0.07)", color:"#D91E18", borderRadius:7, padding:"2px 10px", fontSize:11, fontWeight:700, letterSpacing:1 }}>{config.title}</div>
+                                        <div style={{ fontWeight: 800, fontSize: 15.5, color: "#1A1A1A", lineHeight: 1.3, marginTop: 12 }}>{displayName}</div>
+                                        <div style={{ display: "inline-block", marginTop: 6, background: "rgba(217,30,24,0.07)", color: "#D91E18", borderRadius: 7, padding: "2px 10px", fontSize: 11, fontWeight: 700, letterSpacing: 1 }}>{config.title}</div>
                                     </div>
 
-                                    <hr style={{ borderColor:"#f0f0f0", margin:"0 0 16px" }} />
+                                    <hr style={{ borderColor: "#f0f0f0", margin: "0 0 16px" }} />
 
                                     {/* Live preview stats */}
                                     {getSidebarStats().map(({ icon, val }, i) => (
-                                        <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:11 }}>
-                                            <div style={{ width:30, height:30, borderRadius:8, flexShrink:0, background:"#f8f9fa", display:"flex", alignItems:"center", justifyContent:"center" }}>
-                                                <i className={`bx ${icon}`} style={{ fontSize:14, color:"#6b7280" }} />
+                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 11 }}>
+                                            <div style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: "#f8f9fa", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <i className={`bx ${icon}`} style={{ fontSize: 14, color: "#6b7280" }} />
                                             </div>
-                                            <div style={{ fontSize:13, fontWeight:600, color:"#374151", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{val}</div>
+                                            <div style={{ fontSize: 13, fontWeight: 600, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{val}</div>
                                         </div>
                                     ))}
 
                                     {/* Tab completion */}
-                                    <hr style={{ borderColor:"#f0f0f0", margin:"14px 0 12px" }} />
-                                    <div style={{ fontSize:10, color:"#9ca3af", fontWeight:700, textTransform:"uppercase", letterSpacing:0.8, marginBottom:10 }}>Completion</div>
+                                    <hr style={{ borderColor: "#f0f0f0", margin: "14px 0 12px" }} />
+                                    <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10 }}>Completion</div>
                                     {visibleTabs.map((tab) => {
                                         const isDone = getTabDone(tab);
                                         return (
-                                            <div key={tab} onClick={() => switchTab(tab)} style={{ display:"flex", alignItems:"center", gap:9, marginBottom:9, cursor:"pointer", borderRadius:8, padding:"4px 6px", background: activeTab === tab ? "rgba(217,30,24,0.05)" : "transparent", transition:"background 0.15s" }}>
-                                                <div style={{ width:20, height:20, borderRadius:"50%", flexShrink:0, background: isDone ? "linear-gradient(135deg,#D91E18,#F97316)" : "#f0f0f0", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s", boxShadow: isDone ? "0 2px 6px rgba(217,30,24,0.28)" : "none" }}>
-                                                    {isDone ? <i className="bx bx-check" style={{ fontSize:11, color:"#fff" }} /> : <span style={{ width:6, height:6, borderRadius:"50%", background:"#d1d5db" }} />}
+                                            <div key={tab} onClick={() => switchTab(tab)} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9, cursor: "pointer", borderRadius: 8, padding: "4px 6px", background: activeTab === tab ? "rgba(217,30,24,0.05)" : "transparent", transition: "background 0.15s" }}>
+                                                <div style={{ width: 20, height: 20, borderRadius: "50%", flexShrink: 0, background: isDone ? "linear-gradient(135deg,#D91E18,#F97316)" : "#f0f0f0", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s", boxShadow: isDone ? "0 2px 6px rgba(217,30,24,0.28)" : "none" }}>
+                                                    {isDone ? <i className="bx bx-check" style={{ fontSize: 11, color: "#fff" }} /> : <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#d1d5db" }} />}
                                                 </div>
-                                                <span style={{ fontSize:12.5, fontWeight:600, color: activeTab === tab ? "#D91E18" : isDone ? "#374151" : "#9ca3af" }}>{formatLabel(tab)}</span>
+                                                <span style={{ fontSize: 12.5, fontWeight: 600, color: activeTab === tab ? "#D91E18" : isDone ? "#374151" : "#9ca3af" }}>{formatLabel(tab)}</span>
                                             </div>
                                         );
                                     })}
 
-                                    <hr style={{ borderColor:"#f0f0f0", margin:"14px 0" }} />
-
-                                    {/* Franchise invite */}
-                                    {module === "franchise" && mode === "edit" && isFranchiseCompleted && (
-                                        <button type="button"
-                                            style={{ width:"100%", padding:"11px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#F97316 0%,#ea580c 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor: resendTimer > 0 || form.inviteStatus === "ACTIVE" ? "not-allowed" : "pointer", opacity: resendTimer > 0 || form.inviteStatus === "ACTIVE" ? 0.7 : 1, marginBottom:8, display:"flex", alignItems:"center", justifyContent:"center", gap:8, fontFamily:"inherit" }}
-                                            onClick={handleSendInvitation}
-                                            disabled={resendTimer > 0 || form.inviteStatus === "ACTIVE"}>
-                                            <i className="bx bx-mail-send" style={{ fontSize:16 }} />
-                                            {form.inviteStatus === "ACTIVE" ? "ERP Activated" : resendTimer > 0 ? `Resend in ${formatTime(resendTimer)}` : form.inviteStatus === "INVITE_SENT" ? "Resend Invitation" : "Send Invitation"}
-                                        </button>
-                                    )}
+                                    <hr style={{ borderColor: "#f0f0f0", margin: "14px 0" }} />
 
                                     {/* Save */}
                                     <button type="submit" disabled={submitting}
-                                        style={{ width:"100%", padding:"12px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13.5, cursor: submitting ? "not-allowed" : "pointer", boxShadow:"0 4px 16px rgba(217,30,24,0.3)", display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:8, opacity: submitting ? 0.8 : 1, transition:"all 0.18s", fontFamily:"inherit" }}>
+                                        style={{ width: "100%", padding: "12px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(217,30,24,0.3)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8, opacity: submitting ? 0.8 : 1, transition: "all 0.18s", fontFamily: "inherit" }}>
                                         {submitting
-                                            ? <><span className="spinner-border spinner-border-sm" style={{ width:14, height:14, borderWidth:2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
-                                            : <><i className="bx bx-save" style={{ fontSize:16 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
+                                            ? <><span className="spinner-border spinner-border-sm" style={{ width: 14, height: 14, borderWidth: 2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
+                                            : <><i className="bx bx-save" style={{ fontSize: 16 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
                                     </button>
 
                                     {/* Cancel */}
                                     <Link to={config.listPath}
-                                        style={{ display:"block", padding:"11px", borderRadius:10, border:"1.5px solid #e9ecef", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:13, textDecoration:"none", textAlign:"center", transition:"all 0.15s" }}
-                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor="#d1d5db"; e.currentTarget.style.background="#f3f4f6"; }}
-                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor="#e9ecef"; e.currentTarget.style.background="#f9fafb"; }}>
+                                        style={{ display: "block", padding: "11px", borderRadius: 10, border: "1.5px solid #e9ecef", background: "#f9fafb", color: "#374151", fontWeight: 600, fontSize: 13, textDecoration: "none", textAlign: "center", transition: "all 0.15s" }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.background = "#f3f4f6"; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#e9ecef"; e.currentTarget.style.background = "#f9fafb"; }}>
                                         <i className="bx bx-arrow-back me-1" />Cancel
                                     </Link>
                                 </div>
@@ -3128,10 +3193,10 @@ const CommonMasterForm = ({
 
                             {/* ── Right: tabs + form ── */}
                             <div className="col-xl-9 col-lg-8 col-12">
-                                <div className="cmf-card" style={{ overflow:"hidden", padding:0 }}>
+                                <div className="cmf-card" style={{ overflow: "hidden", padding: 0 }}>
 
                                     {/* Tab navigation */}
-                                    <div style={{ display:"flex", gap:4, padding:"14px 20px", background:"#fafafa", borderBottom:"1px solid #f0f0f0", overflowX:"auto" }}>
+                                    <div style={{ display: "flex", gap: 4, padding: "14px 20px", background: "#fafafa", borderBottom: "1px solid #f0f0f0", overflowX: "auto" }}>
                                         {visibleTabs.map((tab) => {
                                             const active = activeTab === tab;
                                             const isDone = getTabDone(tab);
@@ -3139,10 +3204,11 @@ const CommonMasterForm = ({
                                                 <button key={tab} type="button" className="cmf-tab-btn"
                                                     onClick={() => switchTab(tab)}
                                                     style={{ background: active ? "linear-gradient(135deg,#D91E18 0%,#F97316 100%)" : isDone ? "rgba(217,30,24,0.06)" : "transparent", color: active ? "#fff" : isDone ? "#D91E18" : "#6b7280", boxShadow: active ? "0 4px 14px rgba(217,30,24,0.28)" : "none", transform: active ? "scale(1.02)" : "scale(1)" }}>
+                                                    {TAB_ICONS[tab] && <i className={`bx ${TAB_ICONS[tab]}`} style={{ fontSize: 16 }} />}
                                                     {formatLabel(tab)}
-                                                    {isDone && !active && (
-                                                        <span style={{ width:15, height:15, borderRadius:"50%", background:"linear-gradient(135deg,#D91E18,#F97316)", display:"inline-flex", alignItems:"center", justifyContent:"center", marginLeft:2 }}>
-                                                            <i className="bx bx-check" style={{ fontSize:10, color:"#fff" }} />
+                                                    {isDone && (
+                                                        <span style={{ width: 15, height: 15, borderRadius: "50%", background: active ? "rgba(255,255,255,0.2)" : "linear-gradient(135deg,#D91E18,#F97316)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginLeft: 4 }}>
+                                                            <i className="bx bx-check" style={{ fontSize: 10, color: active ? "#fff" : "#fff" }} />
                                                         </span>
                                                     )}
                                                 </button>
@@ -3151,18 +3217,18 @@ const CommonMasterForm = ({
                                     </div>
 
                                     {/* Animated form content */}
-                                    <div style={{ padding:"28px 28px 24px", opacity: tabVisible ? 1 : 0, transform: tabVisible ? "translateY(0)" : "translateY(6px)", transition:"opacity 0.16s ease, transform 0.16s ease" }}>
+                                    <div style={{ padding: "28px 28px 24px", opacity: tabVisible ? 1 : 0, transform: tabVisible ? "translateY(0)" : "translateY(6px)", transition: "opacity 0.16s ease, transform 0.16s ease" }}>
                                         <div className="row g-3">
                                             {config.fields[activeTab]
                                                 ?.filter((field) => !field.showIf || field.showIf(form))
                                                 .map((field) => (
-                                                    <div key={field.name} className={`col-md-${field.col || (["switch","checkbox"].includes(field.type) ? 12 : 6)}`}>
-                                                        {!["switch","checkbox","combo-builder","menu-price-preview"].includes(field.type) && (
+                                                    <div key={field.name} className={`col-md-${field.col || (["switch", "checkbox"].includes(field.type) ? 12 : 6)}`}>
+                                                        {!["switch", "checkbox", "combo-builder", "menu-price-preview"].includes(field.type) && (
                                                             <label className="cmf-label">
                                                                 {module === "package" && field.name === "royaltyValue"
                                                                     ? (form.royaltyType === "PERCENTAGE" ? "Royalty %" : "Royalty Amount")
                                                                     : field.label}
-                                                                {field.required && <span style={{ color:"#D91E18", marginLeft:3 }}>*</span>}
+                                                                {field.required && <span style={{ color: "#D91E18", marginLeft: 3 }}>*</span>}
                                                             </label>
                                                         )}
                                                         {renderField(field)}
@@ -3171,25 +3237,25 @@ const CommonMasterForm = ({
                                         </div>
 
                                         {/* Bottom prev / next */}
-                                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:28, paddingTop:20, borderTop:"1px solid #f0f0f0" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 28, paddingTop: 20, borderTop: "1px solid #f0f0f0" }}>
                                             <button type="button"
                                                 onClick={() => currentTabIndex > 0 && switchTab(visibleTabs[currentTabIndex - 1])}
                                                 disabled={currentTabIndex === 0}
-                                                style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 20px", borderRadius:9, border:"1.5px solid #e9ecef", background:"#f9fafb", color:"#374151", fontWeight:600, fontSize:13, cursor: currentTabIndex === 0 ? "not-allowed" : "pointer", opacity: currentTabIndex === 0 ? 0.35 : 1, transition:"all 0.15s", fontFamily:"inherit" }}>
-                                                <i className="bx bx-chevron-left" style={{ fontSize:16 }} />Previous
+                                                style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 9, border: "1.5px solid #e9ecef", background: "#f9fafb", color: "#374151", fontWeight: 600, fontSize: 13, cursor: currentTabIndex === 0 ? "not-allowed" : "pointer", opacity: currentTabIndex === 0 ? 0.35 : 1, transition: "all 0.15s", fontFamily: "inherit" }}>
+                                                <i className="bx bx-chevron-left" style={{ fontSize: 16 }} />Previous
                                             </button>
 
                                             {currentTabIndex < visibleTabs.length - 1 ? (
                                                 <button type="button" onClick={() => switchTab(visibleTabs[currentTabIndex + 1])}
-                                                    style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 24px", borderRadius:9, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer", boxShadow:"0 3px 12px rgba(217,30,24,0.25)", transition:"all 0.18s", fontFamily:"inherit" }}>
-                                                    Next<i className="bx bx-chevron-right" style={{ fontSize:16 }} />
+                                                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 24px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 3px 12px rgba(217,30,24,0.25)", transition: "all 0.18s", fontFamily: "inherit" }}>
+                                                    Next<i className="bx bx-chevron-right" style={{ fontSize: 16 }} />
                                                 </button>
                                             ) : (
                                                 <button type="button" onClick={handleSubmit} disabled={submitting}
-                                                    style={{ display:"flex", alignItems:"center", gap:6, padding:"10px 24px", borderRadius:9, border:"none", background:"linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color:"#fff", fontWeight:700, fontSize:13, cursor: submitting ? "not-allowed" : "pointer", boxShadow:"0 3px 12px rgba(217,30,24,0.25)", opacity: submitting ? 0.8 : 1, transition:"all 0.18s", fontFamily:"inherit" }}>
+                                                    style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 24px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#D91E18 0%,#F97316 100%)", color: "#fff", fontWeight: 700, fontSize: 13, cursor: submitting ? "not-allowed" : "pointer", boxShadow: "0 3px 12px rgba(217,30,24,0.25)", opacity: submitting ? 0.8 : 1, transition: "all 0.18s", fontFamily: "inherit" }}>
                                                     {submitting
-                                                        ? <><span className="spinner-border spinner-border-sm" style={{ width:13, height:13, borderWidth:2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
-                                                        : <><i className="bx bx-save" style={{ fontSize:15 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
+                                                        ? <><span className="spinner-border spinner-border-sm" style={{ width: 13, height: 13, borderWidth: 2 }} />{mode === "edit" ? "Updating…" : "Saving…"}</>
+                                                        : <><i className="bx bx-save" style={{ fontSize: 15 }} />{mode === "edit" ? "Update Record" : "Save Record"}</>}
                                                 </button>
                                             )}
                                         </div>

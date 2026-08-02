@@ -58,6 +58,7 @@ app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
 app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
 app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"));
 app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
+app.use("/api/vendors", require("./routes/masterRoutes/vendorRoutes"));
 
 // CRM
 app.use("/api/enquiry", require("./routes/enquiryRoutes"));
@@ -83,8 +84,9 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 // Customer
 app.use("/api/customers", require("./routes/customerRoutes"));
 
-// Serve React frontend
+// Serve static files
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/{*path}", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });

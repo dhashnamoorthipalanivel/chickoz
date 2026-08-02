@@ -1,7 +1,7 @@
-const MasalaRequest    = require("../models/masalaRequestModel");
-const Franchise        = require("../models/masterModels/franchiseModel");
-const MasalaItem       = require("../models/masterModels/masalaItemsModel");
-const Notification     = require("../models/notificationModel");
+const MasalaRequest = require("../models/masalaRequestModel");
+const Franchise = require("../models/masterModels/franchiseModel");
+const MasalaItem = require("../models/masterModels/masalaItemsModel");
+const Notification = require("../models/notificationModel");
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -183,7 +183,7 @@ exports.createMasalaRequest = async (req, res) => {
         message: `${franchiseData.franchiseName} submitted a new masala request (${requestId})`,
         data: { requestId: newRequest._id, requestCode: requestId, franchiseName: franchiseData.franchiseName },
       });
-    } catch (_) {}
+    } catch (_) { }
 
     return res.status(201).json({
       success: true,
@@ -433,6 +433,10 @@ exports.updateMasalaRequestStatus = async (req, res) => {
     // ======================================================
     request.status = status;
 
+    if (req.file) {
+      request.deliveryDocument = req.file.filename;
+    }
+
     // ======================================================
     // STATUS HISTORY
     // ======================================================
@@ -463,7 +467,7 @@ exports.updateMasalaRequestStatus = async (req, res) => {
     }
 
     if (status === "DISPATCHED") {
-      request.transportName  = transportName  || "";
+      request.transportName = transportName || "";
       request.trackingNumber = trackingNumber || "";
       request.dispatchRemarks = dispatchRemarks || "";
       request.dispatchedDate = new Date();
@@ -495,7 +499,7 @@ exports.updateMasalaRequestStatus = async (req, res) => {
               });
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }
     }
 

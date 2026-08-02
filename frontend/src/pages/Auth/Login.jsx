@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { loginUser } from "../../api/authAPI";
+import { isTokenExpired } from "../../utils/sessionManager";
 
 /* ─── Injected CSS ──────────────────────────────────────────────────── */
 const LOGIN_CSS = `
@@ -168,6 +169,13 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token && !isTokenExpired(token)) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
+
+  useEffect(() => {
     const el = document.createElement("style");
     el.id = "ckz-login-style";
     el.textContent = LOGIN_CSS;
@@ -192,7 +200,7 @@ const Login = () => {
       localStorage.setItem("token", res.token);
       localStorage.setItem("user", JSON.stringify(res.user));
       toast.success(res.message || "Login successful!");
-      setTimeout(() => navigate("/dashboard"), 1200);
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1200);
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {

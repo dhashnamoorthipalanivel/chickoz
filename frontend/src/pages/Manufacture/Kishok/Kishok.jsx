@@ -10,12 +10,12 @@ const fmtDate = (d) =>
 
 const statusPill = (status) => {
   const map = {
-    PENDING:     { color: "#6b7280", bg: "rgba(107,114,128,0.09)", border: "rgba(107,114,128,0.22)" },
-    ASSIGNED:    { color: "#2563eb", bg: "rgba(37,99,235,0.08)",   border: "rgba(37,99,235,0.22)"   },
-    IN_PROGRESS: { color: "#F97316", bg: "rgba(249,115,22,0.09)",  border: "rgba(249,115,22,0.25)"  },
-    HOLD:        { color: "#d97706", bg: "rgba(217,119,6,0.08)",   border: "rgba(217,119,6,0.22)"   },
-    CANCELLED:   { color: "#D91E18", bg: "rgba(217,30,24,0.08)",   border: "rgba(217,30,24,0.18)"   },
-    COMPLETED:   { color: "#059669", bg: "rgba(5,150,105,0.08)",   border: "rgba(5,150,105,0.2)"    },
+    PENDING: { color: "#6b7280", bg: "rgba(107,114,128,0.09)", border: "rgba(107,114,128,0.22)" },
+    ASSIGNED: { color: "#2563eb", bg: "rgba(37,99,235,0.08)", border: "rgba(37,99,235,0.22)" },
+    IN_PROGRESS: { color: "#F97316", bg: "rgba(249,115,22,0.09)", border: "rgba(249,115,22,0.25)" },
+    HOLD: { color: "#d97706", bg: "rgba(217,119,6,0.08)", border: "rgba(217,119,6,0.22)" },
+    CANCELLED: { color: "#D91E18", bg: "rgba(217,30,24,0.08)", border: "rgba(217,30,24,0.18)" },
+    COMPLETED: { color: "#059669", bg: "rgba(5,150,105,0.08)", border: "rgba(5,150,105,0.2)" },
   };
   const s = map[status] || { color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb" };
   return (
@@ -42,13 +42,13 @@ const statusColor = (s) => ({
 })[s] || "#6b7280";
 
 const downloadReceipt = (row) => {
-  const fmt  = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+  const fmt = (d) => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
   const fmtL = (v) => v?.toLowerCase().replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) || "—";
-  const paid    = (row.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
-  const total   = Number(row.cartAmount || 0);
+  const paid = (row.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
+  const total = Number(row.cartAmount || 0);
   const pending = Math.max(total - paid, 0);
-  const pct     = total > 0 ? Math.round((paid / total) * 100) : 0;
-  const sColor  = statusColor(row.manufactureStatus);
+  const pct = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const sColor = statusColor(row.manufactureStatus);
 
   const payRows = (row.payments || []).map((p, i) => `
     <tr>
@@ -136,7 +136,6 @@ const downloadReceipt = (row) => {
       <div class="grid">
         <div class="field"><label>Package</label><div class="val">${row.packageName || "—"}</div></div>
         <div class="field"><label>Cart Size</label><div class="val">${row.cartSize || "—"}</div></div>
-        <div class="field"><label>Branding Type</label><div class="val">${row.brandingType || "—"}</div></div>
         <div class="field"><label>Accessories</label><div class="val">${row.accessories || "—"}</div></div>
         <div class="field"><label>Required Date</label><div class="val">${fmt(row.requiredDate)}</div></div>
         <div class="field"><label>Priority</label><div class="val">${row.priority || "—"}</div></div>
@@ -159,11 +158,11 @@ const downloadReceipt = (row) => {
     ${total > 0 ? `
     <div class="section">
       <div class="section-title">Payment Summary</div>
-      <div class="pay-bar-wrap"><div class="pay-bar ${pct===100?"full":""}" style="width:${pct}%"></div></div>
+      <div class="pay-bar-wrap"><div class="pay-bar ${pct === 100 ? "full" : ""}" style="width:${pct}%"></div></div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:12px;text-align:right">${pct}% paid</div>
       <div class="amt-row"><span class="lbl">Cart Amount</span><span class="val" style="color:#374151">₹${total.toLocaleString()}</span></div>
       <div class="amt-row"><span class="lbl">Paid Amount</span><span class="val" style="color:#059669">₹${paid.toLocaleString()}</span></div>
-      <div class="amt-row"><span class="lbl">Pending Amount</span><span class="val" style="color:${pending>0?"#D91E18":"#059669"}">₹${pending.toLocaleString()}</span></div>
+      <div class="amt-row"><span class="lbl">Pending Amount</span><span class="val" style="color:${pending > 0 ? "#D91E18" : "#059669"}">₹${pending.toLocaleString()}</span></div>
       ${row.payLater && pending > 0 ? `<div class="payl-note">⚠ Pay Later enabled — ₹${pending.toLocaleString()} to be collected from customer.</div>` : ""}
     </div>` : ""}
 
@@ -197,10 +196,10 @@ const downloadReceipt = (row) => {
 };
 
 const Kiosk = () => {
-  const [search,       setSearch]       = useState("");
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [page,         setPage]         = useState(1);
-  const [perPage,      setPerPage]      = useState(10);
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   const { kishoks, fetchKishoks } = useKishokStore();
 
@@ -208,15 +207,15 @@ const Kiosk = () => {
 
   const filtered = kishoks.filter(item =>
     (item.referenceId?.toLowerCase().includes(search.toLowerCase()) ||
-     item.customerName?.toLowerCase().includes(search.toLowerCase()) ||
-     item.phone?.includes(search) ||
-     item.place?.toLowerCase().includes(search.toLowerCase()) ||
-     item.vendorName?.toLowerCase().includes(search.toLowerCase())) &&
+      item.customerName?.toLowerCase().includes(search.toLowerCase()) ||
+      item.phone?.includes(search) ||
+      item.place?.toLowerCase().includes(search.toLowerCase()) ||
+      item.vendorName?.toLowerCase().includes(search.toLowerCase())) &&
     (statusFilter === "ALL" || item.manufactureStatus === statusFilter)
   );
 
   const totalPages = Math.ceil(filtered.length / perPage);
-  const paged      = filtered.slice((page - 1) * perPage, page * perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   return (
     <React.Fragment>
@@ -322,7 +321,7 @@ const Kiosk = () => {
                           <th>Vendor</th>
                           <th>Status</th>
                           <th>Created</th>
-                          <th className="text-center">Actions</th>
+                          <th className="text-center" style={{ position: "sticky", right: 0, zIndex: 1, background: "#fff", boxShadow: "-1px 0 0 #eff2f7" }}>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -355,14 +354,14 @@ const Kiosk = () => {
                             <td>
                               {row.vendorName
                                 ? <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11.5, fontWeight: 700, color: "#2563eb", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)", whiteSpace: "nowrap" }}>
-                                    <i className="bx bx-user" style={{ fontSize: 12 }} />{row.vendorName}
-                                  </span>
+                                  <i className="bx bx-user" style={{ fontSize: 12 }} />{row.vendorName}
+                                </span>
                                 : <span style={{ color: "#c4cdd6", fontSize: 12 }}>—</span>
                               }
                             </td>
                             <td>{statusPill(row.manufactureStatus)}</td>
                             <td><span style={{ color: "#6b7280", fontSize: 12.5 }}>{fmtDate(row.createdAt)}</span></td>
-                            <td>
+                            <td style={{ position: "sticky", right: 0, zIndex: 1, background: "#fff", boxShadow: "-1px 0 0 #eff2f7" }}>
                               <div className="d-flex justify-content-center gap-2">
                                 <Link
                                   to={`/manufacture-kishok/view/${row._id}`}

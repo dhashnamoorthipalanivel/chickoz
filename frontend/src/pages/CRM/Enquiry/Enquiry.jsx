@@ -311,13 +311,14 @@ const Enquiry = () => {
                           <th>Name</th>
                           <th>Phone</th>
                           <th>Place</th>
+                          <th>State</th>
                           <th>Interested Package</th>
                           <th>Lead Source</th>
                           <th>Status</th>
                           <th>Follow-up Date</th>
                           <th>Assigned To</th>
                           <th>Created Date</th>
-                          <th className="text-center">Actions</th>
+                          <th className="text-center" style={{ position: "sticky", right: 0, zIndex: 2, background: "#f8f9fa", boxShadow: "-1px 0 0 #eff2f7" }}>Actions</th>
                         </tr>
                       </thead>
 
@@ -337,6 +338,7 @@ const Enquiry = () => {
                               <td>{row.name}</td>
                               <td>{row.phone}</td>
                               <td>{row.place}</td>
+                              <td>{row.state || "-"}</td>
                               <td>{row.interestedPackage?.packageName}</td>
                               <td>{leadSourceBadge(row.leadSource?.leadSourceName)}</td>
                               <td>{statusBadge(row.status)}</td>
@@ -348,7 +350,7 @@ const Enquiry = () => {
                               <td>{row.assignedTo}</td>
                               <td>{new Date(row.createdAt).toLocaleDateString()}</td>
 
-                              <td>
+                              <td style={{ position: "sticky", right: 0, zIndex: 1, background: "#fff", boxShadow: "-1px 0 0 #eff2f7" }}>
                                 <div className="d-flex justify-content-center gap-2">
                                   <Link
                                     to={`/crm-enquiry/edit/${row._id}`}
@@ -357,6 +359,16 @@ const Enquiry = () => {
                                     title="Edit"
                                   >
                                     <i className="bx bx-edit-alt"></i>
+                                  </Link>
+
+                                  <Link
+                                    to={`/crm-enquiry/edit/${row._id}`}
+                                    state={{ rowData: row, activeTab: "followup" }}
+                                    className="ckz-action-btn ckz-action-view"
+                                    title="Follow Up"
+                                    style={{ background: "rgba(16, 185, 129, 0.1)", color: "#10b981", border: "1px solid rgba(16, 185, 129, 0.2)" }}
+                                  >
+                                    <i className="bx bx-calendar-check"></i>
                                   </Link>
 
                                   {row.status !== "CONVERTED_TO_LEAD" && (

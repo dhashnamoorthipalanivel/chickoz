@@ -16,7 +16,7 @@ exports.getLeads = async (req, res) => {
     const data = await Lead.find({
       isDeleted: false,
     })
-      .populate("interestedPackage")
+      .populate({ path: "interestedPackage", populate: { path: "packageMaterials" } })
       .populate("leadSource", "leadSourceName")
       .sort({ createdAt: -1 });
 
@@ -36,7 +36,7 @@ exports.getLeads = async (req, res) => {
 exports.getLeadById = async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id)
-      .populate("interestedPackage")
+      .populate({ path: "interestedPackage", populate: { path: "packageMaterials" } })
       .populate("leadSource", "leadSourceName");
 
     if (!lead) {
@@ -98,6 +98,7 @@ exports.updateLead = async (req, res) => {
         phone: lead.phone,
         email: lead.email,
         place: lead.place,
+        state: lead.state,
         address: lead.address,
         assignedTo: lead.assignedTo,
 
@@ -124,82 +125,97 @@ exports.updateLead = async (req, res) => {
 
 exports.createFranchise = async (req, res) => {
   try {
-    const lead = await Lead.findById(req.params.id).populate(
-      "interestedPackage",
-    );
+    const lead = await Lead.findById(req.params.id).populate("interestedPackage");
 
     if (!lead) {
-      return res.status(404).json({
-        message: "Lead not found",
-      });
+      return res.status(404).json({ message: "Lead not found" });
     }
 
-    if (lead.isFranchiseCreated) {
-      return res.status(400).json({
-        message: "Franchise already created",
-      });
-    }
+    let franchise = await Franchise.findOne({ referenceId: lead.referenceId, isDeleted: false });
+    let alreadyExisted = false;
 
-    const franchises = await Franchise.find({}, "franchiseId");
+    const siteVisit = lead?.stages?.SITE_VISIT?.data || {};
 
-    let maxNumber = 0;
-
-    franchises.forEach((f) => {
-      const num = parseInt(f.franchiseId.replace("FR", ""));
-
-      if (num > maxNumber) {
-        maxNumber = num;
+    if (franchise) {
+      alreadyExisted = true;
+      if (siteVisit.lat && siteVisit.lng) {
+        franchise.latitude = siteVisit.lat;
+        franchise.longitude = siteVisit.lng;
+        if (siteVisit.location) franchise.address = siteVisit.location;
+        await franchise.save();
       }
+    } else {
+      const franchises = await Franchise.find({}, "franchiseId");
+      let maxNumber = 0;
+      franchises.forEach((f) => {
+        const num = parseInt(f.franchiseId.replace("FR", ""));
+        if (num > maxNumber) {
+          maxNumber = num;
+        }
+      });
+      const franchiseId = `FR${String(maxNumber + 1).padStart(3, "0")}`;
+
+      franchise = await Franchise.create({
+        franchiseId,
+        referenceId: lead.referenceId,
+        franchiseName: lead.name || "",
+        ownerName: lead.name,
+        manager: "",
+        contact: lead.phone,
+        email: lead.email,
+        packageName: lead?.interestedPackage?.packageName || "",
+        status: "ACTIVE",
+        address: siteVisit.location || lead.address || "",
+        location: lead.place || siteVisit.location || "",
+        latitude: siteVisit.lat || null,
+        longitude: siteVisit.lng || null,
+        state: lead.state || "",
+        country: "India",
+        postCode: lead.postCode,
+        password: "Chickoz@123",
+        inviteStatus: "ACTIVE",
+        passwordSetupAt: new Date(),
+      });
+    }
+
+    const User = require("../models/user");
+    let user = await User.findOne({
+      $or: [
+        { franchiseId: franchise._id },
+        { email: lead.email },
+        { phone: lead.phone }
+      ]
     });
 
-    const franchiseId = `FR${String(maxNumber + 1).padStart(3, "0")}`;
-
-    await Franchise.create({
-      franchiseId,
-
-      referenceId: lead.referenceId,
-
-      franchiseName: "",
-
-      ownerName: lead.name,
-
-      manager: "",
-
-      contact: lead.phone,
-
-      email: lead.email,
-
-      packageName: lead?.interestedPackage?.packageName || "",
-
-      status: "ACTIVE",
-
-      address: lead.address,
-
-      location: lead.place,
-
-      state: "",
-
-      country: "India",
-
-      postCode: lead.postCode,
-    });
+    if (!user) {
+      await User.create({
+        firstName: lead.name,
+        email: lead.email,
+        phone: lead.phone,
+        password: "Chickoz@123",
+        role: "franchise",
+        franchiseId: franchise._id,
+        isActive: true,
+        isEmailVerified: true
+      });
+    } else {
+      user.franchiseId = franchise._id;
+      user.role = "franchise";
+      await user.save();
+    }
 
     lead.isFranchiseCreated = true;
-
     await lead.save();
 
     await Kishok.findOneAndUpdate(
-      {
-        referenceId: lead.referenceId,
-      },
-
-      {
-        isFranchiseCreated: true,
-      },
+      { referenceId: lead.referenceId },
+      { isFranchiseCreated: true }
     );
 
     res.status(200).json({
-      message: "Franchise created successfully",
+      message: alreadyExisted ? "Franchise already created for this lead" : "Franchise created successfully",
+      franchise,
+      alreadyExisted,
     });
   } catch (error) {
     console.log(error.message);
