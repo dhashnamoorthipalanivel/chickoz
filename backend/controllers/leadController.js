@@ -187,6 +187,7 @@ exports.createFranchise = async (req, res) => {
       ]
     });
 
+<<<<<<< HEAD
     if (!user) {
       await User.create({
         firstName: lead.name,
@@ -203,6 +204,57 @@ exports.createFranchise = async (req, res) => {
       user.role = "franchise";
       await user.save();
     }
+=======
+    const franchiseId = `FR${String(maxNumber + 1).padStart(3, "0")}`;
+
+    const newFranchise = await Franchise.create({
+      franchiseId,
+
+      referenceId: lead.referenceId,
+
+      franchiseName: "",
+
+      ownerName: lead.name,
+
+      manager: "",
+
+      contact: lead.phone,
+
+      email: lead.email,
+
+      packageName: lead?.interestedPackage?.packageName || "",
+
+      status: "ACTIVE",
+
+      address: lead.address,
+
+      location: lead.place,
+
+      state: lead.state || "",
+
+      country: "India",
+
+      postCode: lead.postCode,
+
+      password: "Chickoz@123",
+
+      inviteStatus: "ACTIVE",
+
+      passwordSetupAt: new Date(),
+    });
+
+    const User = require("../models/user");
+    await User.create({
+      firstName: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      password: "Chickoz@123",
+      role: "franchise",
+      franchiseId: newFranchise._id,
+      isActive: true,
+      isEmailVerified: true
+    });
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
 
     lead.isFranchiseCreated = true;
     await lead.save();

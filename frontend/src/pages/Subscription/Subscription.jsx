@@ -17,9 +17,12 @@ const daysLeft = (end) => {
 /* ─── status helpers ─────────────────────────────────────────────── */
 const statusPill = (sub) => {
   if (!sub) return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#9ca3af", background: "#f3f4f6", border: "1px solid #e5e7eb" }}>No Subscription</span>;
+<<<<<<< HEAD
   if (sub.status === "UPCOMING" || (sub.startDate && new Date(sub.startDate) > new Date())) {
     return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#2563eb", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}>Upcoming</span>;
   }
+=======
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
   const cfg = {
     ACTIVE: { c: "#059669", bg: "rgba(5,150,105,0.08)", b: "rgba(5,150,105,0.2)", label: "Active" },
     EXPIRED: { c: "#D91E18", bg: "rgba(217,30,24,0.08)", b: "rgba(217,30,24,0.2)", label: "Expired" },
@@ -30,12 +33,16 @@ const statusPill = (sub) => {
 };
 
 const daysLeftPill = (sub) => {
+<<<<<<< HEAD
   if (!sub) return <span style={{ color: "#9ca3af" }}>—</span>;
   if (sub.startDate && new Date(sub.startDate) > new Date()) {
     const days = Math.ceil((new Date(sub.startDate) - new Date()) / 86400000);
     return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, color: "#2563eb", background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}>Starts in {days}d</span>;
   }
   if (sub.status !== "ACTIVE") return <span style={{ color: "#9ca3af" }}>—</span>;
+=======
+  if (!sub || sub.status !== "ACTIVE") return <span style={{ color: "#9ca3af" }}>—</span>;
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
   const d = daysLeft(sub.endDate);
   if (d <= 0) return <span style={{ color: "#D91E18", fontWeight: 700 }}>Expired</span>;
   if (d <= 7) return <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 800, color: "#D91E18", background: "rgba(217,30,24,0.08)", border: "1px solid rgba(217,30,24,0.2)" }}>{d}d left ⚠</span>;
@@ -315,7 +322,11 @@ const Subscription = () => {
                   ) : paged.map((row, i) => {
                     const f = row.franchise;
                     const s = row.subscription;
+<<<<<<< HEAD
                     const canExtend = s && (s.status === "ACTIVE" || s.status === "UPCOMING" || s.status === "EXPIRED");
+=======
+                    const canExtend = s && (s.status === "ACTIVE" || s.status === "EXPIRED");
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
                     return (
                       <tr key={f._id}>
                         <td style={{ padding: "14px 16px", color: "#9ca3af", fontSize: 13 }}>{(page - 1) * perPage + i + 1}</td>
@@ -360,7 +371,11 @@ const Subscription = () => {
                               </button>
                             )}
                             {/* Extend */}
+<<<<<<< HEAD
                             {canExtend && (s?.status === "ACTIVE" || s?.status === "UPCOMING") && (
+=======
+                            {canExtend && s.status === "ACTIVE" && (
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
                               <button title="Extend Subscription"
                                 onClick={() => { setExtendItem(row); setXForm({ mode: "plan", plan: "MONTHLY", customDays: "", amount: "", notes: "" }); }}
                                 style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "5px 12px", borderRadius: 8, border: "none", background: "linear-gradient(135deg,#059669,#34d399)", color: "#fff", fontWeight: 700, fontSize: 12, cursor: "pointer", boxShadow: "0 2px 8px rgba(5,150,105,0.3)" }}>
@@ -368,7 +383,11 @@ const Subscription = () => {
                               </button>
                             )}
                             {/* Suspend */}
+<<<<<<< HEAD
                             {(s?.status === "ACTIVE" || s?.status === "UPCOMING") && (
+=======
+                            {s?.status === "ACTIVE" && (
+>>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
                               <button title="Suspend"
                                 onClick={() => setSuspendItem(row)}
                                 style={{ width: 32, height: 32, borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#6b7280" }}
