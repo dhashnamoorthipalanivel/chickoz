@@ -137,11 +137,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
               <div className="col-md-6">
                 <FieldLabel required>Vendor Name</FieldLabel>
-<<<<<<< HEAD
                 <select name="vendorName" value={formData.vendorName || ""} className="form-select" onChange={handleChange} disabled={isLocked}>
-=======
-                <select name="vendorName" value={formData.vendorName || ""} className="form-select" onChange={handleChange}>
->>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
                   <option value="">Select Vendor...</option>
                   {(vendors || []).filter(v => v.status === "ACTIVE").map(v => (
                     <option key={v._id} value={v.name}>{v.name} ({v.vendorCode || 'N/A'})</option>
@@ -151,11 +147,7 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
               <div className="col-md-6">
                 <FieldLabel>Vendor Phone</FieldLabel>
-<<<<<<< HEAD
                 <input type="text" name="vendorPhone" value={formData.vendorPhone || ""} className="form-control" onChange={handleChange} placeholder="Vendor phone (auto-fills)" disabled={isLocked} />
-=======
-                <input type="text" name="vendorPhone" value={formData.vendorPhone || ""} className="form-control" onChange={handleChange} placeholder="Vendor phone (auto-fills)" />
->>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
               </div>
 
               <div className="col-md-6">

@@ -212,10 +212,6 @@ const SiteVisitMap = ({ stageData, onSelect, isLocked }) => {
   const { franchises, fetchFranchises } = useFranchiseStore();
   const [franchiseCoords, setFranchiseCoords] = useState([]);
   const [checking, setChecking] = useState(false);
-<<<<<<< HEAD
-=======
-  const geocodedRef = useRef(false);
->>>>>>> 87c7535192b950fe0ac7f77fc27580e893c2cdd5
 
   useEffect(() => { fetchFranchises(); }, []);
 
