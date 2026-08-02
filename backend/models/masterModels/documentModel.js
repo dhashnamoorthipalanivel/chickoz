@@ -31,6 +31,11 @@ const documentSchema = new mongoose.Schema(
     default: false
   },
 
+  validationYear: {
+    type: Number,
+    default: null
+  },
+
   status: {
     type: String,
     enum: ["ACTIVE", "INACTIVE"],

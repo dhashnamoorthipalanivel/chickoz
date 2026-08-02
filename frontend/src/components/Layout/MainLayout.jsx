@@ -12,12 +12,14 @@ import { useTheme } from '../../context/ThemeContext';
 import SquarePatternBg from '../SquarePatternBg';
 import SubscriptionExpired from '../../pages/Subscription/SubscriptionExpired';
 import { useSubscriptionStore } from '../../store/store';
+import { useAutoLogout } from '../../utils/sessionManager';
 
 const MainLayout = ({ children }) => {
+  useAutoLogout();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Compute synchronously so admin users never see the blank flash
-  const _user       = JSON.parse(localStorage.getItem("user") || "{}");
+  const _user = JSON.parse(localStorage.getItem("user") || "{}");
   const _isFranchise = _user?.role === "user" || _user?.role === "franchise";
 
   const [subExpired, setSubExpired] = useState(false);
@@ -37,16 +39,16 @@ const MainLayout = ({ children }) => {
       })
       .catch(() => setSubChecked(true));
   }, []);
-  const { 
-    layout: contextLayout, 
-    layoutMode, 
-    layoutWidth, 
-    layoutPosition, 
-    topbarColor, 
-    sidebarSize, 
-    sidebarColor, 
+  const {
+    layout: contextLayout,
+    layoutMode,
+    layoutWidth,
+    layoutPosition,
+    topbarColor,
+    sidebarSize,
+    sidebarColor,
     direction,
-    showRightSidebar 
+    showRightSidebar
   } = useTheme();
 
   // Determine layout: check if route forces horizontal, otherwise use context
@@ -69,10 +71,10 @@ const MainLayout = ({ children }) => {
     document.body.setAttribute('data-topbar', topbarColor);
     document.body.setAttribute('data-sidebar', sidebarColor);
     document.body.setAttribute('data-sidebar-size', sidebarSize);
-    
+
     // Direction (LTR/RTL)
     document.documentElement.setAttribute('dir', direction);
-    
+
     // Right sidebar open class
     if (showRightSidebar) {
       document.body.classList.add('right-bar-enabled');
@@ -102,7 +104,7 @@ const MainLayout = ({ children }) => {
 
   /* Show nothing until subscription check completes (avoid flash) */
   if (!subChecked) return null;
-  if (subExpired)  return <SubscriptionExpired />;
+  if (subExpired) return <SubscriptionExpired />;
 
   return (
     <div id="layout-wrapper">
@@ -116,7 +118,7 @@ const MainLayout = ({ children }) => {
       ) : (
         <HeaderHorizontal />
       )}
-      
+
       <div className="main-content">
         <div className="page-content">
           <div className="container-fluid">

@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { updateLead } from "../../../api/leadApi";
+import { usePackageStore } from "../../../store/store";
 
 const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
 
   const statusOnlyLock =
-  [
-    "HOLD",
-    "RETURN",
-    "CANCELLED",
-  ].includes(
-    formData?.leadStatus
-  );
+    [
+      "HOLD",
+      "RETURN",
+      "CANCELLED",
+    ].includes(
+      formData?.leadStatus
+    );
+
+  const { packages, fetchPackages } = usePackageStore();
 
   const [localData, setLocalData] = useState({});
   const [isChanged, setIsChanged] = useState(false);
+
+  useEffect(() => { fetchPackages(); }, []);
 
   useEffect(() => {
     setLocalData(formData || {});
@@ -24,7 +29,13 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    const updated = { ...localData, [name]: value };
+    let updated;
+    if (name === "interestedPackage") {
+      const selectedPkg = packages.find(p => p._id === value);
+      updated = { ...localData, interestedPackage: selectedPkg || value };
+    } else {
+      updated = { ...localData, [name]: value };
+    }
     setLocalData(updated);
 
     const changed =
@@ -64,7 +75,7 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
     };
 
   return (
-    <div className="card">
+    <div className="card" style={{ animation: "none", position: "relative", zIndex: 0 }}>
       <div className="card-body">
 
         <h5 className="mb-3">Enquiry Info</h5>
@@ -78,9 +89,9 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               className="form-control"
               value={localData?.referenceId || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
               disabled
             />
           </div>
@@ -95,9 +106,9 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               name="name"
               value={localData?.name || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
               onChange={handleChange}
             />
           </div>
@@ -112,9 +123,9 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               name="phone"
               value={localData?.phone || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
               onChange={handleChange}
             />
           </div>
@@ -129,9 +140,25 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               name="place"
               value={localData?.place || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="col-12">
+            <label className="form-label">
+              State <span className="text-danger">*</span>
+            </label>
+            <input
+              className="form-control"
+              name="state"
+              value={localData?.state || ""}
+              disabled={
+                isLocked ||
+                statusOnlyLock
+              }
               onChange={handleChange}
             />
           </div>
@@ -145,9 +172,9 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               name="postCode"
               value={localData?.postCode || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
               onChange={handleChange}
             />
           </div>
@@ -157,19 +184,18 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
             <label className="form-label">
               Interested Package <span className="text-danger">*</span>
             </label>
-            <input
-              className="form-control"
+            <select
+              className="form-select"
               name="interestedPackage"
-              value={
-                localData?.interestedPackage
-                  ?.packageName || ""
-              }
-              disabled={
-  isLocked ||
-  statusOnlyLock
-}
+              value={localData?.interestedPackage?._id || localData?.interestedPackage || ""}
+              disabled={isLocked || statusOnlyLock}
               onChange={handleChange}
-            />
+            >
+              <option value="">Select Package</option>
+              {packages.map(p => (
+                <option key={p._id} value={p._id}>{p.packageName}</option>
+              ))}
+            </select>
           </div>
 
           {/* Assigned To */}
@@ -182,9 +208,9 @@ const LeadInfoFrom = ({ formData, setFormData, isLocked }) => {
               name="assignedTo"
               value={localData?.assignedTo || ""}
               disabled={
-  isLocked ||
-  statusOnlyLock
-}
+                isLocked ||
+                statusOnlyLock
+              }
               onChange={handleChange}
             />
           </div>

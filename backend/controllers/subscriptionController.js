@@ -1,12 +1,12 @@
 const Subscription = require("../models/subscriptionModel");
-const Franchise    = require("../models/masterModels/franchiseModel");
+const Franchise = require("../models/masterModels/franchiseModel");
 
 const PLAN_DAYS = {
-  TRIAL:       14,
-  MONTHLY:     30,
-  QUARTERLY:   90,
+  TRIAL: 14,
+  MONTHLY: 30,
+  QUARTERLY: 90,
   HALF_YEARLY: 180,
-  YEARLY:      365,
+  YEARLY: 365,
 };
 
 const genReceiptNo = () =>
@@ -27,13 +27,13 @@ exports.getAll = async (req, res) => {
     await autoExpire();
 
     const franchises = await Franchise.find({ isDeleted: false }).sort({ createdAt: -1 });
-    const subs       = await Subscription.find({ isDeleted: false });
+    const subs = await Subscription.find({ isDeleted: false });
 
     const subMap = {};
     subs.forEach(s => { subMap[String(s.franchise)] = s; });
 
     const result = franchises.map(f => ({
-      franchise:    f,
+      franchise: f,
       subscription: subMap[String(f._id)] || null,
     }));
 
@@ -100,39 +100,39 @@ exports.enable = async (req, res) => {
 
     const histEntry = {
       receiptNo,
-      amount:          Number(amount) || 0,
+      amount: Number(amount) || 0,
       plan,
       daysAdded,
       previousEndDate: null,
-      newEndDate:      end,
-      paidAt:          new Date(),
-      notes:           notes || "",
-      createdBy:       req.user?.firstName || "Admin",
+      newEndDate: end,
+      paidAt: new Date(),
+      notes: notes || "",
+      createdBy: req.user?.firstName || "Admin",
     };
 
     let sub = await Subscription.findOne({ franchise: franchiseId });
 
     if (sub) {
       histEntry.previousEndDate = sub.endDate;
-      sub.plan      = plan;
+      sub.plan = plan;
       sub.startDate = start;
-      sub.endDate   = end;
-      sub.status    = "ACTIVE";
-      sub.notes     = notes || sub.notes;
+      sub.endDate = end;
+      sub.status = "ACTIVE";
+      sub.notes = notes || sub.notes;
       sub.paymentHistory.push(histEntry);
       await sub.save();
     } else {
       sub = await Subscription.create({
-        franchise:     franchiseId,
+        franchise: franchiseId,
         franchiseName: franchise.franchiseName,
         franchiseCode: franchise.franchiseId,
-        ownerName:     franchise.ownerName,
-        contact:       franchise.contact,
+        ownerName: franchise.ownerName,
+        contact: franchise.contact,
         plan,
-        startDate:     start,
-        endDate:       end,
-        status:        "ACTIVE",
-        notes:         notes || "",
+        startDate: start,
+        endDate: end,
+        status: "ACTIVE",
+        notes: notes || "",
         paymentHistory: [histEntry],
       });
     }
@@ -151,8 +151,8 @@ exports.extend = async (req, res) => {
     const { franchiseId } = req.params;
     const { plan, customDays, amount, notes } = req.body;
 
-    let daysAdded  = 0;
-    let planLabel  = "";
+    let daysAdded = 0;
+    let planLabel = "";
 
     if (plan && PLAN_DAYS[plan]) {
       daysAdded = PLAN_DAYS[plan];
@@ -168,24 +168,24 @@ exports.extend = async (req, res) => {
     if (!sub) return res.status(404).json({ message: "No subscription found. Enable it first." });
 
     const previousEndDate = new Date(sub.endDate);
-    const extendFrom      = sub.endDate > new Date() ? new Date(sub.endDate) : new Date();
-    const newEndDate      = new Date(extendFrom);
+    const extendFrom = sub.endDate > new Date() ? new Date(sub.endDate) : new Date();
+    const newEndDate = new Date(extendFrom);
     newEndDate.setDate(newEndDate.getDate() + daysAdded);
 
     sub.endDate = newEndDate;
-    sub.status  = "ACTIVE";
+    sub.status = "ACTIVE";
     if (plan) sub.plan = plan;
 
     sub.paymentHistory.push({
-      receiptNo:       genReceiptNo(),
-      amount:          Number(amount) || 0,
-      plan:            planLabel,
+      receiptNo: genReceiptNo(),
+      amount: Number(amount) || 0,
+      plan: planLabel,
       daysAdded,
       previousEndDate,
       newEndDate,
-      paidAt:          new Date(),
-      notes:           notes || "",
-      createdBy:       req.user?.firstName || "Admin",
+      paidAt: new Date(),
+      notes: notes || "",
+      createdBy: req.user?.firstName || "Admin",
     });
 
     await sub.save();

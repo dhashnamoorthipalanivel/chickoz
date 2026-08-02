@@ -174,6 +174,8 @@ exports.convertToLead = async (req, res) => {
 
       place: enquiry.place,
 
+      state: enquiry.state,
+
       postCode: enquiry.postCode,
 
       address: enquiry.address,

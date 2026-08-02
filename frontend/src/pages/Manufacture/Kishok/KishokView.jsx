@@ -149,7 +149,6 @@ const KishokView = () => {
                     <InfoRow label="Cart Size">{data.cartSize}</InfoRow>
                   </div>
                   <div className="col-md-6">
-                    <InfoRow label="Branding Type">{data.brandingType}</InfoRow>
                     <InfoRow label="Accessories">{data.accessories}</InfoRow>
                     <InfoRow label="Required Date">{fmtDate(data.requiredDate)}</InfoRow>
                     <InfoRow label="Priority">

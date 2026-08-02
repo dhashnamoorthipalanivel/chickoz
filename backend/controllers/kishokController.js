@@ -164,7 +164,45 @@ exports.createKishokFromLead = async (lead) => {
 
 exports.updateKishok = async (req, res) => {
   try {
-    const data = await Kishok.findByIdAndUpdate(req.params.id, req.body, {
+    let updateBody = { ...req.body };
+
+    // Handle files uploaded via Multer if present
+    if (req.files && req.files.length > 0) {
+      const uploadedUrls = req.files.map(f => `/uploads/${f.filename}`);
+      const uploadedNames = req.files.map(f => f.originalname);
+
+      let existingImgs = [];
+      let existingNames = [];
+      if (req.body.cartImages) {
+        try {
+          existingImgs = typeof req.body.cartImages === "string" ? JSON.parse(req.body.cartImages) : req.body.cartImages;
+        } catch (_) { existingImgs = [req.body.cartImages]; }
+      }
+      if (req.body.cartImageNames) {
+        try {
+          existingNames = typeof req.body.cartImageNames === "string" ? JSON.parse(req.body.cartImageNames) : req.body.cartImageNames;
+        } catch (_) { existingNames = [req.body.cartImageNames]; }
+      }
+
+      const allImgs = [...existingImgs, ...uploadedUrls];
+      const allNames = [...existingNames, ...uploadedNames];
+
+      updateBody.cartImages = allImgs;
+      updateBody.cartImageNames = allNames;
+      updateBody.cartImage = allImgs[0] || "";
+      updateBody.cartImageName = allNames[0] || "";
+    } else if (updateBody.cartImages) {
+      if (!Array.isArray(updateBody.cartImages)) {
+        try { updateBody.cartImages = JSON.parse(updateBody.cartImages); } catch (_) { updateBody.cartImages = [updateBody.cartImages]; }
+      }
+      if (updateBody.cartImageNames && !Array.isArray(updateBody.cartImageNames)) {
+        try { updateBody.cartImageNames = JSON.parse(updateBody.cartImageNames); } catch (_) { updateBody.cartImageNames = [updateBody.cartImageNames]; }
+      }
+      updateBody.cartImage = updateBody.cartImages[0] || "";
+      updateBody.cartImageName = (updateBody.cartImageNames && updateBody.cartImageNames[0]) || "";
+    }
+
+    const data = await Kishok.findByIdAndUpdate(req.params.id, updateBody, {
       returnDocument: "after",
     });
 
@@ -187,7 +225,6 @@ exports.updateKishok = async (req, res) => {
 
     // ✅ SAVE PAYMENT SUMMARY
     data.paidAmount = paidAmount;
-
     data.pendingAmount = pendingAmount;
 
     await data.save();
@@ -204,15 +241,12 @@ exports.updateKishok = async (req, res) => {
       lead.stages.TRAINING.data
     ) {
       lead.stages.TRAINING.data.cartManufactureStatus = data.manufactureStatus;
-
       lead.stages.TRAINING.data.cartAssignedVendor = data.vendorName;
-
       await lead.save();
     }
 
     res.status(200).json({
       message: "Kishok updated successfully",
-
       data,
     });
   } catch (error) {

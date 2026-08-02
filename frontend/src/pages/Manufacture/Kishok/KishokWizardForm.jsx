@@ -5,10 +5,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useKishokStore, usePaymentModes } from "../../../store/store";
 
 const stages = [
-  { key: "REQUIREMENT",   icon: "bx bx-cart",        label: "Requirement"   },
-  { key: "VENDOR_ASSIGN", icon: "bx bx-user-plus",   label: "Vendor Assign" },
-  { key: "PRODUCTION",    icon: "bx bx-cog",          label: "Production"    },
-  { key: "PAYMENT",       icon: "bx bx-credit-card",  label: "Payment"       },
+  { key: "REQUIREMENT", icon: "bx bx-cart", label: "Requirement" },
+  { key: "VENDOR_ASSIGN", icon: "bx bx-user-plus", label: "Vendor Assign" },
+  { key: "PRODUCTION", icon: "bx bx-cog", label: "Production" },
+  { key: "PAYMENT", icon: "bx bx-credit-card", label: "Payment" },
 ];
 
 const formatLabel = (v) =>
@@ -16,9 +16,9 @@ const formatLabel = (v) =>
 
 const KishokWizardForm = () => {
   const [activeStage, setActiveStage] = useState(0);
-  const { state }  = useLocation();
-  const navigate   = useNavigate();
-  const rowData    = state?.rowData;
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const rowData = state?.rowData;
 
   const [formData, setFormData] = useState({});
   const isLocked =
@@ -47,7 +47,7 @@ const KishokWizardForm = () => {
       }
       if (key === "PAYMENT") {
         const total = Number(rowData.cartAmount || 0);
-        const paid  = (rowData.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
+        const paid = (rowData.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
         if (paid < total) { openStage = i; break; }
         continue;
       }
@@ -58,10 +58,10 @@ const KishokWizardForm = () => {
   }, [rowData]);
 
   const stageRequiredFields = {
-    REQUIREMENT:   ["requiredDate", "priority"],
+    REQUIREMENT: ["requiredDate", "priority"],
     VENDOR_ASSIGN: ["vendorName", "assignDate", "expectedDate"],
-    PRODUCTION:    ["manufactureStatus", "dispatchDate", "cartImage"],
-    PAYMENT:       ["payments"],
+    PRODUCTION: ["manufactureStatus", "dispatchDate", "cartImage"],
+    PAYMENT: ["payments"],
   };
 
   const getStageStatus = (stageKey) => {
@@ -70,22 +70,22 @@ const KishokWizardForm = () => {
     if (stageKey === "PAYMENT") {
       if (formData.payLater) return "completed";
       const total = Number(formData.cartAmount || 0);
-      const paid  = (formData.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
-      if (paid === 0)     return "not-started";
-      if (paid < total)   return "in-progress";
+      const paid = (formData.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
+      if (paid === 0) return "not-started";
+      if (paid < total) return "in-progress";
       return "completed";
     }
 
     if (stageKey === "PRODUCTION") {
       if (formData.manufactureStatus === "COMPLETED") return "completed";
-      if (formData.manufactureStatus)                 return "in-progress";
+      if (formData.manufactureStatus) return "in-progress";
       return "not-started";
     }
 
     if (completedStages.includes(stageKey)) return "completed";
 
     const required = stageRequiredFields[stageKey] || [];
-    const filled   = required.filter(f => { const v = formData[f]; return v && v.toString().trim() !== ""; }).length;
+    const filled = required.filter(f => { const v = formData[f]; return v && v.toString().trim() !== ""; }).length;
     if (filled > 0) return "in-progress";
     return "not-started";
   };
@@ -119,7 +119,7 @@ const KishokWizardForm = () => {
       const payload = { ...updatedData };
       if (payload.cartImage) {
         const img = payload.cartImage;
-        payload.cartImage     = typeof img === "string" ? img : img.name;
+        payload.cartImage = typeof img === "string" ? img : img.name;
         payload.cartImageName = typeof img === "string" ? img : img.name;
       }
       await saveKishok(formData._id, payload);
@@ -137,7 +137,7 @@ const KishokWizardForm = () => {
       const payload = { ...formData };
       if (payload.cartImage) {
         const img = payload.cartImage;
-        payload.cartImage     = typeof img === "string" ? img : img.name;
+        payload.cartImage = typeof img === "string" ? img : img.name;
         payload.cartImageName = typeof img === "string" ? img : img.name;
       }
       await saveKishok(formData._id, payload);
@@ -152,11 +152,11 @@ const KishokWizardForm = () => {
       const payload = {
         ...formData,
         manufactureStatus: "COMPLETED",
-        completedStages:   stages.map(s => s.key),
+        completedStages: stages.map(s => s.key),
       };
       if (payload.cartImage) {
         const img = payload.cartImage;
-        payload.cartImage     = typeof img === "string" ? img : img.name;
+        payload.cartImage = typeof img === "string" ? img : img.name;
         payload.cartImageName = typeof img === "string" ? img : img.name;
       }
       await saveKishok(formData._id, payload);
@@ -166,7 +166,7 @@ const KishokWizardForm = () => {
 
   /* ── Stepper colours ── */
   const stageStyle = (index) => {
-    const key    = stages[index].key;
+    const key = stages[index].key;
     const status = getStageStatus(key);
     const active = activeStage === index;
 
@@ -215,7 +215,7 @@ const KishokWizardForm = () => {
 
         {/* ── Customer info banner ── */}
         {formData.customerName && (
-          <div style={{ background: "linear-gradient(90deg,rgba(217,30,24,0.06),rgba(249,115,22,0.04))", border: "1px solid rgba(249,115,22,0.18)", borderRadius: 12, padding: "12px 20px", marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <div style={{ background: "linear-gradient(90deg,rgba(217,30,24,0.06),rgba(249,115,22,0.04))", border: "1px solid rgba(249,115,22,0.18)", borderRadius: 12, padding: "12px 20px", marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#D91E18,#F97316)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <i className="bx bx-user" style={{ color: "#fff", fontSize: 18 }} />
@@ -230,11 +230,11 @@ const KishokWizardForm = () => {
         )}
 
         {/* ── Wizard stepper card ── */}
-        <div className="card mb-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+        <div className="card mb-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative" }}>
           <div className="card-body" style={{ padding: "22px 28px" }}>
             <div style={{ display: "flex", alignItems: "center" }}>
               {stages.map((stage, index) => {
-                const ss     = stageStyle(index);
+                const ss = stageStyle(index);
                 const status = getStageStatus(stage.key);
                 return (
                   <React.Fragment key={stage.key}>
@@ -285,7 +285,7 @@ const KishokWizardForm = () => {
         />
 
         {/* ── Action buttons ── */}
-        <div className="card mt-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
+        <div className="card mt-3" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative", zIndex: 1 }}>
           <div className="card-body" style={{ padding: "18px 24px" }}>
             <div className="d-flex justify-content-between flex-wrap gap-2">
 

@@ -3,11 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useLeadStore, usePaymentModes } from "../../../store/store";
 
 const STAGES = [
-  { key: "SITE_VISIT",  label: "Site Visit",  icon: "bx-map"          },
-  { key: "APPROVAL",    label: "Approval",    icon: "bx-check-shield"  },
-  { key: "TRAINING",    label: "Training",    icon: "bx-book"          },
-  { key: "PAYMENT",     label: "Payment",     icon: "bx-credit-card"   },
-  { key: "FINAL_SETUP", label: "Final Setup", icon: "bx-store"         },
+  { key: "SITE_VISIT", label: "Site Visit", icon: "bx-map" },
+  { key: "APPROVAL", label: "Approval", icon: "bx-check-shield" },
+  { key: "TRAINING", label: "Training", icon: "bx-book" },
+  { key: "PAYMENT", label: "Payment", icon: "bx-credit-card" },
+  { key: "FINAL_SETUP", label: "Final Setup", icon: "bx-store" },
 ];
 
 const formatLabel = (value) =>
@@ -26,18 +26,18 @@ const getCompletedStages = (stagesObj) => {
     completed.push("TRAINING");
   const total = Number(stagesObj?.PAYMENT?.data?.totalAmount || 0);
   const paid = (stagesObj?.PAYMENT?.data?.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
-  if (total > 0 && paid >= total) completed.push("PAYMENT");
+  if (stagesObj?.PAYMENT?.data?.payLater || (total > 0 && paid >= total)) completed.push("PAYMENT");
   if (stagesObj?.FINAL_SETUP?.data?.contractSigned === "Yes") completed.push("FINAL_SETUP");
   return completed;
 };
 
 const LEAD_STATUS_STYLE = {
-  NOT_STARTED: { color: "#6b7280", bg: "#f3f4f6",                border: "#e5e7eb"                },
-  IN_PROGRESS: { color: "#2563EB", bg: "rgba(37,99,235,0.08)",   border: "rgba(37,99,235,0.18)"  },
-  COMPLETED:   { color: "#059669", bg: "rgba(5,150,105,0.08)",   border: "rgba(5,150,105,0.18)"  },
-  HOLD:        { color: "#D97706", bg: "rgba(217,119,6,0.09)",   border: "rgba(217,119,6,0.2)"   },
-  CANCELLED:   { color: "#991B1B", bg: "rgba(153,27,27,0.08)",   border: "rgba(153,27,27,0.18)"  },
-  RETURN:      { color: "#0891B2", bg: "rgba(8,145,178,0.08)",   border: "rgba(8,145,178,0.18)"  },
+  NOT_STARTED: { color: "#6b7280", bg: "#f3f4f6", border: "#e5e7eb" },
+  IN_PROGRESS: { color: "#2563EB", bg: "rgba(37,99,235,0.08)", border: "rgba(37,99,235,0.18)" },
+  COMPLETED: { color: "#059669", bg: "rgba(5,150,105,0.08)", border: "rgba(5,150,105,0.18)" },
+  HOLD: { color: "#D97706", bg: "rgba(217,119,6,0.09)", border: "rgba(217,119,6,0.2)" },
+  CANCELLED: { color: "#991B1B", bg: "rgba(153,27,27,0.08)", border: "rgba(153,27,27,0.18)" },
+  RETURN: { color: "#0891B2", bg: "rgba(8,145,178,0.08)", border: "rgba(8,145,178,0.18)" },
 };
 
 const getLeadStatus = (completedStages) => {
@@ -59,17 +59,17 @@ const DataRow = ({ label, value, highlight }) => (
 // Stage data panels per stage key
 const SiteVisitData = ({ data }) => (
   <div>
-    <DataRow label="Visit Type"         value={data.visitType}         highlight />
-    <DataRow label="Visit Date"         value={fmtDate(data.visitDate)} />
-    <DataRow label="Location"           value={data.location}          highlight />
-    <DataRow label="Delivery Location"  value={data.deliveryLocation} />
+    <DataRow label="Visit Type" value={data.visitType} highlight />
+    <DataRow label="Visit Date" value={fmtDate(data.visitDate)} />
+    <DataRow label="Location" value={data.location} highlight />
+    <DataRow label="Delivery Location" value={data.deliveryLocation} />
   </div>
 );
 
 const ApprovalData = ({ data }) => (
   <div>
-    <DataRow label="Site Status"       value={data.siteStatus}       highlight />
-    <DataRow label="Approval Status"   value={data.approvalStatus}   highlight />
+    <DataRow label="Site Status" value={data.siteStatus} highlight />
+    <DataRow label="Approval Status" value={data.approvalStatus} highlight />
     <DataRow label="Legal Formalities" value={data.legalStatus} />
   </div>
 );
@@ -78,18 +78,17 @@ const TrainingData = ({ data }) => {
   const cartYes = data.cartRequired === "yes" || data.cartRequired === true;
   return (
     <div>
-      <DataRow label="Training Status"    value={data.trainingStatus}              highlight />
-      <DataRow label="Training Start"     value={fmtDate(data.trainingStart)} />
-      <DataRow label="Parent Details"     value={data.parentsDetails} />
-      <DataRow label="Cart Required"      value={cartYes ? "Yes" : data.cartRequired === "no" ? "No" : "—"} />
+      <DataRow label="Training Status" value={data.trainingStatus} highlight />
+      <DataRow label="Training Start" value={fmtDate(data.trainingStart)} />
+      <DataRow label="Parent Details" value={data.parentsDetails} />
+      <DataRow label="Cart Required" value={cartYes ? "Yes" : data.cartRequired === "no" ? "No" : "—"} />
       {cartYes && (
         <>
-          <DataRow label="Cart Size"           value={data.cartSize} />
-          <DataRow label="Branding Type"       value={data.brandingType} />
-          <DataRow label="Accessories"         value={data.accessories} />
-          <DataRow label="Cart Required Date"  value={fmtDate(data.cartRequiredDate)} />
-          <DataRow label="Priority"            value={data.cartPriority}           highlight />
-          <DataRow label="Cart Manufacture"    value={formatLabel(data.cartManufactureStatus)} />
+          <DataRow label="Cart Size" value={data.cartSize} />
+          <DataRow label="Accessories" value={data.accessories} />
+          <DataRow label="Cart Required Date" value={fmtDate(data.cartRequiredDate)} />
+          <DataRow label="Priority" value={data.cartPriority} highlight />
+          <DataRow label="Cart Manufacture" value={formatLabel(data.cartManufactureStatus)} />
         </>
       )}
     </div>
@@ -106,9 +105,9 @@ const PaymentData = ({ data, paymentModes = [] }) => {
     <div>
       <div style={{ display: "flex", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
         {[
-          { label: "Total Amount",   value: `₹ ${total.toLocaleString()}`,           color: "#1A1A1A" },
-          { label: "Paid",           value: `₹ ${Number(paidAmount).toLocaleString()}`, color: "#059669" },
-          { label: "Pending",        value: `₹ ${Number(pending).toLocaleString()}`,    color: pending > 0 ? "#D91E18" : "#059669" },
+          { label: "Total Amount", value: `₹ ${total.toLocaleString()}`, color: "#1A1A1A" },
+          { label: "Paid", value: `₹ ${Number(paidAmount).toLocaleString()}`, color: "#059669" },
+          { label: "Pending", value: `₹ ${Number(pending).toLocaleString()}`, color: pending > 0 ? "#D91E18" : "#059669" },
         ].map(({ label, value, color }) => (
           <div key={label} style={{ flex: 1, minWidth: 100, padding: "10px 14px", borderRadius: 12, background: "#f9fafb", border: "1px solid #f0f0f0" }}>
             <div style={{ fontSize: 10.5, color: "#9ca3af", fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>{label}</div>
@@ -116,6 +115,13 @@ const PaymentData = ({ data, paymentModes = [] }) => {
           </div>
         ))}
       </div>
+
+      {data.payLater && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.2)", marginBottom: 14 }}>
+          <i className="bx bx-error-circle" style={{ color: "#ea580c", fontSize: 18 }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#9a3412" }}>Pay Later Enabled — Payment pending collection.</span>
+        </div>
+      )}
       {payments.length > 0 ? (
         <div>
           <div style={{ fontSize: 11.5, fontWeight: 700, color: "#6b7280", marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Payment History</div>
@@ -150,10 +156,15 @@ const PaymentData = ({ data, paymentModes = [] }) => {
 
 const FinalSetupData = ({ data }) => (
   <div>
-    <DataRow label="Contract Signed"   value={data.contractSigned}    highlight />
-    <DataRow label="Bank Details"      value={data.bankDetails} />
-    <DataRow label="KYC Document"      value={data.kycDocumentName || (data.kycDocument ? "Uploaded" : null)} />
-    <DataRow label="Royalty Document"  value={data.royaltyDocumentName || (data.royaltyDocument ? "Uploaded" : null)} />
+    <DataRow label="Contract Signed" value={data.contractSigned} highlight />
+    <DataRow label="Bank Account Number" value={data.bankDetails} />
+    <DataRow label="Bank Account Holder Name" value={data.bankAccountHolderName} />
+    <DataRow label="Bank Name" value={data.bankName} />
+    <DataRow label="Bank IFSC Code" value={data.bankIfscCode} />
+    <DataRow label="Draft Amount" value={data.draftAmount} />
+    <DataRow label="E-Way Bill" value={data.ewayBillFileName || (data.ewayBillFile ? "Uploaded" : null)} />
+    <DataRow label="KYC Document" value={data.kycDocumentName || (data.kycDocument ? "Uploaded" : null)} />
+    <DataRow label="Royalty Document" value={data.royaltyDocumentName || (data.royaltyDocument ? "Uploaded" : null)} />
   </div>
 );
 
@@ -164,9 +175,9 @@ const StageDataPanel = ({ stage, stageObj, isDone, isCurrent, paymentModes }) =>
   );
 
   const borderColor = isDone ? "rgba(5,150,105,0.22)" : isCurrent ? "rgba(37,99,235,0.22)" : "#efefef";
-  const headerBg   = isDone ? "rgba(5,150,105,0.04)" : isCurrent ? "rgba(37,99,235,0.04)" : "#fafafa";
-  const iconColor  = isDone ? "#059669" : isCurrent ? "#2563EB" : "#d1d5db";
-  const iconBg     = isDone ? "rgba(5,150,105,0.1)" : isCurrent ? "rgba(37,99,235,0.1)" : "#f3f4f6";
+  const headerBg = isDone ? "rgba(5,150,105,0.04)" : isCurrent ? "rgba(37,99,235,0.04)" : "#fafafa";
+  const iconColor = isDone ? "#059669" : isCurrent ? "#2563EB" : "#d1d5db";
+  const iconBg = isDone ? "rgba(5,150,105,0.1)" : isCurrent ? "rgba(37,99,235,0.1)" : "#f3f4f6";
 
   return (
     <div style={{ borderRadius: 14, border: `1.5px solid ${borderColor}`, overflow: "hidden", background: "#fff" }}>
@@ -197,10 +208,10 @@ const StageDataPanel = ({ stage, stageObj, isDone, isCurrent, paymentModes }) =>
       {/* Stage data */}
       {hasAnyData ? (
         <div style={{ padding: "14px 18px" }}>
-          {stage.key === "SITE_VISIT"  && <SiteVisitData  data={data} />}
-          {stage.key === "APPROVAL"    && <ApprovalData   data={data} />}
-          {stage.key === "TRAINING"    && <TrainingData   data={data} />}
-          {stage.key === "PAYMENT"     && <PaymentData    data={data} paymentModes={paymentModes} />}
+          {stage.key === "SITE_VISIT" && <SiteVisitData data={data} />}
+          {stage.key === "APPROVAL" && <ApprovalData data={data} />}
+          {stage.key === "TRAINING" && <TrainingData data={data} />}
+          {stage.key === "PAYMENT" && <PaymentData data={data} paymentModes={paymentModes} />}
           {stage.key === "FINAL_SETUP" && <FinalSetupData data={data} />}
         </div>
       ) : (
@@ -370,10 +381,10 @@ const LeadView = () => {
                   {/* Info grid */}
                   <div className="row g-3 mb-4">
                     {[
-                      { icon: "bx-phone",    label: "Phone",       value: lead.phone },
-                      { icon: "bx-map-pin",  label: "Place",       value: lead.place },
-                      { icon: "bx-user",     label: "Assigned To", value: lead.assignedTo },
-                      { icon: "bx-calendar", label: "Created",     value: fmtDate(lead.createdAt) },
+                      { icon: "bx-phone", label: "Phone", value: lead.phone },
+                      { icon: "bx-map-pin", label: "Place", value: lead.place },
+                      { icon: "bx-user", label: "Assigned To", value: lead.assignedTo },
+                      { icon: "bx-calendar", label: "Created", value: fmtDate(lead.createdAt) },
                     ].map(({ icon, label, value }) => (
                       <div className="col-sm-6 col-md-3" key={label}>
                         <div style={{ padding: "13px 15px", borderRadius: 13, background: "#f9fafb", border: "1px solid #f0f0f0" }}>
@@ -422,7 +433,7 @@ const LeadView = () => {
                             {idx < STAGES.length - 1 && (
                               <div style={{ position: "absolute", top: 26, right: 0, width: "50%", height: 2, zIndex: 0, background: isDone ? "#059669" : "#e5e7eb" }} />
                             )}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 6px", textAlign: "center", position: "relative", zIndex: 1 }}>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "0 6px", textAlign: "center", position: "relative", zIndex: 0 }}>
                               <div style={{
                                 width: 52, height: 52, borderRadius: 15,
                                 background: isDone ? "linear-gradient(135deg, #059669 0%, #047857 100%)" : isCurrent ? "linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)" : "#f3f4f6",

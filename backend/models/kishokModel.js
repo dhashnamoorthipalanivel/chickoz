@@ -118,6 +118,20 @@ const kishokSchema = new mongoose.Schema(
       default: "",
     },
 
+    cartImages: [
+      {
+        type: String,
+        default: "",
+      },
+    ],
+
+    cartImageNames: [
+      {
+        type: String,
+        default: "",
+      },
+    ],
+
     remarks: {
       type: String,
       default: "",

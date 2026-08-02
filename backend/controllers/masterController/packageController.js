@@ -81,7 +81,7 @@ exports.createPackage = async (req, res) => {
 // GET ALL (hide deleted)
 exports.getPackages = async (req, res) => {
   try {
-    const data = await Package.find({ isDeleted: false }).sort({ createdAt: -1 });
+    const data = await Package.find({ isDeleted: false }).populate("packageMaterials").sort({ createdAt: -1 });
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -92,7 +92,7 @@ exports.getPackages = async (req, res) => {
 // GET SINGLE
 exports.getPackageById = async (req, res) => {
   try {
-    const data = await Package.findById(req.params.id);
+    const data = await Package.findById(req.params.id).populate("packageMaterials");
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });

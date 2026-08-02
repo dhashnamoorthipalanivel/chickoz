@@ -39,6 +39,11 @@ const franchiseSchema = new mongoose.Schema(
       required: true,
     },
 
+    password: {
+      type: String,
+      default: "",
+    },
+
     packageName: {
       type: String,
       default: "",
@@ -201,6 +206,12 @@ const franchiseSchema = new mongoose.Schema(
         isVisibleInBilling: {
           type: Boolean,
           default: true,
+        },
+
+        // ✅ SALE PRICE OVERRIDE
+        salePrice: {
+          type: Number,
+          default: null,
         },
       },
     ],

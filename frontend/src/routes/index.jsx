@@ -90,7 +90,6 @@ import Tax from '../pages/Master/Tax/Tax';
 import FoodCategory from '../pages/Master/FoodCategory';
 import MenuItem from '../pages/Master/MenuItem/MenuItem';
 import RawMaterial from '../pages/Master/RawMaterial';
-import Vendor from '../pages/Master/Vendor';
 import PaymentMode from '../pages/Master/PaymentMode/PaymentMode';
 import OrderType from '../pages/Master/OrderType/OrderType';
 import KitchenStation from '../pages/Master/KitchenStation';
@@ -101,6 +100,8 @@ import FranchiseMenuVisibility from '../pages/Master/MenuItem/FranchiseMenuVisib
 import FranchiseMenuAvailability from '../pages/Master/MenuItem/FranchiseMenuAvailability';
 import FranchiseMenuVisibilityForm from '../pages/Master/MenuItem/FranchiseMenuVisibilityForm';
 import TaxForm from '../pages/Master/Tax/TaxForm';
+import Vendor from '../pages/Master/Vendor';
+import VendorForm from '../pages/Master/VendorForm';
 import OrderTypeForm from '../pages/Master/OrderType/OrderTypeForm';
 import PaymentModeForm from '../pages/Master/PaymentMode/PaymentModeForm';
 import LeadSource from '../pages/Master/LeadSource/LeadSource';
@@ -141,7 +142,7 @@ import MasalaFranchiseRequestView from '../pages/Manufacture/Masala/MasalaFranch
 import Subscription from '../pages/Subscription/Subscription';
 
 // Reports
-import AdminReport     from '../pages/Reports/AdminReport';
+import AdminReport from '../pages/Reports/AdminReport';
 import FranchiseReport from '../pages/Reports/FranchiseReport';
 
 // Auth
@@ -195,9 +196,9 @@ const AppRoutes = () => {
 
       {/* Dashboard */}
       <Route path="/dashboard" element={<W><Dashboard /></W>} />
-      <Route path="/franchise-dashboard"   element={<W><FranchiseDashboard /></W>} />
-      <Route path="/reports-admin"         element={<W><AdminReport /></W>} />
-      <Route path="/reports-franchise"     element={<W><FranchiseReport /></W>} />
+      <Route path="/franchise-dashboard" element={<W><FranchiseDashboard /></W>} />
+      <Route path="/reports-admin" element={<W><AdminReport /></W>} />
+      <Route path="/reports-franchise" element={<W><FranchiseReport /></W>} />
       <Route path="/layouts-horizontal" element={<W><Dashboard /></W>} />
 
       {/* Auth (no layout) */}
@@ -206,14 +207,14 @@ const AppRoutes = () => {
       <Route path="/auth-register" element={<Register />} />
       <Route path="/register" element={<Register />} />
       {/*  */}
-      <Route path="/auth-recoverpw" element={<RecoverPw />} /> 
+      <Route path="/auth-recoverpw" element={<RecoverPw />} />
       <Route path="/auth-lock-screen" element={<LockScreen />} />
       <Route path="/auth-logout" element={<Logout />} />
       <Route path="/auth-confirm-mail" element={<ConfirmMail />} />
       <Route path="/auth-email-verification" element={<EmailVerification />} />
       <Route path="/auth-two-step-verification" element={<TwoStepVerification />} />
       <Route path='/auth-change-password' element={<ChangePassword />} />
-      
+
       {/* Error Pages (no layout) */}
       <Route path="/pages-404" element={<Page404 />} />
       <Route path="/pages-500" element={<Page500 />} />
@@ -347,7 +348,7 @@ const AppRoutes = () => {
 
       {/* Subscription Management (admin only) */}
       <Route path="/subscription-management" element={
-        <ProtectedRoute allowedRoles={["admin","super_admin"]}>
+        <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
           <W><Subscription /></W>
         </ProtectedRoute>
       } />
@@ -370,7 +371,7 @@ const AppRoutes = () => {
       <Route path="/manufacture-masala-admin-process" element={<W><MasalaAdminProcess /></W>} />
       <Route path="/manufacture-masala-franchise-request/add" element={<W><MasalaFranchiseRequestForm /></W>} />
       <Route path="/manufacture-masala-franchise-request/edit/:id" element={<W><MasalaFranchiseRequestForm /></W>} />
-      <Route path="/manufacture-masala-franchise-request/view/:id" element={<W><MasalaFranchiseRequestView/></W>} />
+      <Route path="/manufacture-masala-franchise-request/view/:id" element={<W><MasalaFranchiseRequestView /></W>} />
       <Route path="/manufacture-masala-admin-process/add" element={<W><MasalaAdminProcessForm /></W>} />
       <Route path="/manufacture-masala-admin-process/view/:id" element={<W><MasalaAdminProcessView /></W>} />
 
@@ -408,7 +409,7 @@ const AppRoutes = () => {
       {/* Master Module */}
       <Route path='/master-franchise'
         element={
-          <ProtectedRoute allowedRoles={["admin","super_admin"]}>
+          <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
             <W><Franchise /></W>
           </ProtectedRoute>
         }
@@ -421,7 +422,7 @@ const AppRoutes = () => {
       <Route path='/master-franchise-menu-visibility' element={<W><FranchiseMenuVisibility /></W>} />
       <Route path='/master-franchise-menu-availability'
         element={
-          <ProtectedRoute allowedRoles={["admin","super_admin","user","franchise"]}>
+          <ProtectedRoute allowedRoles={["admin", "super_admin", "user", "franchise"]}>
             <W><FranchiseMenuAvailability /></W>
           </ProtectedRoute>
         }
@@ -437,6 +438,10 @@ const AppRoutes = () => {
       <Route path="/master-franchise-menu-visibility/edit/:id" element={<W><FranchiseMenuVisibilityForm /></W>} />
       <Route path="/master-tax/add" element={<W><TaxForm /></W>} />
       <Route path="/master-tax/edit/:id" element={<W><TaxForm /></W>} />
+
+      <Route path='/master-vendor' element={<W><Vendor /></W>} />
+      <Route path='/master-vendor/add' element={<W><VendorForm /></W>} />
+      <Route path='/master-vendor/edit/:id' element={<W><VendorForm /></W>} />
       <Route path="/master-order-type/add" element={<W><OrderTypeForm /></W>} />
       <Route path="/master-order-type/edit/:id" element={<W><OrderTypeForm /></W>} />
       <Route path="/master-payment-mode/add" element={<W><PaymentModeForm /></W>} />

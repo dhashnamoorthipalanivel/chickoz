@@ -16,7 +16,7 @@ exports.getLeads = async (req, res) => {
     const data = await Lead.find({
       isDeleted: false,
     })
-      .populate("interestedPackage")
+      .populate({ path: "interestedPackage", populate: { path: "packageMaterials" } })
       .populate("leadSource", "leadSourceName")
       .sort({ createdAt: -1 });
 
@@ -36,7 +36,7 @@ exports.getLeads = async (req, res) => {
 exports.getLeadById = async (req, res) => {
   try {
     const lead = await Lead.findById(req.params.id)
-      .populate("interestedPackage")
+      .populate({ path: "interestedPackage", populate: { path: "packageMaterials" } })
       .populate("leadSource", "leadSourceName");
 
     if (!lead) {
@@ -98,6 +98,7 @@ exports.updateLead = async (req, res) => {
         phone: lead.phone,
         email: lead.email,
         place: lead.place,
+        state: lead.state,
         address: lead.address,
         assignedTo: lead.assignedTo,
 
@@ -154,7 +155,7 @@ exports.createFranchise = async (req, res) => {
 
     const franchiseId = `FR${String(maxNumber + 1).padStart(3, "0")}`;
 
-    await Franchise.create({
+    const newFranchise = await Franchise.create({
       franchiseId,
 
       referenceId: lead.referenceId,
@@ -177,11 +178,29 @@ exports.createFranchise = async (req, res) => {
 
       location: lead.place,
 
-      state: "",
+      state: lead.state || "",
 
       country: "India",
 
       postCode: lead.postCode,
+
+      password: "Chickoz@123",
+
+      inviteStatus: "ACTIVE",
+
+      passwordSetupAt: new Date(),
+    });
+
+    const User = require("../models/user");
+    await User.create({
+      firstName: lead.name,
+      email: lead.email,
+      phone: lead.phone,
+      password: "Chickoz@123",
+      role: "franchise",
+      franchiseId: newFranchise._id,
+      isActive: true,
+      isEmailVerified: true
     });
 
     lead.isFranchiseCreated = true;

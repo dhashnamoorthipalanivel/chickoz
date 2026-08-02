@@ -243,7 +243,7 @@ const Header = ({ toggleSidebar }) => {
       toast.success(res.message || "Logout successful");
 
       setTimeout(() => {
-        navigate("/auth-login");
+        navigate("/auth-login", { replace: true });
       }, 1000);
     } catch (error) {
       console.log("Logout Error:", error);

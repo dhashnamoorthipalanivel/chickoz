@@ -221,6 +221,7 @@ const Sidebar = ({ toggleSidebar }) => {
                   <li><Link to="/master-franchise">Franchise</Link></li>
                   <li><Link to="/master-package">Package</Link></li>
                   <li><Link to="/master-tax">Tax</Link></li>
+                  <li><Link to="/master-vendor">Vendor</Link></li>
                   <li>
                     <a href="#" onClick={e => e.preventDefault()} className="has-arrow">Menu</a>
                     <ul className="sub-menu" aria-expanded="false">

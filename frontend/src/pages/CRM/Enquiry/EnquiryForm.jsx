@@ -18,11 +18,11 @@ const formatDateTime = (d) =>
 /* ─── Status Pill ──────────────────────────────────────────── */
 
 const STATUS_META = {
-    NEW:                { color: "#F97316", bg: "rgba(249,115,22,0.09)", label: "New" },
-    FOLLOW_UP:          { color: "#D91E18", bg: "rgba(217,30,24,0.08)",  label: "Follow Up" },
-    HOLD:               { color: "#6b7280", bg: "#f3f4f6",               label: "Hold" },
-    CANCELLED:          { color: "#1A1A1A", bg: "#f5f5f5",               label: "Cancelled" },
-    CONVERTED_TO_LEAD:  { color: "#3B2418", bg: "#F4E7D3",               label: "Converted" },
+    NEW: { color: "#F97316", bg: "rgba(249,115,22,0.09)", label: "New" },
+    FOLLOW_UP: { color: "#D91E18", bg: "rgba(217,30,24,0.08)", label: "Follow Up" },
+    HOLD: { color: "#6b7280", bg: "#f3f4f6", label: "Hold" },
+    CANCELLED: { color: "#1A1A1A", bg: "#f5f5f5", label: "Cancelled" },
+    CONVERTED_TO_LEAD: { color: "#3B2418", bg: "#F4E7D3", label: "Converted" },
 };
 
 const StatusPill = ({ status }) => {
@@ -41,18 +41,18 @@ const StatusPill = ({ status }) => {
 
 /* ─── Brand token shorthand ────────────────────────────────── */
 const B = {
-    red:      "#D91E18",
-    orange:   "#F97316",
-    brown:    "#3B2418",
-    dark:     "#1A1A1A",
-    cream:    "#F4E7D3",
-    bg:       "#FFF8F3",
-    grad:     "linear-gradient(135deg, #D91E18 0%, #F97316 100%)",
+    red: "#D91E18",
+    orange: "#F97316",
+    brown: "#3B2418",
+    dark: "#1A1A1A",
+    cream: "#F4E7D3",
+    bg: "#FFF8F3",
+    grad: "linear-gradient(135deg, #D91E18 0%, #F97316 100%)",
     gradSoft: "linear-gradient(135deg, #FFF8F3 0%, #F4E7D3 100%)",
-    shadow:   "0 4px 14px rgba(217,30,24,0.32)",
-    border:   "rgba(244,231,211,0.9)",
-    radius:   14,
-    ease:     "cubic-bezier(0.4,0,0.2,1)",
+    shadow: "0 4px 14px rgba(217,30,24,0.32)",
+    border: "rgba(244,231,211,0.9)",
+    radius: 14,
+    ease: "cubic-bezier(0.4,0,0.2,1)",
 };
 
 /* ─── Form Config ──────────────────────────────────────────── */
@@ -63,28 +63,30 @@ const ENQUIRY_CONFIG = {
     tabs: ["basic", "lead", "followup"],
     fields: {
         basic: [
-            { name: "referenceId", label: "Reference ID",        type: "text",     required: true,  placeholder: "Auto-generated",          maxLength: 50,  disabled: true },
-            { name: "name",        label: "Name",                 type: "text",     required: true,  placeholder: "Customer full name",       maxLength: 100 },
-            { name: "phone",       label: "Phone",                type: "tel",      required: true,  placeholder: "10-digit mobile number",  maxLength: 10  },
-            { name: "email",       label: "Email",                type: "email",    required: true,  placeholder: "email@example.com",       maxLength: 100 },
-            { name: "place",       label: "Place / City",         type: "text",     required: true,  placeholder: "Enter city",              maxLength: 100 },
-            { name: "postCode",    label: "Post Code / Zip",      type: "text",     required: true,  placeholder: "Eg: 638001",              maxLength: 12  },
-            { name: "address",     label: "Address",              type: "textarea", required: false, placeholder: "Full address",            col: 12, maxLength: 500 },
+            { name: "referenceId", label: "Reference ID", type: "text", required: true, placeholder: "Auto-generated", maxLength: 50, disabled: true },
+            { name: "name", label: "Name", type: "text", required: true, placeholder: "Customer full name", maxLength: 100 },
+            { name: "phone", label: "Phone", type: "tel", required: true, placeholder: "10-digit mobile number", maxLength: 10 },
+            { name: "email", label: "Email", type: "email", required: true, placeholder: "email@example.com", maxLength: 100 },
+            { name: "address", label: "Address", type: "textarea", required: true, placeholder: "Full address", col: 12, maxLength: 500 },
+            { name: "place", label: "Place / City", type: "text", required: true, placeholder: "Enter city", maxLength: 100 },
+            { name: "state", label: "State", type: "text", required: true, placeholder: "Enter state", maxLength: 100 },
+            { name: "postCode", label: "Post Code / Zip", type: "text", required: true, placeholder: "Eg: 638001", maxLength: 12 },
+
         ],
         lead: [
-            { name: "interestedPackage", label: "Interested Package", type: "select",  required: true  },
-            { name: "leadSource",        label: "Lead Source",         type: "select",  required: true  },
-            { name: "status",            label: "Status",              type: "select",  required: true,  options: ["NEW", "FOLLOW_UP", "HOLD", "CANCELLED"] },
-            { name: "assignedTo",        label: "Assigned To",         type: "text",    required: true,  placeholder: "Sales person name", maxLength: 100 },
+            { name: "interestedPackage", label: "Interested Package", type: "select", required: true },
+            { name: "leadSource", label: "Lead Source", type: "select", required: true },
+            { name: "status", label: "Status", type: "select", required: true, options: ["NEW", "FOLLOW_UP", "HOLD", "CANCELLED"] },
+            { name: "assignedTo", label: "Assigned To", type: "text", required: true, placeholder: "Sales person name", maxLength: 100 },
         ],
         followup: [
-            { name: "followUpDate", label: "Follow-up Date",   type: "date",     required: false },
-            { name: "createdDate",  label: "Created Date",     type: "date",     required: false, disabled: true },
-            { name: "remarks",      label: "Remarks / Notes",  type: "textarea", required: false, placeholder: "Enter notes", col: 12, maxLength: 1000 },
+            { name: "followUpDate", label: "Follow-up Date", type: "date", required: false },
+            { name: "createdDate", label: "Created Date", type: "date", required: false, disabled: true },
+            { name: "remarks", label: "Remarks / Notes", type: "textarea", required: false, placeholder: "Enter notes", col: 12, maxLength: 1000 },
         ],
     },
     initialValues: {
-        referenceId: "", name: "", phone: "", email: "", place: "", postCode: "",
+        referenceId: "", name: "", phone: "", email: "", place: "", state: "", postCode: "",
         address: "", interestedPackage: "", leadSource: "", status: "NEW",
         followUpDate: "", assignedTo: "",
         createdDate: new Date().toISOString().split("T")[0],
@@ -98,14 +100,14 @@ const TAB_LABELS = { basic: "Basic Info", lead: "Lead Info", followup: "Follow U
 /* ─── Followup Tab (Edit Mode) ─────────────────────────────── */
 
 const FollowupTab = ({ enquiryId, assignedBy, creationEntry }) => {
-    const [history, setHistory]     = useState([]);
-    const [loading, setLoading]     = useState(false);
-    const [saving, setSaving]       = useState(false);
-    const [fu, setFu]               = useState({ followUpDate: "", status: "", remarks: "" });
-    const [errs, setErrs]           = useState({});
+    const [history, setHistory] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [fu, setFu] = useState({ followUpDate: "", status: "", remarks: "" });
+    const [errs, setErrs] = useState({});
 
     const hasCreation = !!(creationEntry && (creationEntry.followUpDate || creationEntry.remarks));
-    const hasAny      = history.length > 0 || hasCreation;
+    const hasAny = history.length > 0 || hasCreation;
 
     const fetchHistory = useCallback(async () => {
         if (!enquiryId) return;
@@ -121,8 +123,8 @@ const FollowupTab = ({ enquiryId, assignedBy, creationEntry }) => {
 
     const validate = () => {
         const e = {};
-        if (!fu.followUpDate)   e.followUpDate = "Date is required";
-        if (!fu.remarks.trim()) e.remarks       = "Remarks are required";
+        if (!fu.followUpDate) e.followUpDate = "Date is required";
+        if (!fu.remarks.trim()) e.remarks = "Remarks are required";
         return e;
     };
 
@@ -383,20 +385,20 @@ const FollowupTab = ({ enquiryId, assignedBy, creationEntry }) => {
 /* ─── Main Enquiry Form ─────────────────────────────────────── */
 
 const EnquiryForm = () => {
-    const { id }       = useParams();
-    const location     = useLocation();
-    const navigate     = useNavigate();
+    const { id } = useParams();
+    const location = useLocation();
+    const navigate = useNavigate();
 
-    const mode        = id ? "edit" : "add";
+    const mode = id ? "edit" : "add";
     const initialData = location.state?.rowData || {};
-    const config      = ENQUIRY_CONFIG;
+    const config = ENQUIRY_CONFIG;
 
-    const [activeTab, setActiveTab] = useState(config.tabs[0]);
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || config.tabs[0]);
     const [submitting, setSubmitting] = useState(false);
-    const [errors, setErrors]         = useState({});
+    const [errors, setErrors] = useState({});
 
     const { leadSources, fetchLeadSources } = useLeadSources();
-    const { packages, fetchPackages }        = usePackageStore();
+    const { packages, fetchPackages } = usePackageStore();
     const { createEnquiry, getNextReferenceId, updateEnquiry } = useEnquiryStore();
     const { profile } = useAuthStore();
 
@@ -413,7 +415,7 @@ const EnquiryForm = () => {
         ...config.initialValues,
         ...initialData,
         interestedPackage: initialData.interestedPackage?._id || initialData.interestedPackage || "",
-        leadSource:        initialData.leadSource?._id        || initialData.leadSource        || "",
+        leadSource: initialData.leadSource?._id || initialData.leadSource || "",
         followUpDate: initialData.followUpDate
             ? new Date(initialData.followUpDate).toISOString().split("T")[0] : "",
         createdDate: initialData.createdAt
@@ -426,8 +428,8 @@ const EnquiryForm = () => {
     useEffect(() => {
         setForm(mergedInitialValues);
         setErrors({});
-        setActiveTab("basic");
-    }, [id]);
+        setActiveTab(location.state?.activeTab || "basic");
+    }, [id, location.state?.activeTab]);
 
     const validate = () => {
         const e = {};
@@ -459,10 +461,11 @@ const EnquiryForm = () => {
             return;
         }
         try {
+            console.log("Submitting form data:", form);
             setSubmitting(true);
             const payload = {
                 name: form.name, phone: form.phone, email: form.email,
-                place: form.place, postCode: form.postCode, address: form.address,
+                place: form.place, state: form.state, postCode: form.postCode, address: form.address,
                 interestedPackage: form.interestedPackage, leadSource: form.leadSource,
                 status: form.status, followUpDate: form.followUpDate,
                 assignedTo: form.assignedTo, remarks: form.remarks,
@@ -483,7 +486,7 @@ const EnquiryForm = () => {
     };
 
     const currentTabIndex = config.tabs.indexOf(activeTab);
-    const handleNext     = (e) => { e.preventDefault(); e.stopPropagation(); if (currentTabIndex < config.tabs.length - 1) setActiveTab(config.tabs[currentTabIndex + 1]); };
+    const handleNext = (e) => { e.preventDefault(); e.stopPropagation(); if (currentTabIndex < config.tabs.length - 1) setActiveTab(config.tabs[currentTabIndex + 1]); };
     const handlePrevious = (e) => { e.preventDefault(); e.stopPropagation(); if (currentTabIndex > 0) setActiveTab(config.tabs[currentTabIndex - 1]); };
 
     /* ── Field renderer ── */
@@ -578,9 +581,9 @@ const EnquiryForm = () => {
                                         )}
                                     </div>
                                 </div>
-                                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                    <button type="button" onClick={() => navigate(-1)} style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"6px 14px", borderRadius:8, border:"1.5px solid #e5e7eb", background:"#fff", color:"#374151", fontWeight:600, fontSize:13, cursor:"pointer" }}>
-                                        <i className="bx bx-arrow-back" style={{ fontSize:15 }} /> Back
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <button type="button" onClick={() => navigate(-1)} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px", borderRadius: 8, border: "1.5px solid #e5e7eb", background: "#fff", color: "#374151", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                                        <i className="bx bx-arrow-back" style={{ fontSize: 15 }} /> Back
                                     </button>
                                     <ol className="breadcrumb m-0">
                                         <li className="breadcrumb-item"><Link to="/dashboard">Dashboard</Link></li>
@@ -606,8 +609,8 @@ const EnquiryForm = () => {
                                         display: "flex",
                                     }}>
                                         {config.tabs.map((tab) => {
-                                            const isActive   = activeTab === tab;
-                                            const hasError   = config.fields[tab]?.some((f) => errors[f.name]);
+                                            const isActive = activeTab === tab;
+                                            const hasError = config.fields[tab]?.some((f) => errors[f.name]);
                                             return (
                                                 <button
                                                     key={tab}
@@ -651,11 +654,11 @@ const EnquiryForm = () => {
                                                     (initialData.followUpDate || initialData.remarks)
                                                         ? {
                                                             followUpDate: initialData.followUpDate,
-                                                            remarks:      initialData.remarks,
-                                                            status:       initialData.status,
-                                                            addedBy:      initialData.assignedTo || "Admin",
-                                                            createdAt:    initialData.createdAt,
-                                                          }
+                                                            remarks: initialData.remarks,
+                                                            status: initialData.status,
+                                                            addedBy: initialData.assignedTo || "Admin",
+                                                            createdAt: initialData.createdAt,
+                                                        }
                                                         : null
                                                 }
                                             />

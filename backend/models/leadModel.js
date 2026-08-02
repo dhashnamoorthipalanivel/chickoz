@@ -36,6 +36,11 @@ const leadSchema = new mongoose.Schema(
       required: true,
     },
 
+    state: {
+      type: String,
+      default: "",
+    },
+
     postCode: {
       type: String,
       default: "",
@@ -172,6 +177,10 @@ const leadSchema = new mongoose.Schema(
               submitted: {
                 type: Boolean,
                 default: false,
+              },
+              expiryDate: {
+                type: Date,
+                default: null,
               },
               fileName: {
                 type: String,
@@ -356,6 +365,11 @@ const leadSchema = new mongoose.Schema(
             type: Number,
             default: 0,
           },
+
+          payLater: {
+            type: Boolean,
+            default: false,
+          },
         },
       },
 
@@ -400,6 +414,41 @@ const leadSchema = new mongoose.Schema(
           royaltyDocumentName: {
             type: String,
             default: "",
+          },
+
+          bankAccountHolderName: {
+            type: String,
+            default: "",
+          },
+
+          bankName: {
+            type: String,
+            default: "",
+          },
+
+          bankIfscCode: {
+            type: String,
+            default: "",
+          },
+
+          bankBranch: {
+            type: String,
+            default: "",
+          },
+
+          ewayBillFile: {
+            type: String,
+            default: "",
+          },
+
+          ewayBillFileName: {
+            type: String,
+            default: "",
+          },
+
+          draftAmount: {
+            type: Number,
+            default: 0,
           },
         },
       },

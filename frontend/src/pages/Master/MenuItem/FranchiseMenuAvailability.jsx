@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useFranchiseMenuStore } from "../../../store/store";
+import { useFranchiseMenuStore, useAuthStore, useFranchiseStore } from "../../../store/store";
 import { toast } from "react-toastify";
 
 const formatLabel = (value) => {
@@ -9,9 +9,9 @@ const formatLabel = (value) => {
 };
 
 const FOOD_TYPE_STYLE = {
-  VEG:     { color: "#065F46", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)",  icon: "bx-leaf" },
-  NON_VEG: { color: "#991B1B", bg: "rgba(153,27,27,0.07)", border: "rgba(153,27,27,0.18)",  icon: "bx-bowl-hot" },
-  BEVERAGE:{ color: "#1D4ED8", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", icon: "bx-drink" },
+  VEG: { color: "#065F46", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)", icon: "bx-leaf" },
+  NON_VEG: { color: "#991B1B", bg: "rgba(153,27,27,0.07)", border: "rgba(153,27,27,0.18)", icon: "bx-bowl-hot" },
+  BEVERAGE: { color: "#1D4ED8", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)", icon: "bx-drink" },
 };
 
 const foodTypePill = (type) => {
@@ -25,26 +25,102 @@ const foodTypePill = (type) => {
 };
 
 const FranchiseMenuAvailability = () => {
-  const [search, setSearch]               = useState("");
+  const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
-  const [availFilter, setAvailFilter]     = useState("ALL");
-  const [page, setPage]                   = useState(1);
-  const [perPage, setPerPage]             = useState(10);
-  const [updatingId, setUpdatingId]       = useState(null);
+  const [availFilter, setAvailFilter] = useState("ALL");
+  const [franchiseFilter, setFranchiseFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [updatingId, setUpdatingId] = useState(null);
+  const [salePrices, setSalePrices] = useState({});
+  const [visibilities, setVisibilities] = useState({});
+  const [isSavingAll, setIsSavingAll] = useState(false);
 
   const { menus, loading, fetchMyMenus, updateVisibility } = useFranchiseMenuStore();
+  const { user } = useAuthStore();
+  const { franchises, fetchFranchises } = useFranchiseStore();
 
-  useEffect(() => { fetchMyMenus(); }, []);
+  const isAdmin = ["admin", "super_admin"].includes(user?.role);
 
-  const handleToggle = async (menuId, value) => {
-    setUpdatingId(menuId);
+  useEffect(() => {
+    if (isAdmin) {
+      fetchFranchises();
+    }
+  }, [isAdmin, fetchFranchises]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      fetchMyMenus();
+    } else if (franchiseFilter) {
+      fetchMyMenus(franchiseFilter);
+    }
+  }, [isAdmin, franchiseFilter, fetchMyMenus]);
+
+  useEffect(() => {
+    const initialSalePrices = {};
+    const initialVisibilities = {};
+    menus.forEach(m => {
+      initialSalePrices[m.menuId || m._id] = m.salePrice ?? "";
+      initialVisibilities[m.menuId || m._id] = !!m.isVisibleInBilling;
+    });
+    setSalePrices(initialSalePrices);
+    setVisibilities(initialVisibilities);
+  }, [menus]);
+
+  const handleToggle = (menuId, value) => {
+    setVisibilities(prev => ({ ...prev, [menuId]: value }));
+  };
+
+  const handleSaveAll = async () => {
+    // Check if any valid items have empty sale prices
+    const invalid = menus.some(m => {
+      const sp = salePrices[m.menuId || m._id];
+      return sp === "" || sp === null || sp === undefined;
+    });
+
+    if (invalid) {
+      toast.error("Sale Price is required for all items");
+      return;
+    }
+
+    setIsSavingAll(true);
+    let hasError = false;
     try {
-      await updateVisibility({ menuId, isVisibleInBilling: value });
-      toast.success(`Menu ${value ? "shown in" : "hidden from"} billing`);
+      for (const m of menus) {
+        const menuId = m.menuId || m._id;
+        const sp = salePrices[menuId];
+        const vis = visibilities[menuId];
+        const spNum = sp === "" || sp === null ? null : Number(sp);
+
+        if (spNum !== m.salePrice || vis !== !!m.isVisibleInBilling) {
+          try {
+            await updateVisibility({ 
+              menuId, 
+              salePrice: spNum, 
+              isVisibleInBilling: vis,
+              franchiseId: isAdmin ? franchiseFilter : undefined 
+            });
+          } catch (err) {
+            hasError = true;
+          }
+        }
+      }
+      
+      if (hasError) {
+        toast.warning("Some items failed to save");
+      } else {
+        toast.success("Data saved successfully");
+      }
+      // Fetch fresh data
+      if (!isAdmin) {
+        fetchMyMenus();
+      } else if (franchiseFilter) {
+        fetchMyMenus(franchiseFilter);
+      }
     } catch {
-      toast.error("Update failed");
+      toast.error("Failed to save some data");
     } finally {
-      setUpdatingId(null);
+      setIsSavingAll(false);
     }
   };
 
@@ -54,18 +130,19 @@ const FranchiseMenuAvailability = () => {
       item.menuName?.toLowerCase().includes(q) ||
       item.menuCode?.toLowerCase().includes(q);
     const matchCategory = categoryFilter === "ALL" || item.category === categoryFilter;
+    const currentVis = visibilities[item.menuId || item._id] ?? !!item.isVisibleInBilling;
     const matchAvail =
       availFilter === "ALL" ||
-      (availFilter === "VISIBLE" && item.isVisibleInBilling) ||
-      (availFilter === "HIDDEN" && !item.isVisibleInBilling);
+      (availFilter === "VISIBLE" && currentVis) ||
+      (availFilter === "HIDDEN" && !currentVis);
     return matchSearch && matchCategory && matchAvail;
   });
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-  const visibleCount = menus.filter((m) => m.isVisibleInBilling).length;
-  const hiddenCount  = menus.length - visibleCount;
+  const visibleCount = menus.filter((m) => visibilities[m.menuId || m._id] ?? !!m.isVisibleInBilling).length;
+  const hiddenCount = menus.length - visibleCount;
 
   return (
     <React.Fragment>
@@ -108,9 +185,9 @@ const FranchiseMenuAvailability = () => {
           {!loading && menus.length > 0 && (
             <div className="row mb-3 g-3">
               {[
-                { label: "Total Menus",    value: menus.length,  color: "#1D4ED8", icon: "bx-food-menu",     bg: "rgba(59,130,246,0.08)",  border: "rgba(59,130,246,0.2)" },
-                { label: "Visible",        value: visibleCount,  color: "#065F46", icon: "bx-show",          bg: "rgba(16,185,129,0.08)",  border: "rgba(16,185,129,0.2)" },
-                { label: "Hidden",         value: hiddenCount,   color: "#991B1B", icon: "bx-hide",          bg: "rgba(153,27,27,0.07)",   border: "rgba(153,27,27,0.18)" },
+                { label: "Total Menus", value: menus.length, color: "#1D4ED8", icon: "bx-food-menu", bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.2)" },
+                { label: "Visible", value: visibleCount, color: "#065F46", icon: "bx-show", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.2)" },
+                { label: "Hidden", value: hiddenCount, color: "#991B1B", icon: "bx-hide", bg: "rgba(153,27,27,0.07)", border: "rgba(153,27,27,0.18)" },
               ].map(({ label, value, color, icon, bg, border }) => (
                 <div key={label} className="col-4">
                   <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", border: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 12 }}>
@@ -140,9 +217,19 @@ const FranchiseMenuAvailability = () => {
                     boxShadow: "0 2px 6px rgba(217,30,24,0.3)",
                   }}>{filtered.length}</span>
                 </div>
-                <span style={{ fontSize: 12.5, color: "#6b7280" }}>
-                  Toggle the switch to show or hide a menu item in billing
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 15, flexWrap: "wrap" }}>
+                  {isAdmin && (
+                    <select className="form-select form-select-sm" value={franchiseFilter} onChange={(e) => { setFranchiseFilter(e.target.value); setPage(1); }} style={{ width: 220 }}>
+                      <option value="">Select Franchise</option>
+                      {franchises.map(f => (
+                        <option key={f._id} value={f._id}>{f.franchiseId || f._id}</option>
+                      ))}
+                    </select>
+                  )}
+                  <span style={{ fontSize: 12.5, color: "#6b7280" }}>
+                    Toggle the switch to show or hide a menu item in billing
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -211,7 +298,8 @@ const FranchiseMenuAvailability = () => {
                         <th style={{ width: 60 }}>Image</th>
                         <th>Menu Name</th>
                         <th>Category</th>
-                        <th>Price</th>
+                        <th> Regular Price</th>
+                        <th>Sale Price</th>
                         <th className="text-center">Visible in Billing</th>
                       </tr>
                     </thead>
@@ -248,6 +336,17 @@ const FranchiseMenuAvailability = () => {
                           <td>
                             <span style={{ fontWeight: 700, fontSize: 13.5, color: "#1A1A1A" }}>₹{item.price}</span>
                           </td>
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control form-control-sm"
+                              style={{ width: 100 }}
+                              placeholder="Required"
+                              required
+                              value={salePrices[item.menuId || item._id] ?? ""}
+                              onChange={(e) => setSalePrices(prev => ({ ...prev, [item.menuId || item._id]: e.target.value }))}
+                            />
+                          </td>
                           <td className="text-center">
                             {updatingId === (item.menuId || item._id) ? (
                               <div className="d-flex justify-content-center">
@@ -260,16 +359,16 @@ const FranchiseMenuAvailability = () => {
                                     className="form-check-input"
                                     type="checkbox"
                                     role="switch"
-                                    checked={!!item.isVisibleInBilling}
+                                    checked={visibilities[item.menuId || item._id] ?? !!item.isVisibleInBilling}
                                     onChange={(e) => handleToggle(item.menuId || item._id, e.target.checked)}
-                                    style={{ cursor: "pointer", width: 36, height: 20, ...(item.isVisibleInBilling ? { backgroundColor: "#D91E18", borderColor: "#D91E18" } : {}) }}
+                                    style={{ cursor: "pointer", width: 36, height: 20, ...((visibilities[item.menuId || item._id] ?? !!item.isVisibleInBilling) ? { backgroundColor: "#D91E18", borderColor: "#D91E18" } : {}) }}
                                   />
                                 </div>
                                 <span style={{
                                   fontSize: 10.5, fontWeight: 700,
-                                  color: item.isVisibleInBilling ? "#065F46" : "#991B1B",
+                                  color: (visibilities[item.menuId || item._id] ?? !!item.isVisibleInBilling) ? "#065F46" : "#991B1B",
                                 }}>
-                                  {item.isVisibleInBilling ? "Visible" : "Hidden"}
+                                  {(visibilities[item.menuId || item._id] ?? !!item.isVisibleInBilling) ? "Visible" : "Hidden"}
                                 </span>
                               </div>
                             )}
@@ -277,6 +376,26 @@ const FranchiseMenuAvailability = () => {
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot>
+                      <tr>
+                        <td colSpan="7" className="text-end py-3">
+                          <button
+                            className="btn btn-primary"
+                            onClick={handleSaveAll}
+                            disabled={isSavingAll || paged.length === 0}
+                          >
+                            {isSavingAll ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Saving...
+                              </>
+                            ) : (
+                              "Save Prices"
+                            )}
+                          </button>
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 )}
               </div>

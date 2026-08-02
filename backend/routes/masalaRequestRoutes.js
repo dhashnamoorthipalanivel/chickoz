@@ -32,7 +32,14 @@ router.get("/admin/all", protect, getAllMasalaRequests);
 // ======================================================
 // ADMIN UPDATE STATUS
 // ======================================================
-router.patch("/admin/update-status/:id", protect, updateMasalaRequestStatus);
+const { upload } = require("../utils/upload");
+
+router.patch(
+  "/admin/update-status/:id",
+  protect,
+  upload.single("deliveryDocument"),
+  updateMasalaRequestStatus
+);
 
 // ======================================================
 // UPDATE REQUEST

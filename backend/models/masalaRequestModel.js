@@ -156,9 +156,9 @@ const masalaRequestSchema = new mongoose.Schema(
     // ======================================================
 
     paymentOption: {
-  type: String,
-  required: true,
-},
+      type: String,
+      required: true,
+    },
 
     // ======================================================
     // PAYMENT STATUS
@@ -336,6 +336,12 @@ const masalaRequestSchema = new mongoose.Schema(
 
     deliveredDate: {
       type: Date,
+
+      default: null,
+    },
+
+    deliveryDocument: {
+      type: String,
 
       default: null,
     },

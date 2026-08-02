@@ -179,6 +179,9 @@ exports.getMyMenus = async (req, res) => {
 
           isVisibleInBilling:
             assignedData?.isVisibleInBilling ?? true,
+
+          salePrice:
+            assignedData?.salePrice ?? null,
         };
       });
 
@@ -205,15 +208,17 @@ exports.updateMenuVisibility = async (req, res) => {
   try {
     const {
       menuId,
-
       isVisibleInBilling,
+      salePrice,
+      franchiseId: reqFranchiseId,
     } = req.body;
 
     // ✅ LOGGED USER
     const user = req.user;
 
     // ✅ FIND FRANCHISE
-    const franchise = await Franchise.findById(user.franchiseId);
+    const targetFranchiseId = reqFranchiseId || user.franchiseId;
+    const franchise = await Franchise.findById(targetFranchiseId);
 
     if (!franchise) {
       return res.status(404).json({
@@ -232,15 +237,20 @@ exports.updateMenuVisibility = async (req, res) => {
       });
     }
 
-    // ✅ UPDATE VISIBILITY
-    menu.isVisibleInBilling = isVisibleInBilling;
+    // ✅ UPDATE DATA
+    if (isVisibleInBilling !== undefined) {
+      menu.isVisibleInBilling = isVisibleInBilling;
+    }
+    if (salePrice !== undefined) {
+      menu.salePrice = salePrice;
+    }
 
     await franchise.save();
 
     res.status(200).json({
       success: true,
 
-      message: "Menu visibility updated",
+      message: "Menu data updated",
     });
   } catch (error) {
     console.log(error);
