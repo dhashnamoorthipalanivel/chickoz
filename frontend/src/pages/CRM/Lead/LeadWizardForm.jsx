@@ -109,7 +109,7 @@ const LeadWizardForm = ({ onBack }) => {
       ? ["trainingStatus", "trainingStart", "cartRequired", "cartSize", "cartRequiredDate", "cartPriority"]
       : ["trainingStatus", "trainingStart", "cartRequired"],
     PAYMENT: ["totalAmount"],
-    FINAL_SETUP: ["contractSigned", "bankDetails", "bankAccountHolderName", "bankName", "bankIfscCode", "kycDocument", "royaltyDocument"],
+    FINAL_SETUP: ["contractSigned", "kycDocument", "royaltyDocument"],
   };
 
   const validateCurrentStage = () => {
@@ -159,7 +159,7 @@ const LeadWizardForm = ({ onBack }) => {
     if (stageKey === "FINAL_SETUP") {
       const { contractSigned, bankDetails, kycDocument, royaltyDocument } = formData?.stages?.FINAL_SETUP?.data || {};
       if (!contractSigned && !bankDetails && !kycDocument && !royaltyDocument) return "not-started";
-      if (contractSigned === "Yes" && bankDetails && kycDocument && royaltyDocument) return "completed";
+      if (contractSigned === "Yes" && kycDocument && royaltyDocument) return "completed";
       return "in-progress";
     }
 

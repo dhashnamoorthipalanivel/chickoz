@@ -7,3 +7,4 @@ export const getAllOrdersApi       = ()       => api.get("/orders",             
 export const getOrderByIdApi      = (id)     => api.get(`/orders/${id}`,       auth());
 export const createOrderApi       = (data)   => api.post("/orders", data,      auth());
 export const updateOrderStatusApi = (id, d)  => api.patch(`/orders/${id}/status`, d, auth());
+export const deleteOrderApi       = (id)     => api.delete(`/orders/${id}`, auth());

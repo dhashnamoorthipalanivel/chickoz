@@ -227,9 +227,9 @@ const KishokView = () => {
                 <InfoRow label="Production Status">{statusPill(data.manufactureStatus)}</InfoRow>
                 <InfoRow label="Dispatch Date">{fmtDate(data.dispatchDate)}</InfoRow>
                 {data.cartImageName && (
-                  <InfoRow label="Cart Image">
+                  <InfoRow label="Cart Media">
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, color: "#059669", background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.2)" }}>
-                      <i className="bx bx-image" style={{ fontSize: 11 }} />{data.cartImageName}
+                      <i className={data.cartImageName.match(/\\.(mp4|webm|ogg|mov)$/i) ? "bx bx-video" : "bx bx-image"} style={{ fontSize: 11 }} />{data.cartImageName}
                     </span>
                   </InfoRow>
                 )}

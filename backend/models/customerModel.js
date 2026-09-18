@@ -11,7 +11,6 @@ const customerSchema = new mongoose.Schema(
     mobile: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
     },
 
@@ -19,6 +18,18 @@ const customerSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+    customerRefId: {
+      type: String,
+    },
+    creatorFranchiseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Franchise",
+    },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE"],
+      default: "ACTIVE",
     },
   },
 

@@ -70,38 +70,30 @@ exports.createCustomer = async (req, res) => {
       });
     }
 
-    // CHECK GLOBAL CUSTOMER
+    // CHECK CUSTOMER IN THIS FRANCHISE
     let customer = await Customer.findOne({
       mobile,
+      creatorFranchiseId: franchise._id,
     });
 
-    // CREATE CUSTOMER IF NOT EXISTS
-    if (!customer) {
-      customer = await Customer.create({
-        customerName,
-        mobile,
-        email,
-      });
-    }
-
-    // CHECK CUSTOMER ALREADY EXISTS
-    // IN THIS FRANCHISE
-
-    const existingCustomerFranchise = await CustomerFranchise.findOne({
-      customerId: customer._id,
-      franchiseId,
-    });
-
-    if (existingCustomerFranchise) {
+    if (customer) {
       return res.status(400).json({
         message: "Customer already exists in this franchise",
       });
     }
 
-    // CREATE FRANCHISE MAPPING
-    await CustomerFranchise.create({
-      customerId: customer._id,
-      franchiseId,
+    // CREATE CUSTOMER
+    const customerCount = await Customer.countDocuments({ creatorFranchiseId: franchise._id });
+    const seq = (customerCount + 1).toString().padStart(3, "0");
+    const fId = franchise.franchiseId || franchise.referenceId || "Fran01";
+    const customerRefId = `Chic${fId}-cus${seq}`;
+
+    customer = await Customer.create({
+      customerName,
+      mobile,
+      email,
+      creatorFranchiseId: franchise._id,
+      customerRefId,
     });
 
     res.status(201).json({
@@ -122,29 +114,13 @@ exports.getCustomerByMobile = async (req, res) => {
   try {
     const { mobile, franchiseId } = req.params;
 
-    // FIND CUSTOMER
+    // FIND CUSTOMER IN THIS FRANCHISE
     const customer = await Customer.findOne({
       mobile,
+      creatorFranchiseId: franchiseId,
     });
 
-    // NO GLOBAL CUSTOMER
     if (!customer) {
-      return res.status(404).json({
-        message: "Customer not found",
-      });
-    }
-
-    // CHECK CUSTOMER
-    // INSIDE FRANCHISE
-    const customerFranchise = await CustomerFranchise.findOne({
-      customerId: customer._id,
-      franchiseId,
-    });
-
-    // NOT FOUND
-    // IN THIS FRANCHISE
-
-    if (!customerFranchise) {
       return res.status(404).json({
         message: "Customer not found in this franchise",
       });
@@ -164,40 +140,52 @@ exports.getCustomerByMobile = async (req, res) => {
 };
 
 exports.getFranchiseCustomers =
-    async (req, res) => {
+  async (req, res) => {
 
     try {
 
-        const { franchiseId } =
-            req.params;
+      const { franchiseId } =
+        req.params;
 
-        const mappings =
-            await CustomerFranchise
-                .find({
-                    franchiseId
-                })
-                .populate(
-                    "customerId"
-                );
+      const customers = await Customer.find({
+        creatorFranchiseId: franchiseId,
+      }).populate("creatorFranchiseId");
 
-        const customers =
-            mappings.map(
-                (item) =>
-                    item.customerId
-            );
+      res.status(200).json({
 
-        res.status(200).json({
+        success: true,
 
-            success: true,
-
-            customers,
-        });
+        customers,
+      });
 
     } catch (error) {
 
-        res.status(500).json({
-            message:
-                error.message
-        });
+      res.status(500).json({
+        message:
+          error.message
+      });
     }
+  };
+
+// GET ALL CUSTOMERS (Admin sees all, franchise sees theirs)
+exports.getAllCustomers = async (req, res) => {
+  try {
+    const { franchiseId } = req.query;
+    
+    let customers = [];
+    if (franchiseId) {
+      // Franchise specific customers
+      customers = await Customer.find({ creatorFranchiseId: franchiseId }).populate("creatorFranchiseId");
+    } else {
+      // Admin sees all
+      customers = await Customer.find({}).populate("creatorFranchiseId");
+    }
+
+    res.status(200).json({
+      success: true,
+      customers,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

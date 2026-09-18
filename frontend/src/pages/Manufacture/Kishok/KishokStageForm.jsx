@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useVendorStore } from "../../../store/store";
 
@@ -21,7 +21,8 @@ const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentModes }) => {
-  const stage    = stages[activeStage];
+  const [lightbox, setLightbox] = useState(null);
+  const stage = stages[activeStage];
   const isLocked =
     ["HOLD", "RETURN", "CANCELLED"].includes(formData?.leadStatus) ||
     formData?.isFranchiseCreated;
@@ -46,10 +47,10 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
     }
   };
 
-  const paidAmount  = (formData?.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
-  const cartAmount  = Number(formData?.cartAmount ?? 0);
+  const paidAmount = (formData?.payments || []).reduce((a, b) => a + Number(b.amount || 0), 0);
+  const cartAmount = Number(formData?.cartAmount ?? 0);
   const isFullyPaid = cartAmount > 0 && paidAmount >= cartAmount;
-  const pending     = Math.max(cartAmount - paidAmount, 0);
+  const pending = Math.max(cartAmount - paidAmount, 0);
 
   return (
     <div className="card" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)" }}>
@@ -98,11 +99,6 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
               <div className="col-md-6">
                 <FieldLabel>Cart Size</FieldLabel>
                 <input className="form-control" value={formData.cartSize || ""} readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
-              </div>
-
-              <div className="col-md-6">
-                <FieldLabel>Accessories</FieldLabel>
-                <input className="form-control" value={formData.accessories || ""} readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
               </div>
 
               <div className="col-md-6">
@@ -208,52 +204,37 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                 />
               </div>
 
-              {/* ── Cart Images (Multiple) ── */}
+              {/* ── Cart Images/Videos (Multiple) ── */}
               <div className="col-md-12">
-                <FieldLabel required>Cart Images (Multiple)</FieldLabel>
+                <FieldLabel required>Cart Images / Videos  (Format: JPG, PNG, MP4)</FieldLabel>
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/*,video/*"
                   className="form-control"
                   disabled={isLocked}
                   onChange={(e) => {
                     const files = Array.from(e.target.files || []);
                     if (files.length === 0) return;
+                    
+                    setFormData(prev => {
+                      const existingUrls = Array.isArray(prev.cartImages) && prev.cartImages.length > 0
+                        ? prev.cartImages
+                        : (prev.cartImage ? [prev.cartImage] : []);
+                      const existingNames = Array.isArray(prev.cartImageNames) && prev.cartImageNames.length > 0
+                        ? prev.cartImageNames
+                        : (prev.cartImageName ? [prev.cartImageName] : []);
 
-                    const readPromises = files.map(file => {
-                      return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          resolve({
-                            url: event.target.result,
-                            name: file.name
-                          });
-                        };
-                        reader.readAsDataURL(file);
-                      });
-                    });
+                      const updatedUrls = [...existingUrls, ...files];
+                      const updatedNames = [...existingNames, ...files.map(f => f.name)];
 
-                    Promise.all(readPromises).then(newImages => {
-                      setFormData(prev => {
-                        const existingUrls = Array.isArray(prev.cartImages) && prev.cartImages.length > 0
-                          ? prev.cartImages
-                          : (prev.cartImage ? [prev.cartImage] : []);
-                        const existingNames = Array.isArray(prev.cartImageNames) && prev.cartImageNames.length > 0
-                          ? prev.cartImageNames
-                          : (prev.cartImageName ? [prev.cartImageName] : []);
-
-                        const updatedUrls = [...existingUrls, ...newImages.map(img => img.url)];
-                        const updatedNames = [...existingNames, ...newImages.map(img => img.name)];
-
-                        return {
-                          ...prev,
-                          cartImages: updatedUrls,
-                          cartImageNames: updatedNames,
-                          cartImage: updatedUrls[0] || "",
-                          cartImageName: updatedNames[0] || "",
-                        };
-                      });
+                      return {
+                        ...prev,
+                        cartImages: updatedUrls,
+                        cartImageNames: updatedNames,
+                        cartImage: updatedUrls[0] || "",
+                        cartImageName: updatedNames[0] || "",
+                      };
                     });
                     e.target.value = "";
                   }}
@@ -279,6 +260,13 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                         {imagesList.map((imgSrc, idx) => {
                           const fileName = namesList[idx] || (typeof imgSrc === "string" && !imgSrc.startsWith("data:") ? imgSrc.split("/").pop() : `Image ${idx + 1}`);
+                          const isVideo = (typeof imgSrc === "string" && imgSrc.startsWith("data:video")) || (imgSrc instanceof File && imgSrc.type.startsWith("video/")) || fileName.match(/\.(mp4|webm|ogg|mov)$/i);
+                          
+                          let displaySrc = imgSrc instanceof File ? URL.createObjectURL(imgSrc) : imgSrc;
+                          if (typeof displaySrc === "string" && displaySrc.startsWith("/uploads")) {
+                            displaySrc = `http://localhost:3000${displaySrc}`;
+                          }
+                          
                           return (
                             <div
                               key={idx}
@@ -290,19 +278,34 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                                 background: "#fff",
                                 padding: 6,
                                 boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                                cursor: "pointer",
                               }}
+                              onClick={() => setLightbox({ type: isVideo ? "video" : "image", src: displaySrc })}
                             >
-                              <img
-                                src={imgSrc}
-                                alt={fileName}
-                                style={{
-                                  width: "100%",
-                                  height: 85,
-                                  objectFit: "cover",
-                                  borderRadius: 7,
-                                  background: "#f3f4f6",
-                                }}
-                              />
+                              {isVideo ? (
+                                <video
+                                  src={displaySrc}
+                                  style={{
+                                    width: "100%",
+                                    height: 85,
+                                    objectFit: "cover",
+                                    borderRadius: 7,
+                                    background: "#f3f4f6",
+                                  }}
+                                />
+                              ) : (
+                                <img
+                                  src={displaySrc}
+                                  alt={fileName}
+                                  style={{
+                                    width: "100%",
+                                    height: 85,
+                                    objectFit: "cover",
+                                    borderRadius: 7,
+                                    background: "#f3f4f6",
+                                  }}
+                                />
+                              )}
                               <div
                                 style={{
                                   fontSize: 11,
@@ -370,6 +373,17 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
                   );
                 })()}
               </div>
+
+              <div className="col-12 mt-3">
+                <FieldLabel>Cart Accessories & Materials</FieldLabel>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  value={formData.accessories || "No accessories specified"} 
+                  readOnly 
+                  style={{ background: "#f9fafb", color: "#6b7280" }} 
+                />
+              </div>
             </>
           )}
 
@@ -423,9 +437,9 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
               <div className="col-12">
                 <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 4 }}>
                   {[
-                    { label: "Cart Amount",    value: cartAmount,  color: "#374151" },
-                    { label: "Paid",           value: paidAmount,  color: "#059669" },
-                    { label: "Pending",        value: pending,     color: pending > 0 ? "#D91E18" : "#059669" },
+                    { label: "Cart Amount", value: cartAmount, color: "#374151" },
+                    { label: "Paid", value: paidAmount, color: "#059669" },
+                    { label: "Pending", value: pending, color: pending > 0 ? "#D91E18" : "#059669" },
                   ].map(({ label, value, color }) => (
                     <div key={label} style={{ flex: "1 1 120px", padding: "10px 14px", background: "#f9fafb", borderRadius: 10, border: "1px solid #f3f4f6" }}>
                       <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
@@ -485,15 +499,15 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
                         const newPayment = { amount: entered, paymentDate: formData.tempDate, paymentMode: formData.tempPaymentMode || null };
                         const updatedPayments = [...(formData.payments || []), newPayment];
-                        const updatedPaid     = updatedPayments.reduce((a, b) => a + Number(b.amount || 0), 0);
+                        const updatedPaid = updatedPayments.reduce((a, b) => a + Number(b.amount || 0), 0);
 
                         setFormData(prev => ({
                           ...prev,
-                          payments:      updatedPayments,
-                          paidAmount:    updatedPaid,
+                          payments: updatedPayments,
+                          paidAmount: updatedPaid,
                           pendingAmount: Number(prev.cartAmount || 0) - updatedPaid,
-                          tempAmount:    "",
-                          tempDate:      "",
+                          tempAmount: "",
+                          tempDate: "",
                           tempPaymentMode: "",
                         }));
                       }}
@@ -548,6 +562,29 @@ const KishokStageForm = ({ activeStage, stages, formData, setFormData, paymentMo
 
         </div>
       </div>
+
+      {/* ── Lightbox Modal ── */}
+      {lightbox && (
+        <div 
+          onClick={() => setLightbox(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <button 
+              onClick={() => setLightbox(null)}
+              style={{ position: "absolute", top: -16, right: -16, background: "#ef4444", color: "#fff", border: "2px solid #fff", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 999, fontSize: 22, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+            >
+              <i className="bx bx-x" />
+            </button>
+            {lightbox.type === "video" ? (
+              <video src={lightbox.src} controls autoPlay style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 8, background: "#000", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }} />
+            ) : (
+              <img src={lightbox.src} alt="Preview" style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 8, objectFit: "contain", background: "#000", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }} />
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

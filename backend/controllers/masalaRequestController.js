@@ -509,6 +509,63 @@ exports.updateMasalaRequestStatus = async (req, res) => {
 
     await request.save();
 
+    // ── Generate Notification for Franchise on Status Update (APPROVED, DISPATCHED, etc.) ──
+    try {
+      let targetFranchiseObjId = null;
+      const fDoc = await Franchise.findOne({
+        $or: [
+          { franchiseId: request.franchise?.franchiseId },
+          { franchiseName: request.franchise?.franchiseName },
+          { email: request.franchise?.email },
+          { contact: request.franchise?.phone },
+        ],
+        isDeleted: false
+      });
+
+      if (fDoc) {
+        targetFranchiseObjId = fDoc._id;
+      }
+
+      const statusTitles = {
+        APPROVED: "Masala Request Approved 🟢",
+        ACCEPTED: "Masala Request Accepted ✅",
+        PROCESSING: "Masala Request Processing ⚙️",
+        DISPATCHED: "Masala Request Dispatched 🚚",
+        DELIVERED: "Masala Request Delivered 📦",
+        REJECTED: "Masala Request Rejected ❌",
+        CANCELLED: "Masala Request Cancelled ⚠️",
+        UNDER_REVIEW: "Masala Request Under Review 🔍",
+      };
+
+      const notifTitle = statusTitles[status] || `Masala Request ${status}`;
+      let notifMsg = `Your Masala Request (${request.requestId}) status has been updated to ${status}.`;
+
+      if (status === "DISPATCHED" && trackingNumber) {
+        notifMsg += ` Tracking No: ${trackingNumber}.`;
+      }
+      if (adminRemarks) {
+        notifMsg += ` Remarks: ${adminRemarks}`;
+      }
+
+      await Notification.create({
+        type: "MASALA_REQUEST_STATUS",
+        title: notifTitle,
+        message: notifMsg,
+        franchiseId: targetFranchiseObjId,
+        data: {
+          requestId: request._id,
+          requestNo: request.requestId,
+          status: status,
+          franchiseId: targetFranchiseObjId ? targetFranchiseObjId.toString() : null,
+          franchiseName: request.franchise?.franchiseName,
+          sender: "Admin"
+        },
+        isRead: false
+      });
+    } catch (notifErr) {
+      console.error("Error creating status notification:", notifErr);
+    }
+
     return res.status(200).json({
       success: true,
       message: `Request ${status} successfully`,

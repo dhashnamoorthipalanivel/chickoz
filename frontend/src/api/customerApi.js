@@ -16,3 +16,10 @@ export const getFranchiseCustomersApi = async (franchiseId) => {
   const response = await api.get(`/customers/franchise/${franchiseId}`);
   return response.data;
 };
+
+// GET ALL CUSTOMERS
+export const getAllCustomersApi = async (franchiseId) => {
+  const url = franchiseId ? `/customers?franchiseId=${franchiseId}` : "/customers";
+  const response = await api.get(url);
+  return response.data;
+};

@@ -185,15 +185,17 @@ const ProductDetailModal = ({
     <div
       className="modal fade show d-block"
       tabIndex="-1"
+      onClick={onClose}
       style={{
         background:
           "rgba(0,0,0,0.55)",
         backdropFilter:
-          "blur(3px)"
+          "blur(3px)",
+        zIndex: 9999
       }}
     >
 
-      <div className="modal-dialog modal-dialog-centered modal-lg">
+      <div className="modal-dialog modal-dialog-centered modal-lg" onClick={(e) => e.stopPropagation()}>
 
         <div
           className="modal-content border-0"
@@ -213,6 +215,7 @@ const ProductDetailModal = ({
               style={{
                 width: "42px",
                 height: "42px",
+                zIndex: 10
               }}
             >
 

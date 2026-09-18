@@ -166,6 +166,13 @@ exports.updateKishok = async (req, res) => {
   try {
     let updateBody = { ...req.body };
 
+    // Parse any stringified JSON fields (when sending via FormData)
+    for (let key in updateBody) {
+      if (typeof updateBody[key] === 'string' && (updateBody[key].startsWith('[') || updateBody[key].startsWith('{'))) {
+        try { updateBody[key] = JSON.parse(updateBody[key]); } catch (e) {}
+      }
+    }
+
     // Handle files uploaded via Multer if present
     if (req.files && req.files.length > 0) {
       const uploadedUrls = req.files.map(f => `/uploads/${f.filename}`);

@@ -6,6 +6,7 @@ import ProtectedRoute from "../components/ProtectedRoute";
 // Dashboard
 import Dashboard from '../pages/Dashboard/Index';
 import FranchiseDashboard from '../pages/Dashboard/FranchiseDashboard';
+import FranchiseProfile from '../pages/Profile/FranchiseProfile';
 
 // Apps
 import BlogDetail from '../pages/Apps/BlogDetail';
@@ -97,11 +98,23 @@ import Franchise from '../pages/Master/Franchise/Franchise';
 import FranchiseForm from '../pages/Master/Franchise/FranchiseForm';
 import MenuItemForm from '../pages/Master/MenuItem/MenuItemForm';
 import FranchiseMenuVisibility from '../pages/Master/MenuItem/FranchiseMenuVisibility';
+
+// User Management Module
+import UsersList from '../pages/UserManagement/UsersList';
+import CreateUser from '../pages/UserManagement/CreateUser';
+import EditUser from '../pages/UserManagement/EditUser';
+import RolesList from "../pages/UserManagement/RolesList";
+import CreateRole from "../pages/UserManagement/CreateRole";
+import EditRole from "../pages/UserManagement/EditRole";
+import RoleAssignments from '../pages/UserManagement/RoleAssignments';
+import CreateRoleAssignment from '../pages/UserManagement/CreateRoleAssignment';
+import TableMaster from '../pages/Master/Table';
 import FranchiseMenuAvailability from '../pages/Master/MenuItem/FranchiseMenuAvailability';
 import FranchiseMenuVisibilityForm from '../pages/Master/MenuItem/FranchiseMenuVisibilityForm';
 import TaxForm from '../pages/Master/Tax/TaxForm';
 import Vendor from '../pages/Master/Vendor';
 import VendorForm from '../pages/Master/VendorForm';
+import Customer from '../pages/Master/Customer';
 import OrderTypeForm from '../pages/Master/OrderType/OrderTypeForm';
 import PaymentModeForm from '../pages/Master/PaymentMode/PaymentModeForm';
 import LeadSource from '../pages/Master/LeadSource/LeadSource';
@@ -121,6 +134,12 @@ import EnquiryForm from '../pages/CRM/Enquiry/EnquiryForm';
 import Lead from '../pages/CRM/Lead/Lead';
 import LeadWizardFrom from '../pages/CRM/Lead/LeadWizardForm';
 import LeadView from '../pages/CRM/Lead/LeadView';
+import KanbanBoard from "../pages/CRM/KanbanBoard";
+import LeadDetailHub from "../pages/CRM/LeadDetailHub";
+import AutomationBuilder from "../pages/CRM/AutomationBuilder";
+import SocialIntegrations from "../pages/CRM/SocialIntegrations";
+import CRMDashboard from "../pages/CRM/CRMDashboard";
+import SocialLeadsList from "../pages/CRM/SocialLeadsList";
 
 // Store
 import Billing from '../pages/StoreManagement/Billing';
@@ -200,8 +219,11 @@ const AppRoutes = () => {
       <Route path="/reports-admin" element={<W><AdminReport /></W>} />
       <Route path="/reports-franchise" element={<W><FranchiseReport /></W>} />
       <Route path="/layouts-horizontal" element={<W><Dashboard /></W>} />
+      <Route path="/my-profile" element={<W><FranchiseProfile /></W>} />
+      <Route path="/franchise-profile/:id" element={<W><FranchiseProfile /></W>} />
 
       {/* Auth (no layout) */}
+      <Route path="/login" element={<Login />} />
       <Route path="/auth-login" element={<Login />} />
       <Route path="/auth-setup-password" element={<SetUpPassword />} />
       <Route path="/auth-register" element={<Register />} />
@@ -346,6 +368,14 @@ const AppRoutes = () => {
       <Route path="/crm-lead/view/:id" element={<W><LeadView /></W>} />
       <Route path="/crm-lead/:id" element={<W><LeadWizardFrom /></W>} />
 
+      {/* NEW CRM FEATURES */}
+      <Route path='/crm/dashboard' element={<W> <CRMDashboard /> </W>} />
+      <Route path='/crm/social-leads' element={<W> <SocialLeadsList /> </W>} />
+      <Route path='/crm/kanban' element={<W> <KanbanBoard /> </W>} />
+      <Route path='/crm/lead/:id' element={<W> <LeadDetailHub /> </W>} />
+      <Route path='/crm/automations' element={<W> <AutomationBuilder /> </W>} />
+      <Route path='/crm/integrations' element={<W> <SocialIntegrations /> </W>} />
+
       {/* Subscription Management (admin only) */}
       <Route path="/subscription-management" element={
         <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
@@ -416,6 +446,13 @@ const AppRoutes = () => {
       />
       <Route path='/master-franchise/add' element={<W><FranchiseForm /></W>} />
       <Route path='/master-franchise/edit/:id' element={<W><FranchiseForm /></W>} />
+      <Route path='/master-table'
+        element={
+          <ProtectedRoute allowedRoles={["admin", "super_admin", "user", "franchise"]}>
+            <W><TableMaster /></W>
+          </ProtectedRoute>
+        }
+      />
       <Route path='/master-package' element={<W><Package /></W>} />
       <Route path='/master-tax' element={<W><Tax /></W>} />
       <Route path='/master-menu-item' element={<W><MenuItem /></W>} />
@@ -440,6 +477,11 @@ const AppRoutes = () => {
       <Route path="/master-tax/edit/:id" element={<W><TaxForm /></W>} />
 
       <Route path='/master-vendor' element={<W><Vendor /></W>} />
+      <Route path='/master-customer' element={
+        <ProtectedRoute allowedRoles={["admin", "super_admin", "user", "franchise"]}>
+          <W><Customer /></W>
+        </ProtectedRoute>
+      } />
       <Route path='/master-vendor/add' element={<W><VendorForm /></W>} />
       <Route path='/master-vendor/edit/:id' element={<W><VendorForm /></W>} />
       <Route path="/master-order-type/add" element={<W><OrderTypeForm /></W>} />
@@ -456,6 +498,18 @@ const AppRoutes = () => {
       <Route path="/master-package/edit/:id" element={<W><PackageForm /></W>} />
       <Route path="/master-masala-items/add" element={<W><MasalaItemsForm /></W>} />
       <Route path="/master-masala-items/edit/:id" element={<W><MasalaItemsForm /></W>} />
+
+      {/* User Management Module */}
+      <Route path="/users" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><UsersList /></W></ProtectedRoute>} />
+      <Route path="/users/create" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><CreateUser /></W></ProtectedRoute>} />
+      <Route path="/users/:id/edit" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><EditUser /></W></ProtectedRoute>} />
+
+      <Route path="/roles" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><RolesList /></W></ProtectedRoute>} />
+      <Route path="/roles/create" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><CreateRole /></W></ProtectedRoute>} />
+      <Route path="/roles/edit/:id" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><EditRole /></W></ProtectedRoute>} />
+
+      <Route path="/role-assignments" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><RoleAssignments /></W></ProtectedRoute>} />
+      <Route path="/role-assignments/create" element={<ProtectedRoute allowedRoles={["admin", "super_admin", "franchise"]}><W><CreateRoleAssignment /></W></ProtectedRoute>} />
 
     </Routes>
   );

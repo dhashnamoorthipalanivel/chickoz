@@ -10,3 +10,8 @@ export const getFranchiseById = (id) => api.get(`/franchises/${id}`);
 export const updateFranchise = (id, data) => api.put(`/franchises/${id}`, data);
 
 export const sendFranchiseInvitation = (id) => api.post(`/franchises/send-invitation/${id}`);
+
+// GET PROFILE (My Profile or by ID)
+export const getFranchiseProfile = (id) => api.get(id ? `/franchises/profile/${id}` : "/franchises/my-profile", {
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+});

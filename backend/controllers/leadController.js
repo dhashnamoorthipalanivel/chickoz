@@ -135,13 +135,17 @@ exports.createFranchise = async (req, res) => {
     let alreadyExisted = false;
 
     const siteVisit = lead?.stages?.SITE_VISIT?.data || {};
+    const finalSetup = lead?.stages?.FINAL_SETUP?.data || {};
+    const lat = finalSetup.lat || siteVisit.lat || null;
+    const lng = finalSetup.lng || siteVisit.lng || null;
+    const loc = finalSetup.location || siteVisit.location || lead.address || "";
 
     if (franchise) {
       alreadyExisted = true;
-      if (siteVisit.lat && siteVisit.lng) {
-        franchise.latitude = siteVisit.lat;
-        franchise.longitude = siteVisit.lng;
-        if (siteVisit.location) franchise.address = siteVisit.location;
+      if (lat && lng) {
+        franchise.latitude = lat;
+        franchise.longitude = lng;
+        if (loc) franchise.address = loc;
         await franchise.save();
       }
     } else {
@@ -165,10 +169,10 @@ exports.createFranchise = async (req, res) => {
         email: lead.email,
         packageName: lead?.interestedPackage?.packageName || "",
         status: "ACTIVE",
-        address: siteVisit.location || lead.address || "",
-        location: lead.place || siteVisit.location || "",
-        latitude: siteVisit.lat || null,
-        longitude: siteVisit.lng || null,
+        address: loc,
+        location: lead.place || loc,
+        latitude: lat,
+        longitude: lng,
         state: lead.state || "",
         country: "India",
         postCode: lead.postCode,
@@ -178,7 +182,7 @@ exports.createFranchise = async (req, res) => {
       });
     }
 
-    const User = require("../models/user");
+    const User = require("../models/User");
     let user = await User.findOne({
       $or: [
         { franchiseId: franchise._id },

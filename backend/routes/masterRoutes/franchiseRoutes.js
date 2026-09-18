@@ -11,7 +11,12 @@ const {
   setupPassword,
 } = require("../../controllers/masterController/franchiseController");
 
+const { getFranchiseProfile } = require("../../controllers/profileController");
+const { protect } = require("../../middleware/authMiddleware");
+
 router.get("/", getFranchises);
+router.get("/my-profile", protect, getFranchiseProfile);
+router.get("/profile/:id", protect, getFranchiseProfile);
 
 router.get("/verify-invite-token", verifyInviteToken);
 

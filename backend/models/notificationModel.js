@@ -4,11 +4,11 @@ const notificationSchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ["NEW_MASALA_REQUEST", "LOW_STOCK"],
       required: true,
     },
     title: { type: String, required: true },
     message: { type: String, required: true },
+    franchiseId: { type: mongoose.Schema.Types.ObjectId, ref: "Franchise", default: null },
     data: { type: mongoose.Schema.Types.Mixed, default: {} },
     isRead: { type: Boolean, default: false },
   },

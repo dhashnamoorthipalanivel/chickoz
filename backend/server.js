@@ -11,21 +11,22 @@ connectDB().then(async () => {
     const mongoose = require("mongoose");
     const db = mongoose.connection;
     const indexDrops = [
-      { col: "packages",    idx: "packageCode_1"    },
-      { col: "taxes",       idx: "taxCode_1"        },
-      { col: "masalaitems", idx: "itemCode_1"        },
-      { col: "paymentmodes",idx: "paymentCode_1"    },
-      { col: "ordertypes",  idx: "orderTypeCode_1"  },
+      { col: "packages", idx: "packageCode_1" },
+      { col: "taxes", idx: "taxCode_1" },
+      { col: "masalaitems", idx: "itemCode_1" },
+      { col: "paymentmodes", idx: "paymentCode_1" },
+      { col: "ordertypes", idx: "orderTypeCode_1" },
       { col: "leadsources", idx: "leadSourceCode_1" },
-      { col: "documents",   idx: "documentCode_1"   },
-      { col: "materials",   idx: "materialCode_1"   },
-      { col: "menus",       idx: "menuCode_1"       },
+      { col: "documents", idx: "documentCode_1" },
+      { col: "materials", idx: "materialCode_1" },
+      { col: "menus", idx: "menuCode_1" },
+      { col: "franchises", idx: "referenceId_1" },
     ];
     for (const { col, idx } of indexDrops) {
       try {
         await db.collection(col).dropIndex(idx);
         console.log(`[migration] Dropped index ${idx} on ${col}`);
-      } catch (_) {}
+      } catch (_) { }
     }
   } catch (err) {
     console.error("[migration] index drop:", err.message);
@@ -40,8 +41,8 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Auth
 app.use("/api/auth", require("./routes/authRoutes"));
@@ -53,17 +54,21 @@ app.use("/api/masalaItems", require("./routes/masterRoutes/masalaItemsRoutes"));
 app.use("/api/paymentModes", require("./routes/masterRoutes/paymentModeRoutes"));
 app.use("/api/orderTypes", require("./routes/masterRoutes/orderTypeRoutes"));
 app.use("/api/leadSources", require("./routes/masterRoutes/leadSourceRoutes"));
-app.use("/api/materials",  require("./routes/masterRoutes/materialRoutes"));
+app.use("/api/materials", require("./routes/masterRoutes/materialRoutes"));
 app.use("/api/documents", require("./routes/masterRoutes/documentRoutes"));
 app.use("/api/franchises", require("./routes/masterRoutes/franchiseRoutes"));
 app.use("/api/franchise-menu", require("./routes/masterRoutes/franchiseMenuRoutes"));
 app.use("/api/menus", require("./routes/masterRoutes/menu/menuItemRoutes"));
 app.use("/api/vendors", require("./routes/masterRoutes/vendorRoutes"));
+app.use("/api/tables", require("./routes/masterRoutes/tableRoutes"));
 
 // CRM
+app.use("/api/crm", require("./routes/crmRoutes"));
+app.use("/api/raw-leads", require("./routes/rawLeadRoutes"));
 app.use("/api/enquiry", require("./routes/enquiryRoutes"));
 app.use("/api/lead", require("./routes/leadRoutes"));
 app.use("/api/kishok", require("./routes/kishokRoutes"));
+app.use("/api/integrations", require("./routes/integrationRoutes"));
 app.use("/api/masala-request", require("./routes/masalaRequestRoutes"));
 
 // Subscription
@@ -84,14 +89,21 @@ app.use("/api/orders", require("./routes/orderRoutes"));
 // Customer
 app.use("/api/customers", require("./routes/customerRoutes"));
 
+// User Management
+app.use("/api/user-management", require("./routes/userManagementRoutes"));
+
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.get("/{*path}", (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+const initSubscriptionCron = require("./cron/subscriptionCron");
+require("./cron/followUpCron");
 const PORT = process.env.PORT || 3000;
+
+initSubscriptionCron();
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);

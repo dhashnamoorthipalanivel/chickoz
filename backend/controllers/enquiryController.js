@@ -244,6 +244,15 @@ exports.addFollowup = async (req, res) => {
       ...(status && { status }),
     });
 
+    // Instant Notification Trigger
+    const followDateObj = new Date(followUpDate);
+    const todayObj = new Date();
+    if (followDateObj.toDateString() === todayObj.toDateString()) {
+      const { runFollowUpCheck } = require("../cron/followUpCron");
+      // Fire and forget
+      runFollowUpCheck();
+    }
+
     res.status(201).json(entry);
   } catch (error) {
     res.status(500).json({ message: error.message });

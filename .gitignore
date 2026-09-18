@@ -4,3 +4,5 @@ frontend/dist
 frontend/build
 backend/.env
 frontend/.env
+*.zip
+backend/uploads/

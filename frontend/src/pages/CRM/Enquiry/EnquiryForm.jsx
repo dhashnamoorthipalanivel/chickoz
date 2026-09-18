@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEnquiryStore, useLeadSources, usePackageStore, useAuthStore } from "../../../store/store";
-import { getFollowupHistory, addFollowupEntry } from "../../../api/enquiryApi";
+import { getFollowupHistory, addFollowupEntry, getEnquiryById } from "../../../api/enquiryApi";
 import { toast } from "react-toastify";
 
 /* ─── Helpers ──────────────────────────────────────────────── */
@@ -396,6 +396,8 @@ const EnquiryForm = () => {
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || config.tabs[0]);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
+    const [fetchedData, setFetchedData] = useState(initialData);
+    const [loading, setLoading] = useState(mode === "edit" && !initialData.referenceId);
 
     const { leadSources, fetchLeadSources } = useLeadSources();
     const { packages, fetchPackages } = usePackageStore();
@@ -405,23 +407,34 @@ const EnquiryForm = () => {
     useEffect(() => { fetchLeadSources(); fetchPackages(); }, []);
 
     useEffect(() => {
-        if (mode !== "add") return;
-        getNextReferenceId().then((res) =>
-            setForm((p) => ({ ...p, referenceId: res?.referenceId || "" }))
-        );
-    }, [mode]);
+        if (mode === "add") {
+            getNextReferenceId().then((res) =>
+                setForm((p) => ({ ...p, referenceId: res?.referenceId || "" }))
+            );
+        } else if (mode === "edit" && !initialData.referenceId) {
+            setLoading(true);
+            getEnquiryById(id).then(res => {
+                setFetchedData(res.data);
+                setLoading(false);
+            }).catch(err => {
+                console.error(err);
+                toast.error("Failed to fetch enquiry data");
+                setLoading(false);
+            });
+        }
+    }, [mode, id]);
 
     const mergedInitialValues = useMemo(() => ({
         ...config.initialValues,
-        ...initialData,
-        interestedPackage: initialData.interestedPackage?._id || initialData.interestedPackage || "",
-        leadSource: initialData.leadSource?._id || initialData.leadSource || "",
-        followUpDate: initialData.followUpDate
-            ? new Date(initialData.followUpDate).toISOString().split("T")[0] : "",
-        createdDate: initialData.createdAt
-            ? new Date(initialData.createdAt).toISOString().split("T")[0]
+        ...fetchedData,
+        interestedPackage: fetchedData.interestedPackage?._id || fetchedData.interestedPackage || "",
+        leadSource: fetchedData.leadSource?._id || fetchedData.leadSource || "",
+        followUpDate: fetchedData.followUpDate
+            ? new Date(fetchedData.followUpDate).toISOString().split("T")[0] : "",
+        createdDate: fetchedData.createdAt
+            ? new Date(fetchedData.createdAt).toISOString().split("T")[0]
             : config.initialValues.createdDate,
-    }), [initialData]);
+    }), [fetchedData]);
 
     const [form, setForm] = useState(() => mergedInitialValues);
 
@@ -429,7 +442,9 @@ const EnquiryForm = () => {
         setForm(mergedInitialValues);
         setErrors({});
         setActiveTab(location.state?.activeTab || "basic");
-    }, [id, location.state?.activeTab]);
+    }, [mergedInitialValues, location.state?.activeTab]);
+
+    if (loading) return <div className="text-center py-5"><div className="spinner-border text-primary"></div></div>;
 
     const validate = () => {
         const e = {};
@@ -574,9 +589,9 @@ const EnquiryForm = () => {
                                         <h4 className="mb-0" style={{ fontWeight: 800, fontSize: 18, color: B.dark }}>
                                             {mode === "edit" ? "Edit Enquiry" : "New Enquiry"}
                                         </h4>
-                                        {mode === "edit" && initialData.referenceId && (
+                                        {mode === "edit" && fetchedData.referenceId && (
                                             <div style={{ fontSize: 12, color: B.orange, fontWeight: 700, marginTop: 1 }}>
-                                                # {initialData.referenceId}
+                                                # {fetchedData.referenceId}
                                             </div>
                                         )}
                                     </div>
@@ -648,16 +663,16 @@ const EnquiryForm = () => {
                                     <div style={{ padding: "26px 28px" }}>
                                         {activeTab === "followup" && mode === "edit" ? (
                                             <FollowupTab
-                                                enquiryId={initialData._id}
+                                                enquiryId={fetchedData._id}
                                                 assignedBy={profile?.name || form.assignedTo || "Admin"}
                                                 creationEntry={
-                                                    (initialData.followUpDate || initialData.remarks)
+                                                    (fetchedData.followUpDate || fetchedData.remarks)
                                                         ? {
-                                                            followUpDate: initialData.followUpDate,
-                                                            remarks: initialData.remarks,
-                                                            status: initialData.status,
-                                                            addedBy: initialData.assignedTo || "Admin",
-                                                            createdAt: initialData.createdAt,
+                                                            followUpDate: fetchedData.followUpDate,
+                                                            remarks: fetchedData.remarks,
+                                                            status: fetchedData.status,
+                                                            addedBy: fetchedData.assignedTo || "Admin",
+                                                            createdAt: fetchedData.createdAt,
                                                         }
                                                         : null
                                                 }

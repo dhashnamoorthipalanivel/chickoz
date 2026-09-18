@@ -186,6 +186,10 @@ const leadSchema = new mongoose.Schema(
                 type: String,
                 default: "",
               },
+              fileData: {
+                type: String,
+                default: "",
+              },
             },
           ],
         },
@@ -449,6 +453,21 @@ const leadSchema = new mongoose.Schema(
           draftAmount: {
             type: Number,
             default: 0,
+          },
+
+          location: {
+            type: String,
+            default: "",
+          },
+
+          lat: {
+            type: Number,
+            default: null,
+          },
+
+          lng: {
+            type: Number,
+            default: null,
           },
         },
       },

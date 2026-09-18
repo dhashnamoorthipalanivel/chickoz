@@ -70,3 +70,17 @@ export const verifyChangePasswordOtpApi = async (data) => {
 
     return res.data;
   };
+
+export const changePasswordApi = async (data) => {
+  const token = localStorage.getItem("token");
+  const res = await api.post(
+    "/auth/change-password",
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return res.data;
+};

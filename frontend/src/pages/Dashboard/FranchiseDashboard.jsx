@@ -2,6 +2,20 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Chart from "react-apexcharts";
 import { getFranchiseDashboardApi, getDashboardFranchisesApi } from "../../api/dashboardApi";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix for leaflet's default marker icon in webpack/vite environments
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 /* ─── CSS ───────────────────────────────────────────────────────────── */
 const FR_CSS = `
@@ -106,6 +120,76 @@ const StatusPill = ({ status }) => {
     <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 700, background: `${c.color}14`, color: c.color, border: `1px solid ${c.color}33` }}>
       {c.label}
     </span>
+  );
+};
+
+const KNOWN_CITY_COORDS = {
+  chithode: [11.4116, 77.6749],
+  bhavani: [11.4485, 77.6835],
+  gobi: [11.4542, 77.4411],
+  gobichettipalayam: [11.4542, 77.4411],
+  sathya: [11.5034, 77.2444],
+  sathyamangalam: [11.5034, 77.2444],
+  erode: [11.3410, 77.7172],
+  komarapalayam: [11.4428, 77.7126],
+  salem: [11.6643, 78.1460],
+  chennai: [13.0827, 80.2707],
+};
+
+const resolveFranchiseCoords = (f) => {
+  if (f.latitude && f.longitude) {
+    return { ...f, lat: Number(f.latitude), lng: Number(f.longitude) };
+  }
+  const nameText = (f.franchiseName || '').toLowerCase();
+  const addrText = (f.address || '').toLowerCase();
+  const locText = (f.location || '').toLowerCase();
+
+  for (const [key, coords] of Object.entries(KNOWN_CITY_COORDS)) {
+    if (nameText.includes(key) || addrText.includes(key) || locText.includes(key)) {
+      return { ...f, lat: coords[0], lng: coords[1] };
+    }
+  }
+  return { ...f, lat: 11.4428, lng: 77.7126 }; // Fallback
+};
+
+const GlobalFranchiseMap = ({ franchises }) => {
+  const mappedFranchises = franchises.map(resolveFranchiseCoords);
+  
+  // If there's only one franchise, zoom in tightly on its location. Otherwise, show state view.
+  const isSingle = mappedFranchises.length === 1;
+  const mapCenter = isSingle ? [mappedFranchises[0].lat, mappedFranchises[0].lng] : [11.1271, 78.6569];
+  const mapZoom = isSingle ? 13 : 7;
+
+  return (
+    <div className="card mt-4" style={{ borderRadius: 16, border: "1px solid #f0f0f0", boxShadow: "0 4px 14px rgba(0,0,0,0.04)" }}>
+      <div className="card-body" style={{ padding: 0, overflow: "hidden", borderRadius: 16 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <i className="bx bx-map-alt" style={{ color: "#3b82f6", fontSize: 18 }} />
+          </div>
+          <h4 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a1a1a" }}>Global Franchise Locations</h4>
+        </div>
+        <div style={{ height: 450, width: "100%" }}>
+          <MapContainer key={`${mapCenter[0]}-${mapZoom}`} center={mapCenter} zoom={mapZoom} style={{ height: "100%", width: "100%" }}>
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {mappedFranchises.map((f, i) => (
+              <Marker key={f._id || i} position={[f.lat, f.lng]}>
+                <Popup maxWidth={220}>
+                  <strong style={{ display: "block", fontSize: 14, color: "#111827", marginBottom: 2 }}>{f.franchiseName || f.franchiseId}</strong>
+                  <span style={{ fontSize: 12, color: "#6b7280", display: "block" }}>{f.location || "Location not specified"}</span>
+                  {f.ownerName && <span style={{ fontSize: 11, color: "#9ca3af", display: "block", marginTop: 4 }}>Owner: {f.ownerName}</span>}
+                  
+                  {/* Cart Images removed */}
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -248,6 +332,10 @@ const FranchiseDashboard = () => {
   if (noFranSelect) return (
     <div className="fr-empty">
       <FranchiseSelector />
+      
+      {franchises.length > 0 && (
+        <GlobalFranchiseMap franchises={franchises} />
+      )}
 
       {/* Intro text */}
       <div style={{ textAlign: "center", padding: "32px 0 24px" }}>
@@ -648,6 +736,10 @@ const FranchiseDashboard = () => {
           </div>
         ))}
       </div>
+
+      {isAdmin && franchises.length > 0 && (
+        <GlobalFranchiseMap franchises={selectedFranchise ? [selectedFranchise] : franchises} />
+      )}
     </React.Fragment>
   );
 };

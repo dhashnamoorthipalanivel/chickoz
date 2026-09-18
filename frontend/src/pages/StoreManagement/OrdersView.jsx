@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useLocation } from "react-router-dom";
-import { useOrderStore } from "../../store/store";
+import { useOrderStore, useAuthStore } from "../../store/store";
+import { printReceipt } from "../../utils/printReceipt";
 
 const RED  = "#D91E18";
 const GRAD = "linear-gradient(135deg,#D91E18 0%,#F97316 100%)";
@@ -26,12 +27,13 @@ const payStatusCfg = {
 };
 
 const orderTypeCfg = {
-  DINE_IN:       { color:"#7c3aed", bg:"rgba(124,58,237,0.08)", border:"rgba(124,58,237,0.22)", icon:"bx-restaurant"  },
-  TAKE_AWAY:     { color:"#F97316", bg:"rgba(249,115,22,0.09)", border:"rgba(249,115,22,0.25)", icon:"bx-shopping-bag" },
-  HOME_DELIVERY: { color:"#2563eb", bg:"rgba(37,99,235,0.08)",  border:"rgba(37,99,235,0.22)",  icon:"bx-cycling"     },
+  DINE_IN:          { color:"#7c3aed", bg:"rgba(124,58,237,0.08)", border:"rgba(124,58,237,0.22)", icon:"bx-restaurant"  },
+  TAKE_AWAY:        { color:"#F97316", bg:"rgba(249,115,22,0.09)", border:"rgba(249,115,22,0.25)", icon:"bx-shopping-bag" },
+  HOME_DELIVERY:    { color:"#2563eb", bg:"rgba(37,99,235,0.08)",  border:"rgba(37,99,235,0.22)",  icon:"bx-cycling"     },
+  DELIVERY_PARTNER: { color:"#ea580c", bg:"rgba(234,88,12,0.08)",  border:"rgba(234,88,12,0.22)",  icon:"bx-car"         },
 };
 
-const payMethodIcon = { CASH:"bx-money-withdraw", CARD:"bx-credit-card", UPI:"bx-qr", WALLET:"bx-wallet", OTHER:"bx-dots-horizontal-rounded" };
+const payMethodIcon = { CASH:"bx-money-withdraw", CARD:"bx-credit-card", UPI:"bx-qr", UPI_CASH:"bx-dialpad-alt", WALLET:"bx-wallet", OTHER:"bx-dots-horizontal-rounded" };
 
 const Pill = ({ color, bg, border, icon, label }) => (
   <span style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"5px 13px", borderRadius:20, fontSize:12, fontWeight:700, color, background:bg, border:`1px solid ${border}`, whiteSpace:"nowrap" }}>
@@ -46,8 +48,8 @@ const InfoRow = ({ label, value }) => (
   </div>
 );
 
-const Card = ({ children, style }) => (
-  <div style={{ background:"#fff", borderRadius:16, border:`1.5px solid ${BDR}`, boxShadow:"0 2px 20px rgba(0,0,0,0.06)", overflow:"hidden", ...style }}>
+const Card = ({ children, style, className = "" }) => (
+  <div className={`card ${className}`} style={{ background:"#fff", borderRadius:16, border:`1.5px solid ${BDR}`, boxShadow:"0 2px 20px rgba(0,0,0,0.06)", overflow:"hidden", ...style }}>
     {children}
   </div>
 );
@@ -63,9 +65,10 @@ const CardHeader = ({ icon, title, color = RED }) => (
 
 const OrdersView = () => {
   const { id }          = useParams();
-  const { state }       = useLocation();
+  const location        = useLocation();
   const { fetchOrderById, loading } = useOrderStore();
-  const [order, setOrder] = useState(state?.rowData || null);
+  const { franchise } = useAuthStore();
+  const [order, setOrder] = useState(location.state?.rowData || null);
 
   useEffect(() => {
     if (id && !order) {
@@ -99,10 +102,12 @@ const OrdersView = () => {
   const itemTotal = (item) => ((item.discountedPrice || 0) + (item.addonTotal || 0)) * (item.qty || 1);
 
   return (
-    <div className="page-content"><div className="container-fluid">
+    <>
+      <div className="page-content">
+        <div className="container-fluid">
 
       {/* ── Breadcrumb ── */}
-      <div className="row"><div className="col-12">
+      <div className="row no-print"><div className="col-12">
         <div className="page-title-box d-sm-flex align-items-center justify-content-between">
           <div style={{ display:"flex", alignItems:"center", gap:14 }}>
             <div style={{ width:44, height:44, borderRadius:12, background:GRAD, boxShadow:"0 4px 14px rgba(217,30,24,0.32)", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -214,7 +219,13 @@ const OrdersView = () => {
             <div style={{ padding:"18px 20px", display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))", gap:18 }}>
               <InfoRow label="Customer Name"   value={order.customerName}   />
               <InfoRow label="Mobile Number"   value={order.customerMobile || "—"} />
-              <InfoRow label="Table / Token"   value={order.tableNo || "—"} />
+              {order.orderType === "DINE_IN" && <InfoRow label="Table / Token"   value={order.tableNo || "—"} />}
+              {order.orderType === "DELIVERY_PARTNER" && (
+                <>
+                  <InfoRow label="Delivery Partner" value={order.deliveryPartner || "—"} />
+                  <InfoRow label="Delivery Order ID" value={order.deliveryOrderId || "—"} />
+                </>
+              )}
               <InfoRow label="Order Date"      value={fmt_date(order.createdAt)} />
             </div>
           </Card>
@@ -293,7 +304,7 @@ const OrdersView = () => {
           {/* Actions */}
           <Card>
             <div style={{ padding:"16px 20px", display:"grid", gap:10 }}>
-              <button className="btn btn-success d-flex align-items-center justify-content-center gap-2" onClick={() => window.print()}>
+              <button className="btn btn-success d-flex align-items-center justify-content-center gap-2" onClick={() => printReceipt(order, franchise?.franchise || franchise)}>
                 <i className="bx bx-printer"/>Print Bill
               </button>
               <Link to="/store-management-orders" className="btn btn-light border d-flex align-items-center justify-content-center gap-2">
@@ -306,6 +317,7 @@ const OrdersView = () => {
       </div>
 
     </div></div>
+    </>
   );
 };
 

@@ -7,6 +7,7 @@ const {
   getAllOrders,
   getOrderById,
   updateOrderStatus,
+  deleteOrder,
 } = require("../controllers/orderController");
 
 router.use(protect);
@@ -16,5 +17,6 @@ router.get("/my",          getMyOrders);
 router.get("/",            getAllOrders);
 router.get("/:id",         getOrderById);
 router.patch("/:id/status", updateOrderStatus);
+router.delete("/:id",      deleteOrder);
 
 module.exports = router;

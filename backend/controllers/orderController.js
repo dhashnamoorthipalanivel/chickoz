@@ -28,7 +28,7 @@ exports.getMyOrders = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("franchiseId", "franchiseName franchiseCode")
+      .populate("franchiseId", "franchiseName franchiseCode address contact")
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (err) {
@@ -39,7 +39,7 @@ exports.getAllOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate("franchiseId", "franchiseName franchiseCode");
+      .populate("franchiseId", "franchiseName franchiseCode address contact");
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
   } catch (err) {
@@ -56,6 +56,16 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await Order.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!order) return res.status(404).json({ message: "Order not found" });
     res.json(order);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndDelete(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+    res.json({ message: "Order deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

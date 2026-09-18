@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const User = require("../models/user");
+const User = require("../models/User");
 const generateToken = require("../utils/generateToken");
 
 // Register User

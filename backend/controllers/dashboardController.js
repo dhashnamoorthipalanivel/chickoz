@@ -201,9 +201,21 @@ exports.getFranchiseDashboard = async (req, res) => {
 exports.getFranchiseList = async (req, res) => {
   try {
     const list = await Franchise.find({ isDeleted: false })
-      .select("_id franchiseId franchiseName ownerName status location")
+      .select("_id franchiseId franchiseName ownerName status location latitude longitude referenceId")
       .sort({ franchiseName: 1 })
       .lean();
+
+    const Kishok = require("../models/kishokModel");
+    for (let f of list) {
+      if (f.referenceId) {
+        const kishok = await Kishok.findOne({ referenceId: f.referenceId }).select("cartImages cartImage").lean();
+        const images = Array.isArray(kishok?.cartImages) && kishok.cartImages.length > 0 
+          ? kishok.cartImages 
+          : (kishok?.cartImage ? [kishok.cartImage] : []);
+        f.cartImages = images;
+      }
+    }
+
     res.json(list);
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -8,6 +8,7 @@ const {
   logoutUser,
   sendChangePasswordOtp,
   verifyChangePasswordOtp,
+  changePassword,
 } = require("../controllers/authController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -21,6 +22,7 @@ router.get("/me", protect, getMe);
 router.post("/logout", protect, logoutUser);
 router.post("/send-change-password-otp", protect, sendChangePasswordOtp);
 router.post("/verify-change-password-otp", protect, verifyChangePasswordOtp);
+router.post("/change-password", protect, changePassword);
 
 router.get("/", (req, res) => {
   res.send("Auth Route Working");

@@ -116,17 +116,28 @@ const KishokWizardForm = () => {
         ...formData,
         completedStages: [...new Set([...(formData.completedStages || []), stages[activeStage].key])],
       };
-      const payload = { ...updatedData };
-      if (payload.cartImage) {
-        const img = payload.cartImage;
-        payload.cartImage = typeof img === "string" ? img : img.name;
-        payload.cartImageName = typeof img === "string" ? img : img.name;
-      }
-      await saveKishok(formData._id, payload);
-      setFormData(updatedData);
+      const payloadObj = { ...updatedData };
+      const formDataObj = new FormData();
+      Object.keys(payloadObj).forEach(key => {
+        if (key === 'cartImages') {
+          (payloadObj.cartImages || []).forEach(item => formDataObj.append('cartImages', item));
+        } else if (key === 'cartImageNames') {
+          (payloadObj.cartImageNames || []).forEach(item => formDataObj.append('cartImageNames', item));
+        } else {
+          const val = payloadObj[key];
+          if (val !== undefined && val !== null) {
+            formDataObj.append(key, typeof val === 'object' ? JSON.stringify(val) : val);
+          }
+        }
+      });
+      const res = await saveKishok(formData._id, formDataObj);
+      setFormData(res.data);
       toast.success("Saved Successfully");
       if (activeStage < stages.length - 1) setActiveStage(p => p + 1);
-    } catch { toast.error("Save Failed"); }
+    } catch (error) { 
+      console.error("handleNext error:", error);
+      toast.error("Save Failed: " + (error.response?.data?.message || error.message)); 
+    }
   };
 
   const handlePrev = () => { if (activeStage > 0) setActiveStage(p => p - 1); };
@@ -134,34 +145,64 @@ const KishokWizardForm = () => {
   const handleSave = async () => {
     if (isLocked && !formData.isFranchiseCreated) return;
     try {
-      const payload = { ...formData };
-      if (payload.cartImage) {
-        const img = payload.cartImage;
-        payload.cartImage = typeof img === "string" ? img : img.name;
-        payload.cartImageName = typeof img === "string" ? img : img.name;
-      }
-      await saveKishok(formData._id, payload);
+      const payloadObj = { ...formData };
+      const formDataObj = new FormData();
+      Object.keys(payloadObj).forEach(key => {
+        if (key === 'cartImages') {
+          (payloadObj.cartImages || []).forEach(item => formDataObj.append('cartImages', item));
+        } else if (key === 'cartImageNames') {
+          (payloadObj.cartImageNames || []).forEach(item => formDataObj.append('cartImageNames', item));
+        } else {
+          const val = payloadObj[key];
+          if (val !== undefined && val !== null) {
+            formDataObj.append(key, typeof val === 'object' ? JSON.stringify(val) : val);
+          }
+        }
+      });
+      const res = await saveKishok(formData._id, formDataObj);
+      setFormData(res.data);
       toast.success(formData.isFranchiseCreated ? "Payment Details Saved" : "Draft Saved");
-    } catch { toast.error("Save Failed"); }
+    } catch (error) { 
+      console.error("handleSave error:", error);
+      toast.error("Save Failed: " + (error.response?.data?.message || error.message)); 
+    }
   };
 
   const handleComplete = async () => {
     if (isLocked && !formData.isFranchiseCreated) return;
     if (!allStagesCompleted) { toast.error("Complete all stages first"); return; }
     try {
-      const payload = {
+      const payloadObj = {
         ...formData,
         manufactureStatus: "COMPLETED",
         completedStages: stages.map(s => s.key),
       };
-      if (payload.cartImage) {
-        const img = payload.cartImage;
-        payload.cartImage = typeof img === "string" ? img : img.name;
-        payload.cartImageName = typeof img === "string" ? img : img.name;
-      }
-      await saveKishok(formData._id, payload);
+
+      const formDataObj = new FormData();
+      Object.keys(payloadObj).forEach(key => {
+        if (key === 'cartImages') {
+          (payloadObj.cartImages || []).forEach(item => {
+            formDataObj.append('cartImages', item);
+          });
+        } else if (key === 'cartImageNames') {
+          (payloadObj.cartImageNames || []).forEach(item => {
+            formDataObj.append('cartImageNames', item);
+          });
+        } else {
+          const val = payloadObj[key];
+          if (val !== undefined && val !== null) {
+            formDataObj.append(key, typeof val === 'object' ? JSON.stringify(val) : val);
+          }
+        }
+      });
+
+      const res = await saveKishok(formData._id, formDataObj);
+      setFormData(res.data);
       toast.success("Kishok Process Completed");
-    } catch { toast.error("Completion Failed"); }
+    } catch (error) { 
+      console.error("handleComplete error:", error);
+      toast.error("Completion Failed: " + (error.response?.data?.message || error.message)); 
+    }
   };
 
   /* ── Stepper colours ── */

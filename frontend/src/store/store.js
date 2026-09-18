@@ -84,9 +84,10 @@ import {
   updateMasalaRequest,
   updateMasalaRequestStatus,
 } from "../api/masalaRequestApi";
-import { createCustomerApi, getCustomerByMobileApi, getFranchiseCustomersApi } from "../api/customerApi";
-import { getNotificationsApi, markAsReadApi, markAllAsReadApi } from "../api/notificationApi";
-import { getMyOrdersApi, getOrderByIdApi, createOrderApi, updateOrderStatusApi } from "../api/orderApi";
+
+import { createCustomerApi, getCustomerByMobileApi, getFranchiseCustomersApi, getAllCustomersApi } from "../api/customerApi";
+import { getNotificationsApi, sendNotificationApi, markAsReadApi, markAllAsReadApi } from "../api/notificationApi";
+import { getMyOrdersApi, getAllOrdersApi, getOrderByIdApi, createOrderApi, updateOrderStatusApi, deleteOrderApi } from "../api/orderApi";
 import {
   getSubscriptions,
   getMySubscription,
@@ -774,6 +775,7 @@ export const useAuthStore = create((set) => ({
 
 export const useCustomerStore = create((set) => ({
   customer: null,
+  customers: [],
   customerLoading: false,
   // CREATE CUSTOMER
   createCustomer: async (payload) => {
@@ -834,6 +836,17 @@ export const useCustomerStore = create((set) => ({
     return response.customers;
   },
 
+  getAllCustomers: async (franchiseId) => {
+    set({ customerLoading: true });
+    try {
+      const response = await getAllCustomersApi(franchiseId);
+      set({ customers: response.customers, customerLoading: false });
+      return response.customers;
+    } catch (error) {
+      set({ customerLoading: false });
+      throw error;
+    }
+  },
 }));
 
 // Masala request
@@ -1039,6 +1052,11 @@ export const useNotificationStore = create((set) => ({
       }));
     } catch (_) { }
   },
+
+  sendNotification: async (data) => {
+    const res = await sendNotificationApi(data);
+    return res.data;
+  },
 }));
 
 // Orders
@@ -1051,6 +1069,16 @@ export const useOrderStore = create((set) => ({
     set({ loading: true });
     try {
       const res = await getMyOrdersApi();
+      set({ orders: res.data, loading: false });
+    } catch (_) {
+      set({ loading: false });
+    }
+  },
+
+  fetchAllOrders: async () => {
+    set({ loading: true });
+    try {
+      const res = await getAllOrdersApi();
       set({ orders: res.data, loading: false });
     } catch (_) {
       set({ loading: false });
@@ -1076,6 +1104,11 @@ export const useOrderStore = create((set) => ({
 
   updateOrderStatus: async (id, data) => {
     const res = await updateOrderStatusApi(id, data);
+    return res.data;
+  },
+
+  deleteOrder: async (id) => {
+    const res = await deleteOrderApi(id);
     return res.data;
   },
 }));
@@ -1167,4 +1200,40 @@ export const useVendorStore = create((set) => ({
     set({ loading: false });
     return res.data;
   },
+}));
+
+
+// Integrations
+import { getIntegrations, configureIntegration } from "../api/integrationApi";
+
+export const useIntegrationStore = create((set) => ({
+  integrations: [],
+  loading: false,
+  fetchIntegrations: async () => {
+    set({ loading: true });
+    try {
+      const res = await getIntegrations();
+      set({ integrations: res.data, loading: false });
+    } catch (err) {
+      console.error(err);
+      set({ loading: false });
+    }
+  },
+  configureIntegration: async (data) => {
+    try {
+      const res = await configureIntegration(data);
+      set((state) => {
+        const existing = state.integrations.find(i => i.platform === res.data.integration.platform);
+        if (existing) {
+          return { integrations: state.integrations.map(i => i.platform === res.data.integration.platform ? res.data.integration : i) };
+        } else {
+          return { integrations: [...state.integrations, res.data.integration] };
+        }
+      });
+      return res.data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
 }));

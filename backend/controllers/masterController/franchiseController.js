@@ -1,6 +1,6 @@
 const Franchise = require("../../models/masterModels/franchiseModel");
 const sendMail = require("../../config/sendMail");
-const User = require("../../models/user");
+const User = require("../../models/User");
 
 // ==========================================
 // GET ALL
@@ -71,7 +71,7 @@ exports.updateFranchise = async (req, res) => {
     // Handle User creation/update if username or password provided
     const { username, password } = req.body;
     if (username || password) {
-      const User = require("../../models/user");
+      const User = require("../../models/User");
       let user = await User.findOne({
           $or: [
               { franchiseId: updatedData._id }, 

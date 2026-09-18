@@ -1,6 +1,6 @@
 const crypto = require("crypto");
-// const User = require("../models/user");
-const User = require("../models/user")
+// const User = require("../models/User");
+const User = require("../models/User")
 // const generateToken = require("../utils/generateToken");
 const generateToken = require("../utils/generateToken");
 const Franchise = require("../models/masterModels/franchiseModel");
@@ -74,18 +74,70 @@ const loginUser = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase().trim() }).select("+password");
+    const cleanInput = email.toLowerCase().trim();
+    const bcrypt = require("bcryptjs");
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+    // 1. Search in User collection by email or phone
+    let user = await User.findOne({
+      $or: [{ email: cleanInput }, { phone: cleanInput }]
+    }).select("+password");
+
+    let isMatch = false;
+
+    if (user) {
+      isMatch = await user.comparePassword(password);
     }
 
-    const isMatch = await user.comparePassword(password);
+    // 2. Fallback search in Franchise collection if user not found or password didn't match
+    if (!user || !isMatch) {
+      const franchise = await Franchise.findOne({
+        $or: [{ email: cleanInput }, { contact: cleanInput }],
+        isDeleted: false
+      });
 
-    if (!isMatch) {
+      if (franchise && franchise.password) {
+        let franPassMatch = password === franchise.password;
+        if (!franPassMatch && franchise.password.startsWith("$2a$")) {
+          try {
+            franPassMatch = await bcrypt.compare(password, franchise.password);
+          } catch (_) { }
+        }
+
+        if (franPassMatch) {
+          user = await User.findOne({
+            $or: [{ franchiseId: franchise._id }, { email: franchise.email }, { phone: franchise.contact }]
+          }).select("+password");
+
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(password, salt);
+
+          if (!user) {
+            user = await User.create({
+              firstName: franchise.ownerName || franchise.franchiseName,
+              email: franchise.email,
+              phone: franchise.contact,
+              password: hashedPassword,
+              role: "franchise",
+              franchiseId: franchise._id,
+              isActive: true,
+              isEmailVerified: true
+            });
+          } else {
+            user.password = hashedPassword;
+            user.email = franchise.email;
+            user.phone = franchise.contact;
+            user.role = "franchise";
+            user.franchiseId = franchise._id;
+            user.isActive = true;
+            await user.save();
+          }
+
+          isMatch = true;
+        }
+      }
+    }
+
+    if (!user || !isMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
@@ -102,6 +154,23 @@ const loginUser = async (req, res) => {
     await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
 
     const token = generateToken(user);
+    
+    // Fetch permissions via RoleAssignment
+    const RoleAssignment = require("../models/RoleAssignment");
+    const Role = require("../models/Role");
+    
+    let permissions = [];
+    if (user.role === 'super_admin') {
+      permissions = ['all'];
+    } else {
+      const assignment = await RoleAssignment.findOne({ userId: user._id }).populate('roleId');
+      if (assignment && assignment.roleId) {
+        permissions = assignment.roleId.permissions || [];
+      } else if (user.role === 'franchise') {
+        // Give franchise owner full access to their own isolated franchise
+        permissions = ['all'];
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -114,6 +183,8 @@ const loginUser = async (req, res) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        franchiseId: user.franchiseId,
+        permissions,
       },
     });
   } catch (error) {
@@ -270,7 +341,7 @@ const sendChangePasswordOtp = async (req, res) => {
     // FIND USER
     const user = await User.findById(req.user.id);
 
-const userWithPassword = await User.findById(req.user.id).select("+password");
+    const userWithPassword = await User.findById(req.user.id).select("+password");
 
     if (!user) {
       return res.status(404).json({
@@ -281,7 +352,7 @@ const userWithPassword = await User.findById(req.user.id).select("+password");
     }
 
     // VERIFY CURRENT PASSWORD
-    const isMatch = await userWithPassword.comparePassword( currentPassword);
+    const isMatch = await userWithPassword.comparePassword(currentPassword);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -383,6 +454,41 @@ const verifyChangePasswordOtp = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: "Current and new password are required" });
+    }
+
+    const user = await User.findById(req.user.id).select("+password");
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Incorrect current password" });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    // Also update the Franchise document password if it's a franchise user
+    if (user.role === "franchise" && user.franchiseId) {
+      const franchise = await Franchise.findById(user.franchiseId);
+      if (franchise) {
+        franchise.password = newPassword;
+        await franchise.save();
+      }
+    }
+
+    res.status(200).json({ success: true, message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -392,4 +498,5 @@ module.exports = {
   logoutUser,
   sendChangePasswordOtp,
   verifyChangePasswordOtp,
+  changePassword,
 };

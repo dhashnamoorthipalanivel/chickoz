@@ -59,6 +59,8 @@ const customSelectStyles = {
       border: "none !important",
     },
   }),
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+  menu: (base) => ({ ...base, zIndex: 9999 }),
 };
 
 /* ── Map defaults ── */
@@ -250,7 +252,9 @@ const SiteVisitMap = ({ stageData, onSelect, isLocked }) => {
 
   const initCenter = stageData.lat && stageData.lng
     ? [stageData.lat, stageData.lng]
-    : KOMAR;
+    : [11.1271, 78.6569]; // Center of Tamil Nadu to see regional franchises
+
+  const initZoom = stageData.lat && stageData.lng ? 13 : 7;
 
   return (
     <div style={{ borderRadius: 12, overflow: "hidden", border: "1.5px solid #e5e7eb", position: "relative" }}>
@@ -261,7 +265,7 @@ const SiteVisitMap = ({ stageData, onSelect, isLocked }) => {
           </div>
         </div>
       )}
-      <MapContainer center={initCenter} zoom={13} style={{ height: 360, width: "100%" }}>
+      <MapContainer center={initCenter} zoom={initZoom} style={{ height: 360, width: "100%" }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -422,10 +426,18 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
     });
   };
 
-  const updateDocumentFile = (docId, fileName) => {
+  const updateDocumentFile = (docId, fileName, fileData) => {
     setFormData(prev => {
       const current = prev?.stages?.APPROVAL?.data?.documents || [];
-      const updated = current.map(d => String(d.documentId) === String(docId) ? { ...d, fileName } : d);
+      const updated = current.map(d => String(d.documentId) === String(docId) ? { ...d, fileName, fileData } : d);
+      return { ...prev, stages: { ...prev.stages, APPROVAL: { ...prev.stages.APPROVAL, data: { ...prev.stages.APPROVAL.data, documents: updated } } } };
+    });
+  };
+
+  const updateDocumentExpiryDate = (docId, expiryDate) => {
+    setFormData(prev => {
+      const current = prev?.stages?.APPROVAL?.data?.documents || [];
+      const updated = current.map(d => String(d.documentId) === String(docId) ? { ...d, expiryDate } : d);
       return { ...prev, stages: { ...prev.stages, APPROVAL: { ...prev.stages.APPROVAL, data: { ...prev.stages.APPROVAL.data, documents: updated } } } };
     });
   };
@@ -715,7 +727,13 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                                     disabled={isLocked}
                                     onChange={e => {
                                       const file = e.target.files[0];
-                                      if (file) updateDocumentFile(doc._id, file.name);
+                                      if (file) {
+                                        const reader = new FileReader();
+                                        reader.onload = (evt) => {
+                                          updateDocumentFile(doc._id, file.name, evt.target.result);
+                                        };
+                                        reader.readAsDataURL(file);
+                                      }
                                     }}
                                   />
                                 </div>
@@ -822,8 +840,32 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                     <input type="text" className="form-control" value={stageData.cartSize || ""} readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
                   </div>
 
+
                   <div className="col-md-6">
-                    <FL>Accessories</FL>
+                    <FL required>Required Date</FL>
+                    <input type="date" name="cartRequiredDate" className="form-control"
+                      value={stageData.cartRequiredDate ? new Date(stageData.cartRequiredDate).toISOString().split("T")[0] : ""}
+                      onChange={handleChange} />
+                  </div>
+
+                  <div className="col-md-6">
+                    <FL required>Priority</FL>
+                    <select name="cartPriority" className="form-select" value={stageData.cartPriority || ""} onChange={handleChange}>
+                      <option value="">Select</option>
+                      <option>Normal</option>
+                      <option>Urgent</option>
+                    </select>
+                  </div>
+
+                  <div className="col-md-6">
+                    <FL>Cart Manufacture Status</FL>
+                    <input type="text" className="form-control"
+                      value={formatLabel(stageData.cartManufactureStatus) || "Not Required"}
+                      readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
+                  </div>
+
+                  <div className="col-12 mt-2">
+                    <FL>Cart Accessories & Materials</FL>
                     {(() => {
                       let raw = stageData.accessories;
                       if (raw === undefined && formData?.interestedPackage) {
@@ -848,6 +890,8 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                           isMulti
                           isClearable
                           styles={customSelectStyles}
+                          menuPortalTarget={document.body}
+                          menuPosition="fixed"
                           options={materialOptions}
                           value={selectedVal}
                           isDisabled={isLocked}
@@ -872,29 +916,6 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
                         />
                       );
                     })()}
-                  </div>
-
-                  <div className="col-md-6">
-                    <FL required>Required Date</FL>
-                    <input type="date" name="cartRequiredDate" className="form-control"
-                      value={stageData.cartRequiredDate ? new Date(stageData.cartRequiredDate).toISOString().split("T")[0] : ""}
-                      onChange={handleChange} />
-                  </div>
-
-                  <div className="col-md-6">
-                    <FL required>Priority</FL>
-                    <select name="cartPriority" className="form-select" value={stageData.cartPriority || ""} onChange={handleChange}>
-                      <option value="">Select</option>
-                      <option>Normal</option>
-                      <option>Urgent</option>
-                    </select>
-                  </div>
-
-                  <div className="col-md-6">
-                    <FL>Cart Manufacture Status</FL>
-                    <input type="text" className="form-control"
-                      value={formatLabel(stageData.cartManufactureStatus) || "Not Required"}
-                      readOnly style={{ background: "#f9fafb", color: "#6b7280" }} />
                   </div>
                 </>
               )}
@@ -1134,25 +1155,25 @@ const LeadStageForm = ({ activeStage, formData, setFormData, stages, paymentMode
               </div>
 
               <div className="col-md-6">
-                <FL required>Bank Account Number</FL>
+                <FL>Bank Account Number</FL>
                 <input type="text" name="bankDetails" className="form-control"
                   value={stageData.bankDetails || ""} onChange={handleChange} placeholder="Account / IFSC details" />
               </div>
 
               <div className="col-md-6">
-                <FL required>Bank Account Holder Name</FL>
+                <FL>Bank Account Holder Name</FL>
                 <input type="text" name="bankAccountHolderName" className="form-control"
                   value={stageData.bankAccountHolderName || ""} onChange={handleChange} placeholder="Account Holder Name" />
               </div>
 
               <div className="col-md-6">
-                <FL required>Bank Name</FL>
+                <FL>Bank Name</FL>
                 <input type="text" name="bankName" className="form-control"
                   value={stageData.bankName || ""} onChange={handleChange} placeholder="Bank Name" />
               </div>
 
               <div className="col-md-6">
-                <FL required>Bank IFSC Code</FL>
+                <FL>Bank IFSC Code</FL>
                 <input type="text" name="bankIfscCode" className="form-control"
                   value={stageData.bankIfscCode || ""} onChange={handleChange} placeholder="IFSC Code" />
               </div>

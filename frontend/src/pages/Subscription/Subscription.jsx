@@ -228,7 +228,7 @@ const Subscription = () => {
     <div>
 
       {/* ── Page header ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24, position: "relative", zIndex: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24, position: "relative", zIndex: 0 }}>
         <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg,#D91E18,#F97316)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(217,30,24,0.3)", flexShrink: 0 }}>
           <i className="bx bx-key" style={{ color: "#fff", fontSize: 22 }} />
         </div>
@@ -239,7 +239,7 @@ const Subscription = () => {
       </div>
 
       {/* ── Stats cards ── */}
-      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24, position: "relative", zIndex: 2 }}>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 24, position: "relative", zIndex: 0 }}>
         {[
           { label: "Total Franchises", val: all.length, icon: "bx-store", c1: "#2563eb", c2: "#60a5fa" },
           { label: "Active", val: active, icon: "bx-check-circle", c1: "#059669", c2: "#34d399" },
@@ -262,7 +262,7 @@ const Subscription = () => {
       </div>
 
       {/* ── Table card ── */}
-      <div className="card" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative", zIndex: 1 }}>
+      <div className="card" style={{ borderRadius: 14, border: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.07)", animation: "none", position: "relative", zIndex: 0 }}>
         <div className="card-header" style={{ padding: "16px 22px", background: "#fff", borderRadius: "14px 14px 0 0", borderBottom: "1px solid #f3f4f6" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

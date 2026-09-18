@@ -12,7 +12,7 @@ const isTokenExpired = (token) => {
   }
 };
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const ProtectedRoute = ({ children, allowedRoles, allowedPerms }) => {
   const token = localStorage.getItem("token");
   const userStr = localStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
@@ -30,6 +30,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // ❌ ROLE BLOCKED
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
+  }
+
+  // ❌ PERMISSION BLOCKED
+  if (allowedPerms && allowedPerms.length > 0) {
+    const permissions = user.permissions || [];
+    const hasPerm = permissions.includes('all') || allowedPerms.some(p => permissions.includes(p));
+    if (!hasPerm) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   // ✅ ACCESS

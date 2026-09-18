@@ -6,7 +6,10 @@ const {
   createCustomer,
   getCustomerByMobile,
   getFranchiseCustomers,
+  getAllCustomers,
 } = require("../controllers/customerController");
+
+router.get("/", getAllCustomers);
 
 // CREATE CUSTOMER
 router.post("/create", createCustomer);
@@ -18,8 +21,8 @@ router.get(
 );
 
 router.get(
-    "/franchise/:franchiseId",
-    getFranchiseCustomers
+  "/franchise/:franchiseId",
+  getFranchiseCustomers
 );
 
 module.exports = router;
